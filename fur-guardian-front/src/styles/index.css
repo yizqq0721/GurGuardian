@@ -1,0 +1,68 @@
+:root {
+  --fg-primary: #e8853d;
+  --fg-primary-deep: #d96f26;
+  --fg-warm-bg: #fdf8f3;
+  --fg-ink: #3d3229;
+  --fg-ink-light: #8a7c6d;
+  --fg-card-bg: #ffffff;
+  --fg-border: #f0e6da;
+  --el-color-primary: #e8853d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+  color: var(--fg-ink);
+  background-color: var(--fg-warm-bg);
+}
+
+a {
+  color: var(--fg-primary);
+  text-decoration: none;
+}
+
+.fg-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.fg-card {
+  background: var(--fg-card-bg);
+  border: 1px solid var(--fg-border);
+  border-radius: 14px;
+  padding: 20px 24px;
+}
+
+.fg-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fg-muted {
+  color: var(--fg-ink-light);
+  font-size: 13px;
+}
+
+.fg-disclaimer {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #fff7ec;
+  border: 1px dashed #f0c9a0;
+  color: #9a6b3f;
+  font-size: 12px;
+  line-height: 1.6;
+}
