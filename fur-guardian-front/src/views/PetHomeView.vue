@@ -47,6 +47,8 @@
             <span class="weight-num">{{ latestWeight.weightKg }}</span>
             <span class="fg-muted">kg · 记录于 {{ latestWeight.recordedAt }}</span>
           </div>
+          <WeightChart v-if="weightLogs.length > 1" :logs="weightLogs" />
+          <p v-else class="fg-muted">再记录几次体重即可看到趋势曲线</p>
           <el-button size="small" type="primary" plain @click="weightDialog = true">记录体重</el-button>
         </div>
       </div>
@@ -87,6 +89,7 @@ import { petApi } from '@/api/pet'
 import { reminderApi } from '@/api/reminder'
 import TipCard from '@/components/TipCard.vue'
 import BcsPicker from '@/components/BcsPicker.vue'
+import WeightChart from '@/components/WeightChart.vue'
 import type { Pet, Reminder, WeightLog } from '@/types'
 
 const route = useRoute()
