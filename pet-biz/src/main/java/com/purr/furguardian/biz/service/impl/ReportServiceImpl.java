@@ -109,6 +109,12 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
+    public void updateReport(WeeklyReportDO report) {
+        report.setUpdatedAt(LocalDateTime.now());
+        reportMapper.updateById(report);
+    }
+
+    @Override
     public List<WeeklyReportDO> listReports(Long userId, Long petId) {
         LambdaQueryWrapper<WeeklyReportDO> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(WeeklyReportDO::getUserId, userId)

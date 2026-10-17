@@ -12,6 +12,8 @@ public interface ReportService {
 
     WeeklyReportDO getReport(Long userId, Long reportId);
 
+    void updateReport(WeeklyReportDO report);
+
     List<WeeklyReportDO> listReports(Long userId, Long petId);
 
     ReportConclusion getRuleConclusions(Long userId, Long reportId);
