@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.purr</groupId>
+        <artifactId>fur-guardian</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>pet-ai</artifactId>
+    <name>pet-ai</name>
+    <description>LLM invocation wrapper and Prompt management</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.purr</groupId>
+            <artifactId>pet-common</artifactId>
+        </dependency>
+        <!-- LangChain4j DashScope (Tongyi Qianwen) Boot 4 starter -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-community-dashscope-spring-boot4-starter</artifactId>
+        </dependency>
+    </dependencies>
+
+</project>

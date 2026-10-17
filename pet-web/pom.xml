@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.purr</groupId>
+        <artifactId>fur-guardian</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>pet-web</artifactId>
+    <name>pet-web</name>
+    <description>Spring Boot application entry point, Controllers</description>
+
+    <dependencies>
+        <!-- All business modules -->
+        <dependency>
+            <groupId>com.purr</groupId>
+            <artifactId>pet-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.purr</groupId>
+            <artifactId>pet-nutrition-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.purr</groupId>
+            <artifactId>pet-knowledge</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.purr</groupId>
+            <artifactId>pet-ai</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.purr</groupId>
+            <artifactId>pet-biz</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.purr</groupId>
+            <artifactId>pet-job</artifactId>
+        </dependency>
+
+        <!-- Web (Boot 4: webmvc, NOT web) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc</artifactId>
+        </dependency>
+        <!-- API documentation (3.1.1 for Boot 4, 2.x only works with Boot 3) -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        </dependency>
+        <!-- BCrypt only — do NOT import spring-boot-starter-security -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+        </dependency>
+
+        <!-- Test -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

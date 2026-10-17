@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.purr</groupId>
+        <artifactId>fur-guardian</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>pet-knowledge</artifactId>
+    <name>pet-knowledge</name>
+    <description>Knowledge base / RAG module (LangChain4j + Redis 8 Query Engine)</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.purr</groupId>
+            <artifactId>pet-common</artifactId>
+        </dependency>
+        <!-- LangChain4j Redis embedding store (Boot 4 suffix required) -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-community-redis-spring-boot4-starter</artifactId>
+        </dependency>
+    </dependencies>
+
+</project>
