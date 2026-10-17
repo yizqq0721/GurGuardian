@@ -40,7 +40,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public Result<Void> handleNotReadable(HttpMessageNotReadableException e) {
-        return Result.fail(ErrorCode.BAD_REQUEST.getCode(), "请求体格式错误");
+        log.error("请求体解析失败: {}", e.getMessage(), e);
+        return Result.fail(ErrorCode.BAD_REQUEST.getCode(), "请求体格式错误: " + e.getMessage());
     }
 
     @ExceptionHandler(NoResourceFoundException.class)

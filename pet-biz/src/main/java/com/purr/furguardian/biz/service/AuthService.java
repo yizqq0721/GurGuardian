@@ -7,4 +7,8 @@ public interface AuthService {
     String login(String username, String password);
 
     void logout(String token);
+
+    Long getUserIdByUsername(String username);
+
+    String getNicknameByUsername(String username);
 }

@@ -73,4 +73,20 @@ public class AuthServiceImpl implements AuthService {
             redisTemplate.delete(TOKEN_PREFIX + token);
         }
     }
+
+    @Override
+    public Long getUserIdByUsername(String username) {
+        LambdaQueryWrapper<UserDO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(UserDO::getUsername, username);
+        UserDO user = userMapper.selectOne(wrapper);
+        return user != null ? user.getId() : null;
+    }
+
+    @Override
+    public String getNicknameByUsername(String username) {
+        LambdaQueryWrapper<UserDO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(UserDO::getUsername, username);
+        UserDO user = userMapper.selectOne(wrapper);
+        return user != null ? user.getNickname() : null;
+    }
 }

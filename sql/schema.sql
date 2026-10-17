@@ -36,7 +36,7 @@ CREATE TABLE pets (
     name            VARCHAR(50)  NOT NULL COMMENT '宠物昵称',
     species         VARCHAR(10)  NOT NULL COMMENT 'dog/cat',
     breed           VARCHAR(100) DEFAULT NULL COMMENT '品种',
-    sex             VARCHAR(5)   NOT NULL COMMENT 'male/female',
+    sex             VARCHAR(10)  NOT NULL COMMENT 'male/female',
     neutered        TINYINT(1)   NOT NULL DEFAULT 0 COMMENT '是否绝育 0否 1是',
     birthday        DATE         DEFAULT NULL COMMENT '出生日期(精确到月)',
     activity_level  VARCHAR(20)  NOT NULL DEFAULT 'MODERATE' COMMENT 'SEDENTARY/LOW/MODERATE/HIGH/WORKING',

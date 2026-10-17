@@ -36,6 +36,8 @@ public class AuthController {
         String token = authService.login(dto.getUsername(), dto.getPassword());
         LoginVO vo = new LoginVO();
         vo.setToken(token);
+        vo.setUserId(authService.getUserIdByUsername(dto.getUsername()));
+        vo.setNickname(authService.getNicknameByUsername(dto.getUsername()));
         return Result.ok(vo);
     }
 
