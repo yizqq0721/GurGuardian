@@ -32,6 +32,7 @@ public class FoodCreateDTO {
     @Schema(description = "原料组成", example = "鸡肉, 大米, 玉米蛋白粉")
     private String ingredients;
 
+    @Schema(description = "营养成分保证分析值")
     private FoodNutrientDTO nutrients;
 
     public String getName() { return name; }

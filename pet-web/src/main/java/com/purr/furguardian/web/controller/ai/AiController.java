@@ -10,6 +10,7 @@ import com.purr.furguardian.common.result.Result;
 import com.purr.furguardian.knowledge.service.KnowledgeRetrievalService;
 import com.purr.furguardian.web.dto.ai.AiQueryDTO;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
@@ -126,9 +127,13 @@ public class AiController {
         return "adult";
     }
 
+    @Schema(description = "AI问答响应")
     public static class AiResponse {
+        @Schema(description = "回答内容", example = "根据WSAVA指南，成猫每日粗蛋白需求...")
         private String content;
+        @Schema(description = "参考来源列表")
         private List<SourceRef> sources;
+        @Schema(description = "是否为降级兜底响应", example = "false")
         private boolean isFallback;
 
         public AiResponse() {}
@@ -146,9 +151,13 @@ public class AiController {
         public void setIsFallback(boolean fallback) { isFallback = fallback; }
     }
 
+    @Schema(description = "知识来源引用")
     public static class SourceRef {
+        @Schema(description = "知识条目ID", example = "1")
         private Long docId;
+        @Schema(description = "条目标题", example = "成猫牛磺酸最低需求")
         private String title;
+        @Schema(description = "来源名称", example = "WSAVA Global Nutrition Guidelines")
         private String sourceName;
 
         public SourceRef() {}
