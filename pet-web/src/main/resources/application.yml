@@ -11,7 +11,9 @@ spring:
 
   # ======================== MySQL ========================
   datasource:
-    url: jdbc:mysql://localhost:3306/fur_guardian?useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    # characterEncoding 必须写 UTF-8：Connector/J 9.x 不认识 utf8mb4 这个名称，
+    # 传 utf8mb4 会在 getConnection() 抛 UnsupportedEncodingException；服务端仍落到 utf8mb4
+    url: jdbc:mysql://localhost:3306/fur_guardian?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
     username: root
     password: your-local-password
     driver-class-name: com.mysql.cj.jdbc.Driver
