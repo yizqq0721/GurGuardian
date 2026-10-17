@@ -9,5 +9,4 @@ public class FurGuardianApplication {
     public static void main(String[] args) {
         SpringApplication.run(FurGuardianApplication.class, args);
     }
-
 }
