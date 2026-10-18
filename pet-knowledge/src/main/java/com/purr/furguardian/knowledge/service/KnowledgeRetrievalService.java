@@ -14,14 +14,19 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
 public class KnowledgeRetrievalService {
 
     private static final Logger log = LoggerFactory.getLogger(KnowledgeRetrievalService.class);
+    private static final Pattern TOKEN_PATTERN = Pattern.compile("[\\u4e00-\\u9fa5]{2,}|[A-Za-z0-9]{2,}");
+    private static final int MAX_KEYWORDS = 12;
 
     private final KnowledgeDocMapper knowledgeDocMapper;
     private final EmbeddingModel embeddingModel;
@@ -37,7 +42,7 @@ public class KnowledgeRetrievalService {
 
     public List<KnowledgeDocDO> search(String query, String species, String lifeStage, int topN) {
         try {
-            List<Long> candidateIds = getFilteredDocIds(species, lifeStage, topN * 3);
+            List<Long> candidateIds = getFilteredDocIds(species, lifeStage);
 
             Embedding queryEmbedding = embeddingModel.embed(query).content();
 
@@ -82,8 +87,47 @@ public class KnowledgeRetrievalService {
 
     public List<KnowledgeDocDO> fallbackSqlSearch(String query, String species, String lifeStage, int topN) {
         LambdaQueryWrapper<KnowledgeDocDO> wrapper = buildFilteredWrapper(species, lifeStage);
+
+        List<String> keywords = extractKeywords(query);
+        if (!keywords.isEmpty()) {
+            wrapper.and(w -> {
+                for (int i = 0; i < keywords.size(); i++) {
+                    if (i > 0) {
+                        w.or();
+                    }
+                    String keyword = keywords.get(i);
+                    w.like(KnowledgeDocDO::getTitle, keyword)
+                     .or().like(KnowledgeDocDO::getContent, keyword)
+                     .or().like(KnowledgeDocDO::getTopics, keyword);
+                }
+            });
+        }
+
         wrapper.last("LIMIT " + topN);
         return knowledgeDocMapper.selectList(wrapper);
+    }
+
+    /**
+     * 项目没有分词器，中文长串按双字滑窗切。降级路径优先保召回，噪声词由 OR 匹配容忍。
+     */
+    private List<String> extractKeywords(String query) {
+        if (query == null || query.isBlank()) {
+            return List.of();
+        }
+
+        Set<String> keywords = new LinkedHashSet<>();
+        Matcher matcher = TOKEN_PATTERN.matcher(query);
+        while (matcher.find() && keywords.size() < MAX_KEYWORDS) {
+            String token = matcher.group();
+            if (token.charAt(0) < 128 || token.length() <= 2) {
+                keywords.add(token);
+                continue;
+            }
+            for (int i = 0; i + 2 <= token.length() && keywords.size() < MAX_KEYWORDS; i++) {
+                keywords.add(token.substring(i, i + 2));
+            }
+        }
+        return List.copyOf(keywords);
     }
 
     public List<KnowledgeDocDO> selectTipCandidates(String species, String lifeStage,
@@ -115,10 +159,10 @@ public class KnowledgeRetrievalService {
         return knowledgeDocMapper.selectList(wrapper);
     }
 
-    private List<Long> getFilteredDocIds(String species, String lifeStage, int limit) {
+    // 不能加 LIMIT：候选集是向量结果的白名单，按主键截断会把语义命中但 id 靠后的条目全部丢弃
+    private List<Long> getFilteredDocIds(String species, String lifeStage) {
         LambdaQueryWrapper<KnowledgeDocDO> wrapper = buildFilteredWrapper(species, lifeStage);
         wrapper.select(KnowledgeDocDO::getId);
-        wrapper.last("LIMIT " + limit);
         return knowledgeDocMapper.selectList(wrapper).stream()
                 .map(KnowledgeDocDO::getId)
                 .collect(Collectors.toList());

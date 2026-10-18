@@ -53,6 +53,14 @@ langchain4j:
       # password: your-local-redis-password
       index-name: fur-guardian-embeddings
       dimension: 1024
+      # 必须显式声明：RedisEmbeddingStore 回读时会按 metadataConfig 的 key 过滤，
+      # 未声明的 key 会被丢弃，导致检索结果里 metadata.getString("docId") 恒为 null，
+      # 向量检索永远命中 0 条并静默降级到 SQL。
+      metadata-keys:
+        - docId
+        - species
+        - lifeStage
+        - severity
 
 # ======================== SpringDoc OpenAPI ========================
 springdoc:

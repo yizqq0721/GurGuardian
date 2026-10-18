@@ -32,7 +32,7 @@ public class EmbeddingIngestionService {
         this.embeddingStore = embeddingStore;
     }
 
-    public void ingestSingle(KnowledgeDocDO doc) {
+    public boolean ingestSingle(KnowledgeDocDO doc) {
         try {
             Map<String, String> metaMap = new HashMap<>();
             metaMap.put("docId", String.valueOf(doc.getId()));
@@ -51,8 +51,10 @@ public class EmbeddingIngestionService {
             knowledgeDocMapper.updateById(doc);
 
             log.info("知识条目入库成功: id={}, title={}", doc.getId(), doc.getTitle());
+            return true;
         } catch (Exception e) {
             log.error("知识条目入库失败: id={}, error={}", doc.getId(), e.getMessage());
+            return false;
         }
     }
 
@@ -60,8 +62,7 @@ public class EmbeddingIngestionService {
         int success = 0;
         for (Long docId : docIds) {
             KnowledgeDocDO doc = knowledgeDocMapper.selectById(docId);
-            if (doc != null && doc.getEmbeddingId() == null) {
-                ingestSingle(doc);
+            if (doc != null && doc.getEmbeddingId() == null && ingestSingle(doc)) {
                 success++;
             }
         }
