@@ -13,7 +13,7 @@
       <div class="fg-card" style="margin-bottom: 16px">
         <div class="filter-row">
           <span class="fg-muted">查看宠物：</span>
-          <el-radio-group v-model="filterPetId" size="small" @change="fetchReminders">
+          <el-radio-group v-model="filterPetId" size="small" @change="onFilterChange">
             <el-radio-button :value="undefined">全部</el-radio-button>
             <el-radio-button v-for="p in petStore.pets" :key="p.id" :value="p.id">{{ p.name }}</el-radio-button>
           </el-radio-group>
@@ -153,6 +153,7 @@ const loading = ref(false)
 const saving = ref(false)
 const reminders = ref<Reminder[]>([])
 const logs = ref<ReminderLog[]>([])
+const optimisticChecked = ref<Set<number>>(new Set())
 const filterPetId = ref<number | undefined>(undefined)
 const onlyToday = ref(false)
 
@@ -172,7 +173,9 @@ const form = reactive({
 
 const checkedIds = computed(() => {
   const today = dayjs().format('YYYY-MM-DD')
-  return new Set(logs.value.filter((l) => l.doneDate === today).map((l) => l.reminderId))
+  const set = new Set(logs.value.filter((l) => l.doneDate === today).map((l) => l.reminderId))
+  optimisticChecked.value.forEach((id) => set.add(id))
+  return set
 })
 
 const filteredReminders = computed(() => {
@@ -208,14 +211,24 @@ async function fetchReminders() {
 }
 
 async function fetchLogs() {
-  if (!petStore.currentPet) return
-  logs.value = await reminderApi
-    .logs({
-      petId: filterPetId.value ?? petStore.currentPet.id,
-      startDate: dayjs().subtract(6, 'day').format('YYYY-MM-DD'),
-      endDate: dayjs().format('YYYY-MM-DD'),
-    })
-    .catch(() => [])
+  const petIds = filterPetId.value != null
+    ? [filterPetId.value]
+    : petStore.pets.map((p) => p.id)
+  if (!petIds.length) {
+    logs.value = []
+    return
+  }
+  const startDate = dayjs().subtract(6, 'day').format('YYYY-MM-DD')
+  const endDate = dayjs().format('YYYY-MM-DD')
+  const results = await Promise.all(
+    petIds.map((id) => reminderApi.logs({ petId: id, startDate, endDate }).catch(() => [] as ReminderLog[])),
+  )
+  logs.value = results.flat()
+}
+
+function onFilterChange() {
+  fetchReminders()
+  fetchLogs()
 }
 
 function petName(id: number) {
@@ -293,6 +306,7 @@ async function save() {
 
 async function checkin(row: Reminder) {
   await reminderApi.checkin(row.id, { doneDate: dayjs().format('YYYY-MM-DD') })
+  optimisticChecked.value = new Set(optimisticChecked.value).add(row.id)
   ElMessage.success(`已完成「${row.title}」`)
   fetchLogs()
 }

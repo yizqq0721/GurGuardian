@@ -129,7 +129,10 @@ const form = reactive({
 
 onMounted(async () => {
   if (!editId.value) return
-  const food = await foodApi.detail(editId.value)
+  const [food, nutrients] = await Promise.all([
+    foodApi.detail(editId.value),
+    foodApi.nutrients(editId.value).catch(() => undefined),
+  ])
   Object.assign(form, {
     name: food.name,
     brand: food.brand || '',
@@ -139,7 +142,7 @@ onMounted(async () => {
     speciesScope: food.speciesScope || 'DOG',
     labeledMeKcal: food.labeledMeKcal,
     ingredients: food.ingredients || '',
-    nutrients: { ...(food.nutrients || {}) },
+    nutrients: { ...(nutrients || food.nutrients || {}) },
   })
 })
 
