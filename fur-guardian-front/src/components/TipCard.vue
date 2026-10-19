@@ -1,33 +1,51 @@
 <template>
-  <div v-loading="loading && !streaming">
+  <div v-loading="loading && !streaming" class="tip-card">
     <template v-if="streaming || streamText">
       <p class="tip-content">
-        {{ streamText }}<span v-if="streaming" class="cursor">▍</span>
+        {{ streamText }}<span v-if="streaming" class="cursor" aria-hidden="true" />
       </p>
-      <p class="fg-muted" style="font-size: 12px">正在基于知识库生成，生成完成后可查看来源。</p>
+      <p class="gen-note">正在基于知识库生成，生成完成后可查看来源。</p>
     </template>
+
     <template v-else-if="tip">
       <p class="tip-content">{{ tip.content }}</p>
+
       <div class="tip-foot">
-        <span v-if="tip.sourceName" class="fg-muted">来源：{{ tip.sourceName }}</span>
+        <SourceChip v-if="tip.sourceName" :label="`来源 · ${tip.sourceName}`" />
         <span class="tip-actions">
-          <el-button size="small" text :loading="streaming" @click="regenerate">🔄 换一条</el-button>
-          <el-button
-            size="small"
-            text
-            :type="tip.feedback === 'like' ? 'primary' : ''"
+          <button
+            type="button"
+            class="fb-btn"
+            :disabled="streaming"
+            @click="regenerate"
+          >
+            <RefreshCw :size="20" class="fg-icon" :class="{ 'is-spin': streaming }" />
+            换一条
+          </button>
+          <button
+            type="button"
+            class="fb-btn"
+            :class="{ 'is-active': tip.feedback === 'like' }"
             @click="sendFeedback('like')"
-          >👍 有用</el-button>
-          <el-button
-            size="small"
-            text
-            :type="tip.feedback === 'dislike' ? 'danger' : ''"
+          >
+            <ThumbsUp :size="20" class="fg-icon" />
+            有用
+          </button>
+          <button
+            type="button"
+            class="fb-btn"
+            :class="{ 'is-active': tip.feedback === 'dislike' }"
             @click="sendFeedback('dislike')"
-          >👎 没帮助</el-button>
+          >
+            <ThumbsDown :size="20" class="fg-icon" />
+            没帮助
+          </button>
         </span>
       </div>
     </template>
-    <el-empty v-else description="暂无今日 Tip" :image-size="60" />
+
+    <EmptyState v-else variant="default" description="暂无今日 Tip" />
+
     <DisclaimerBar />
   </div>
 </template>
@@ -35,8 +53,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import { RefreshCw, ThumbsDown, ThumbsUp } from 'lucide-vue-next'
 import { tipApi } from '@/api/tip'
 import DisclaimerBar from '@/components/DisclaimerBar.vue'
+import EmptyState from '@/components/EmptyState.vue'
+import SourceChip from '@/components/SourceChip.vue'
 import { useTipStream } from '@/composables/useTipStream'
 import type { Tip } from '@/types'
 
@@ -82,13 +103,28 @@ async function sendFeedback(feedback: 'like' | 'dislike') {
 
 <style scoped>
 .tip-content {
-  line-height: 1.8;
-  margin: 0 0 8px;
+  margin: 0 0 var(--fg-s3);
+  font-size: var(--fg-text-body);
+  line-height: 1.7;
+  color: var(--fg-ink);
 }
 
+.gen-note {
+  margin: 0;
+  font-size: var(--fg-text-label);
+  line-height: 1.6;
+  color: var(--fg-ink-muted);
+}
+
+/* 流式光标：用色块画，不靠字符 */
 .cursor {
-  animation: blink 0.8s infinite;
-  color: var(--fg-primary);
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: var(--fg-s1);
+  vertical-align: -0.15em;
+  background: var(--fg-accent);
+  animation: blink 0.8s step-end infinite;
 }
 
 @keyframes blink {
@@ -102,6 +138,58 @@ async function sendFeedback(feedback: 'like' | 'dislike') {
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: var(--fg-s2);
+}
+
+.tip-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fg-s1);
+}
+
+/* 反馈按钮：默认与正文同色，激活才用 accent */
+.fb-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fg-s1);
+  height: 28px;
+  padding: 0 var(--fg-s2);
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--fg-ink);
+  font-family: inherit;
+  font-size: var(--fg-text-label);
+  cursor: pointer;
+  transition: background var(--fg-motion), color var(--fg-motion);
+}
+
+.fb-btn:hover:not(:disabled) {
+  background: var(--fg-accent-soft);
+  color: var(--fg-accent);
+}
+
+.fb-btn:disabled {
+  cursor: default;
+  color: var(--fg-ink-muted);
+}
+
+.fb-btn.is-active {
+  color: var(--fg-accent);
+}
+
+.is-spin {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.tip-card :deep(.empty-state) {
+  padding: var(--fg-s4) 0;
 }
 </style>

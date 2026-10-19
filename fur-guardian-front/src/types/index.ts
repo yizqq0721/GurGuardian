@@ -232,3 +232,39 @@ export interface KnowledgeDoc {
   sourceUrl?: string
   updatedAt?: string
 }
+
+/** 游标翻页：nextCursor 原样回传即可，不用解析它的格式 */
+export interface CursorPage<T> {
+  records: T[]
+  nextCursor: string | null
+  hasMore: boolean
+}
+
+/** 会话里的来源快照，比 AiSource 多 sourceType/severity（服务端回查知识库补全） */
+export interface ChatSource {
+  docId: number
+  title: string
+  sourceName: string
+  sourceType?: string
+  severity?: string
+}
+
+export interface ChatMessage {
+  id: number
+  role: 'user' | 'ai'
+  content: string
+  sources: ChatSource[]
+  isRedLine: boolean
+  isFallback: boolean
+  createdAt: string
+}
+
+export interface ChatSession {
+  id: number
+  title: string
+  petId?: number | null
+  messageCount: number
+  sourceCount: number
+  createdAt: string
+  updatedAt: string
+}

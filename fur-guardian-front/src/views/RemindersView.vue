@@ -1,166 +1,319 @@
 <template>
   <div class="fg-page">
-    <div class="page-head">
-      <h2 class="fg-section-title">提醒管理</h2>
-      <el-button type="primary" :disabled="!petStore.currentPet" @click="openCreate">+ 新建提醒</el-button>
-    </div>
+    <PageHeader
+      title="提醒管理"
+      :breadcrumb="scopeLabel"
+      description="把喂食、遛弯、护理排进一天的时间轴，完成一项就打一次卡。"
+    >
+      <template #actions>
+        <div class="day-nav" role="group" aria-label="切换日期">
+          <button class="day-btn" type="button" :disabled="!canPrev" aria-label="前一天" @click="shiftDate(-1)">
+            <ChevronLeft :size="20" class="fg-icon" />
+          </button>
+          <p class="day-label">
+            <span class="day-date">{{ viewDateLabel }}</span>
+            <span v-if="isToday" class="fg-muted day-tag">今天</span>
+            <span v-else class="fg-muted day-tag">回顾</span>
+          </p>
+          <button class="day-btn" type="button" :disabled="!canNext" aria-label="后一天" @click="shiftDate(1)">
+            <ChevronRight :size="20" class="fg-icon" />
+          </button>
+        </div>
 
-    <el-empty v-if="!petStore.currentPet" description="请先创建宠物档案">
+        <span class="head-divider" aria-hidden="true" />
+
+        <p class="fg-mono streak">
+          <Flame :size="20" class="fg-icon" />
+          <span>连续</span>
+          <span class="streak-num">{{ streak }}</span>
+          <span>天</span>
+        </p>
+
+        <el-button type="primary" :disabled="!petStore.currentPet" @click="openCreate">
+          <Plus :size="20" class="fg-icon" />新建提醒
+        </el-button>
+      </template>
+    </PageHeader>
+
+    <EmptyState v-if="!petStore.currentPet" variant="pets" description="请先创建宠物档案，再安排每日提醒">
       <el-button type="primary" @click="router.push('/onboarding')">去创建</el-button>
-    </el-empty>
+    </EmptyState>
 
     <template v-else>
-      <div class="fg-card" style="margin-bottom: 16px">
-        <div class="filter-row">
-          <span class="fg-muted">查看宠物：</span>
-          <el-radio-group v-model="filterPetId" size="small" @change="onFilterChange">
-            <el-radio-button :value="undefined">全部</el-radio-button>
-            <el-radio-button v-for="p in petStore.pets" :key="p.id" :value="p.id">{{ p.name }}</el-radio-button>
-          </el-radio-group>
-          <el-checkbox v-model="onlyToday" size="small" style="margin-left: auto">只看今日待办</el-checkbox>
+      <section class="toolbar">
+        <span class="fg-label">查看宠物</span>
+        <el-radio-group v-model="filterPetId" size="small" @change="onFilterChange">
+          <el-radio-button :value="undefined">全部</el-radio-button>
+          <el-radio-button v-for="p in petStore.pets" :key="p.id" :value="p.id">{{ p.name }}</el-radio-button>
+        </el-radio-group>
+        <el-checkbox v-model="onlyToday" class="todo-check" size="small">只看今日待办</el-checkbox>
+      </section>
+
+      <div class="fg-split">
+        <!-- 时间轴主体 -->
+        <div class="main-col">
+          <section v-loading="loading" class="fg-card tl-card">
+            <header class="tl-head">
+              <h2 class="fg-section-title">当日时间轴</h2>
+              <p class="fg-muted tl-progress">
+                共 <span class="fg-num">{{ shownTotal }}</span> 项 · 已完成
+                <span class="fg-num">{{ shownDone }}</span> 项
+              </p>
+            </header>
+
+            <p v-if="loadError" class="fg-callout fg-callout--danger">
+              提醒列表加载失败，请检查网络后重试。
+              <button class="link-btn" type="button" @click="fetchReminders">重新加载</button>
+            </p>
+
+            <p v-else-if="!isToday" class="fg-callout">
+              正在回顾 {{ viewDateLabel }} 的完成情况，打卡仅在今天有效。
+            </p>
+
+            <div v-for="group in timelineGroups" :key="group.key" class="tl-group">
+              <p class="fg-label tl-group-label">{{ group.label }}</p>
+              <ul class="tl">
+                <li
+                  v-for="r in group.rows"
+                  :key="r.id"
+                  class="tl-row"
+                  :class="{ 'is-done': isDone(r.id) }"
+                >
+                  <div class="tl-time">
+                    <span :class="r.remindTime ? 'fg-num time-text' : 'time-text time-alt'">{{ rowTime(r) }}</span>
+                  </div>
+                  <span class="tl-marker" aria-hidden="true"><span class="tl-dot" /></span>
+
+                  <el-checkbox
+                    class="tl-check"
+                    :model-value="isDone(r.id)"
+                    :disabled="!isToday || isDone(r.id)"
+                    :aria-label="`打卡：${r.title}`"
+                    @change="onCheck(r)"
+                  />
+
+                  <div class="tl-body">
+                    <p class="tl-title">
+                      <component :is="iconFor(r.reminderType)" :size="20" class="fg-icon tl-ico" />
+                      <span class="tl-name">{{ r.title }}</span>
+                    </p>
+                    <p class="tl-meta">
+                      <span class="fg-muted meta-text">{{ typeLabel(r) }} · {{ petName(r.petId) }}</span>
+                      <span class="fg-chip">
+                        {{ repeatLabel(r) }}<template v-if="r.repeatDays">（{{ repeatDaysText(r.repeatDays) }}）</template>
+                      </span>
+                      <span v-if="r.relativeMin != null" class="fg-chip">饭后 {{ r.relativeMin }} 分钟</span>
+                    </p>
+                  </div>
+
+                  <el-dropdown trigger="click" class="tl-more" @command="onRowCommand($event, r)">
+                    <button class="more-btn" type="button" aria-label="更多操作">
+                      <MoreHorizontal :size="20" class="fg-icon" />
+                    </button>
+                    <template #dropdown>
+                      <el-dropdown-menu>
+                        <el-dropdown-item command="edit">编辑</el-dropdown-item>
+                        <el-dropdown-item command="remove">删除</el-dropdown-item>
+                      </el-dropdown-menu>
+                    </template>
+                  </el-dropdown>
+                </li>
+              </ul>
+            </div>
+
+            <EmptyState
+              v-if="!loading && !loadError && !shownTotal"
+              variant="default"
+              :description="onlyToday ? '今日待办已全部完成' : '还没有提醒，点击「新建提醒」安排第一项'"
+            />
+          </section>
         </div>
+
+        <!-- 侧栏：本周完成度 -->
+        <aside class="aside-col">
+          <section class="fg-card">
+            <h2 class="fg-section-title">本周完成率</h2>
+
+            <StatTile
+              label="今日完成"
+              :value="todayRate"
+              unit="%"
+              :caption="`已打卡 ${doneToday} 项 / 共 ${reminders.length} 项`"
+            />
+
+            <div class="fg-divider" />
+
+            <div class="bars" role="img" :aria-label="`近 7 天每日打卡次数：${barsAria}`">
+              <div
+                v-for="d in weekDays"
+                :key="d.date"
+                class="bar-col"
+                :class="{ 'is-viewed': d.date === viewDate }"
+              >
+                <span class="bar-count fg-num">{{ d.count || '—' }}</span>
+                <span class="bar-track">
+                  <span class="bar-fill" :class="{ 'is-zero': d.count === 0 }" :style="{ height: barHeight(d.count) }" />
+                </span>
+                <span class="bar-day">{{ d.weekday }}</span>
+              </div>
+            </div>
+            <p class="bar-note fg-muted">柱高按当日打卡次数，单位：次</p>
+          </section>
+
+          <section class="fg-card">
+            <h2 class="fg-section-title">打卡概览</h2>
+            <div class="kv-list">
+              <div class="fg-kv">
+                <span class="fg-label">近 7 天累计</span>
+                <span class="fg-num kv-value">{{ weekTotal }} 次</span>
+              </div>
+              <div class="fg-kv">
+                <span class="fg-label">有打卡的天数</span>
+                <span class="fg-num kv-value">{{ activeDays }} 天</span>
+              </div>
+              <div class="fg-kv">
+                <span class="fg-label">连续打卡</span>
+                <span class="fg-num kv-value">{{ streak }} 天</span>
+              </div>
+              <div class="fg-kv">
+                <span class="fg-label">提醒条目</span>
+                <span class="fg-num kv-value">{{ reminders.length }} 项</span>
+              </div>
+            </div>
+          </section>
+        </aside>
       </div>
 
-      <div class="fg-card">
-        <el-table v-loading="loading" :data="filteredReminders">
-          <el-table-column label="提醒" min-width="160">
-            <template #default="{ row }">
-              <span style="font-weight: 600">{{ row.title }}</span>
-              <el-tag size="small" effect="plain" style="margin-left: 8px">
-                {{ REMINDER_TYPE_LABEL[row.reminderType] || row.reminderType }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column label="宠物" width="100">
-            <template #default="{ row }">{{ petName(row.petId) }}</template>
-          </el-table-column>
-          <el-table-column label="时间" width="150">
-            <template #default="{ row }">
-              <span v-if="row.remindTime">{{ row.remindTime }}</span>
-              <span v-else-if="row.relativeMin != null">饭后 {{ row.relativeMin }} 分钟</span>
-              <span v-else class="fg-muted">未设置</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="重复" width="160">
-            <template #default="{ row }">
-              {{ REPEAT_RULE_LABEL[row.repeatRule] || '每天' }}
-              <span v-if="row.repeatDays" class="fg-muted">（{{ repeatDaysText(row.repeatDays) }}）</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="今日" width="90">
-            <template #default="{ row }">
-              <el-tag v-if="checkedIds.has(row.id)" type="success" size="small">已完成</el-tag>
-              <el-button v-else size="small" type="primary" plain @click="checkin(row)">打卡</el-button>
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" width="130" fixed="right">
-            <template #default="{ row }">
-              <el-button size="small" text type="primary" @click="openEdit(row)">编辑</el-button>
-              <el-button size="small" text type="danger" @click="remove(row)">删除</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-      </div>
-
-      <div class="fg-card" style="margin-top: 16px">
-        <h3 class="fg-section-title">🔥 近 7 天打卡</h3>
-        <div class="streak-row">
-          <div v-for="d in weekDays" :key="d.date" class="streak-cell" :class="{ filled: d.count > 0 }">
-            <span class="streak-count">{{ d.count || '' }}</span>
-            <span class="streak-label">{{ d.label }}</span>
-          </div>
-        </div>
-      </div>
-    </template>
-
-    <el-dialog v-model="dialogVisible" :title="editingId ? '编辑提醒' : '新建提醒'" width="520px">
-      <el-form label-position="top">
-        <el-form-item label="提醒标题" required>
-          <el-input v-model="form.title" placeholder="例如：早餐 / 晚间遛弯" maxlength="30" />
-        </el-form-item>
-        <el-row :gutter="16">
-          <el-col :span="12">
-            <el-form-item label="关联宠物" required>
-              <el-select v-model="form.petId" style="width: 100%">
-                <el-option v-for="p in petStore.pets" :key="p.id" :value="p.id" :label="p.name" />
-              </el-select>
+      <div class="drawer-host">
+        <el-drawer
+          v-model="drawerVisible"
+          direction="rtl"
+          size="480px"
+          :title="editingId ? '编辑提醒' : '新建提醒'"
+        >
+          <el-form label-position="top" class="drawer-form">
+            <el-form-item label="提醒标题" required>
+              <el-input v-model="form.title" placeholder="例如：早餐 / 晚间遛弯" maxlength="30" />
             </el-form-item>
-          </el-col>
-          <el-col :span="12">
+
             <el-form-item label="类型" required>
               <el-select v-model="form.reminderType" style="width: 100%">
                 <el-option v-for="o in REMINDER_TYPE_OPTIONS" :key="o.value" :value="o.value" :label="o.label" />
               </el-select>
             </el-form-item>
-          </el-col>
-        </el-row>
 
-        <el-form-item label="提醒方式">
-          <el-radio-group v-model="timeMode">
-            <el-radio-button value="fixed">固定时间</el-radio-button>
-            <el-radio-button value="relative">相对时间（饭后）</el-radio-button>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item v-if="timeMode === 'fixed'" label="提醒时间">
-          <el-time-picker v-model="form.remindTime" format="HH:mm" value-format="HH:mm" style="width: 160px" />
-        </el-form-item>
-        <el-form-item v-else label="饭后多少分钟">
-          <el-input-number v-model="form.relativeMin" :min="5" :max="240" :step="5" />
-          <span class="fg-muted" style="margin-left: 12px">如「饭后 30 分钟」遛狗，防胃扭转</span>
-        </el-form-item>
+            <el-form-item label="关联宠物" required>
+              <el-select v-model="form.petId" style="width: 100%">
+                <el-option v-for="p in petStore.pets" :key="p.id" :value="p.id" :label="p.name" />
+              </el-select>
+            </el-form-item>
 
-        <el-row :gutter="16">
-          <el-col :span="12">
+            <el-form-item label="提醒方式">
+              <el-radio-group v-model="timeMode">
+                <el-radio-button value="fixed">固定时间</el-radio-button>
+                <el-radio-button value="relative">相对时间（饭后）</el-radio-button>
+              </el-radio-group>
+            </el-form-item>
+
+            <el-form-item v-if="timeMode === 'fixed'" label="提醒时间">
+              <el-time-picker v-model="form.remindTime" format="HH:mm" value-format="HH:mm" class="time-pick" />
+            </el-form-item>
+
+            <el-form-item v-else label="饭后多少分钟">
+              <el-input-number v-model="form.relativeMin" :min="5" :max="240" :step="5" />
+              <span class="fg-muted num-hint">如「饭后 30 分钟」遛狗，防胃扭转</span>
+            </el-form-item>
+
             <el-form-item label="重复规则">
               <el-select v-model="form.repeatRule" style="width: 100%">
                 <el-option v-for="o in REPEAT_RULE_OPTIONS" :key="o.value" :value="o.value" :label="o.label" />
               </el-select>
             </el-form-item>
-          </el-col>
-          <el-col v-if="form.repeatRule === 'WEEKLY'" :span="12">
-            <el-form-item label="重复日">
+
+            <el-form-item v-if="form.repeatRule === 'WEEKLY'" label="重复日">
               <el-checkbox-group v-model="weekdayChecks">
-                <el-checkbox v-for="(label, i) in ['一','二','三','四','五','六','日']" :key="i" :value="String(i + 1)">
+                <el-checkbox
+                  v-for="(label, i) in ['一','二','三','四','五','六','日']"
+                  :key="i"
+                  class="weekday-check"
+                  :value="String(i + 1)"
+                >
                   {{ label }}
                 </el-checkbox>
               </el-checkbox-group>
             </el-form-item>
-          </el-col>
-        </el-row>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="save">保存</el-button>
-      </template>
-    </el-dialog>
+          </el-form>
+
+          <template #footer>
+            <el-button @click="drawerVisible = false">取消</el-button>
+            <el-button type="primary" :loading="saving" @click="save">保存</el-button>
+          </template>
+        </el-drawer>
+      </div>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import type { Component } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import dayjs from 'dayjs'
+import {
+  Bath,
+  Bell,
+  Brush,
+  ChevronLeft,
+  ChevronRight,
+  Droplets,
+  Flame,
+  Footprints,
+  MoreHorizontal,
+  Pill,
+  Plus,
+  Syringe,
+  UtensilsCrossed,
+} from 'lucide-vue-next'
 import { reminderApi } from '@/api/reminder'
+import EmptyState from '@/components/EmptyState.vue'
+import PageHeader from '@/components/PageHeader.vue'
+import StatTile from '@/components/StatTile.vue'
 import { usePetStore } from '@/stores/pet'
-import { REMINDER_TYPE_LABEL, REMINDER_TYPE_OPTIONS, REPEAT_RULE_LABEL, REPEAT_RULE_OPTIONS } from '@/utils/constants'
+import {
+  REMINDER_TYPE_LABEL,
+  REMINDER_TYPE_OPTIONS,
+  REPEAT_RULE_LABEL,
+  REPEAT_RULE_OPTIONS,
+} from '@/utils/constants'
 import type { Reminder, ReminderLog, ReminderType, RepeatRule } from '@/types'
 
 const router = useRouter()
+const route = useRoute()
 const petStore = usePetStore()
 
 const loading = ref(false)
+const loadError = ref(false)
 const saving = ref(false)
 const reminders = ref<Reminder[]>([])
 const logs = ref<ReminderLog[]>([])
 const optimisticChecked = ref<Set<number>>(new Set())
-const filterPetId = ref<number | undefined>(undefined)
+/* 宠物卡片上的「提醒管理」用 ?pet= 指明是哪只，从顶栏进入时保持「全部」 */
+const petFromQuery = Number(route.query.pet)
+const filterPetId = ref<number | undefined>(
+  Number.isInteger(petFromQuery) && petFromQuery > 0 ? petFromQuery : undefined,
+)
 const onlyToday = ref(false)
 
-const dialogVisible = ref(false)
+const drawerVisible = ref(false)
 const editingId = ref<number | null>(null)
 const timeMode = ref<'fixed' | 'relative'>('fixed')
 const weekdayChecks = ref<string[]>([])
+
+/** 时间轴可回顾的窗口 = 打卡日志已拉取的近 7 天，不额外请求接口 */
+const WEEKDAY_CN = ['日', '一', '二', '三', '四', '五', '六']
+const windowStart = dayjs().subtract(6, 'day').startOf('day')
+const viewDate = ref(dayjs().format('YYYY-MM-DD'))
 
 const form = reactive({
   petId: 0,
@@ -178,10 +331,45 @@ const checkedIds = computed(() => {
   return set
 })
 
+const isToday = computed(() => viewDate.value === dayjs().format('YYYY-MM-DD'))
+
+/** 所选日期已打卡的提醒 id：历史日期只读，只反映当天日志 */
+const viewDoneIds = computed(() => {
+  const set = new Set(logs.value.filter((l) => l.doneDate === viewDate.value).map((l) => l.reminderId))
+  if (isToday.value) optimisticChecked.value.forEach((id) => set.add(id))
+  return set
+})
+
 const filteredReminders = computed(() => {
   if (!onlyToday.value) return reminders.value
   return reminders.value.filter((r) => !checkedIds.value.has(r.id))
 })
+
+/** 定时提醒按真实时间排序；餐后与未设置时间的提醒各成一段，时间轴不伪造钟点 */
+const timelineGroups = computed(() => {
+  const list = filteredReminders.value
+  const timed = list
+    .filter((r) => !!r.remindTime)
+    .sort((a, b) => (a.remindTime as string).localeCompare(b.remindTime as string))
+  const relative = list.filter((r) => !r.remindTime && r.relativeMin != null)
+  const unset = list.filter((r) => !r.remindTime && r.relativeMin == null)
+
+  const groups: { key: string; label: string; rows: Reminder[] }[] = []
+  if (timed.length) groups.push({ key: 'timed', label: '定时提醒', rows: timed })
+  if (relative.length) groups.push({ key: 'relative', label: '餐后提醒', rows: relative })
+  if (unset.length) groups.push({ key: 'unset', label: '未设置时间', rows: unset })
+  return groups
+})
+
+const shownRows = computed(() => timelineGroups.value.flatMap((g) => g.rows))
+const shownTotal = computed(() => shownRows.value.length)
+const shownDone = computed(() => shownRows.value.filter((r) => viewDoneIds.value.has(r.id)).length)
+
+const doneToday = computed(() => reminders.value.filter((r) => checkedIds.value.has(r.id)).length)
+
+const todayRate = computed(() =>
+  reminders.value.length ? Math.round((doneToday.value / reminders.value.length) * 100) : 0,
+)
 
 const weekDays = computed(() => {
   return Array.from({ length: 7 }, (_, i) => {
@@ -190,10 +378,89 @@ const weekDays = computed(() => {
     return {
       date,
       label: i === 6 ? '今天' : d.format('MM-DD'),
+      weekday: WEEKDAY_CN[d.day()],
       count: logs.value.filter((l) => l.doneDate === date).length,
     }
   })
 })
+
+const weekTotal = computed(() => weekDays.value.reduce((s, d) => s + d.count, 0))
+const activeDays = computed(() => weekDays.value.filter((d) => d.count > 0).length)
+const weekMax = computed(() => Math.max(1, ...weekDays.value.map((d) => d.count)))
+
+/** 连续天数：从今天往回数，今天尚未打卡不打断已有连续 */
+const streak = computed(() => {
+  let n = 0
+  for (let i = 0; i < 7; i += 1) {
+    const date = dayjs().subtract(i, 'day').format('YYYY-MM-DD')
+    const count = logs.value.filter((l) => l.doneDate === date).length
+    if (count > 0) n += 1
+    else if (i === 0) continue
+    else break
+  }
+  return n
+})
+
+const barsAria = computed(() =>
+  weekDays.value.map((d) => `${d.label} ${d.count} 次`).join('，'),
+)
+
+const scopeLabel = computed(() =>
+  filterPetId.value == null
+    ? `全部宠物 · ${petStore.pets.length} 只`
+    : `${petName(filterPetId.value)} · 提醒`,
+)
+
+const viewDateLabel = computed(() => {
+  const d = dayjs(viewDate.value)
+  return `${d.month() + 1}月${d.date()}日 周${WEEKDAY_CN[d.day()]}`
+})
+
+const canPrev = computed(() => !dayjs(viewDate.value).subtract(1, 'day').isBefore(windowStart))
+const canNext = computed(() => !isToday.value)
+
+function shiftDate(delta: number) {
+  const next = dayjs(viewDate.value).add(delta, 'day')
+  if (next.isBefore(windowStart) || next.isAfter(dayjs(), 'day')) return
+  viewDate.value = next.format('YYYY-MM-DD')
+}
+
+function isDone(id: number) {
+  return viewDoneIds.value.has(id)
+}
+
+function rowTime(r: Reminder) {
+  if (r.remindTime) return r.remindTime
+  return r.relativeMin != null ? '餐后' : '—'
+}
+
+function typeLabel(r: Reminder) {
+  return REMINDER_TYPE_LABEL[r.reminderType] || r.reminderType
+}
+
+function repeatLabel(r: Reminder) {
+  return REPEAT_RULE_LABEL[r.repeatRule || ''] || '每天'
+}
+
+function barHeight(count: number) {
+  if (!count) return '2px'
+  return `${Math.max(8, Math.round((count / weekMax.value) * 48))}px`
+}
+
+const REMINDER_TYPE_ICONS: Record<ReminderType, Component> = {
+  FEED: UtensilsCrossed,
+  WALK: Footprints,
+  WATER: Droplets,
+  GROOMING: Brush,
+  DEWORM: Pill,
+  VACCINE: Syringe,
+  BATH: Bath,
+  CUSTOM: Bell,
+}
+
+function iconFor(type: ReminderType): Component {
+  return REMINDER_TYPE_ICONS[type] ?? Bell
+}
 
 onMounted(async () => {
   await petStore.fetchPets()
@@ -203,8 +470,11 @@ onMounted(async () => {
 
 async function fetchReminders() {
   loading.value = true
+  loadError.value = false
   try {
     reminders.value = await reminderApi.list(filterPetId.value)
+  } catch {
+    loadError.value = true
   } finally {
     loading.value = false
   }
@@ -255,7 +525,13 @@ function openCreate() {
     relativeMin: 30,
     repeatRule: 'DAILY',
   })
-  dialogVisible.value = true
+  drawerVisible.value = true
+}
+
+/** 溢出菜单沿用原有编辑 / 删除动作，命令式派发避免依赖组件内部实现 */
+function onRowCommand(command: unknown, row: Reminder) {
+  if (command === 'edit') openEdit(row)
+  else if (command === 'remove') void remove(row)
 }
 
 function openEdit(row: Reminder) {
@@ -270,7 +546,7 @@ function openEdit(row: Reminder) {
     relativeMin: row.relativeMin ?? 30,
     repeatRule: row.repeatRule || 'DAILY',
   })
-  dialogVisible.value = true
+  drawerVisible.value = true
 }
 
 async function save() {
@@ -297,11 +573,17 @@ async function save() {
       await reminderApi.create(payload)
     }
     ElMessage.success('已保存')
-    dialogVisible.value = false
+    drawerVisible.value = false
     fetchReminders()
   } finally {
     saving.value = false
   }
+}
+
+/** 接口只支持打卡、不支持撤销，已完成的行保持只读 */
+function onCheck(row: Reminder) {
+  if (!isToday.value || checkedIds.value.has(row.id)) return
+  checkin(row)
 }
 
 async function checkin(row: Reminder) {
@@ -320,50 +602,478 @@ async function remove(row: Reminder) {
 </script>
 
 <style scoped>
-.page-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.filter-row {
+/* ---------- 页头：日期切换 + 连续天数 + 新建 ---------- */
+.day-nav {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--fg-s1);
 }
 
-.streak-row {
-  display: flex;
-  gap: 8px;
+.day-btn {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: var(--fg-line-w) solid var(--fg-line);
+  border-radius: var(--fg-radius);
+  background: var(--fg-surface);
+  color: var(--fg-ink-muted);
+  cursor: pointer;
+  transition: color var(--fg-motion), border-color var(--fg-motion), background var(--fg-motion);
 }
 
-.streak-cell {
-  flex: 1;
-  max-width: 90px;
-  border: 1px solid var(--fg-border);
-  border-radius: 10px;
-  padding: 12px 0;
+.day-btn:hover:not(:disabled) {
+  color: var(--fg-accent);
+  border-color: var(--fg-line-strong);
+  background: var(--fg-accent-soft);
+}
+
+.day-btn:disabled {
+  color: var(--fg-line-strong);
+  cursor: not-allowed;
+}
+
+.day-label {
+  margin: 0;
+  min-width: 132px;
   text-align: center;
   display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: var(--fg-s2);
+}
+
+.day-date {
+  font-family: var(--fg-font-serif);
+  font-size: var(--fg-text-lead);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.day-tag {
+  font-size: var(--fg-text-label);
+}
+
+.head-divider {
+  width: var(--fg-line-w);
+  height: 24px;
+  background: var(--fg-line);
+}
+
+.streak {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fg-s2);
+  margin: 0;
+  white-space: nowrap;
+}
+
+.streak-num {
+  color: var(--fg-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+:deep(.head-actions) {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.el-button .fg-icon {
+  margin-right: var(--fg-s2);
+}
+
+/* ---------- 筛选条 ---------- */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--fg-s3);
+  flex-wrap: wrap;
+  padding: var(--fg-s3) 0 var(--fg-s4);
+  margin-bottom: var(--fg-s5);
+  border-bottom: var(--fg-line-w) solid var(--fg-line);
+}
+
+.todo-check {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+/* ---------- 时间轴 ---------- */
+.tl-card {
+  position: relative;
+  min-height: 240px;
+}
+
+.tl-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--fg-s4);
+  margin-bottom: var(--fg-s4);
+}
+
+.tl-head .fg-section-title {
+  margin: 0;
+}
+
+.tl-progress {
+  margin: 0;
+  font-size: var(--fg-text-label);
+  white-space: nowrap;
+}
+
+.tl-group + .tl-group {
+  margin-top: var(--fg-s5);
+  padding-top: var(--fg-s4);
+  border-top: var(--fg-line-w) solid var(--fg-line);
+}
+
+.tl-group-label {
+  margin: 0 0 var(--fg-s3) var(--fg-s2);
+}
+
+.tl {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tl-row {
+  display: grid;
+  grid-template-columns: 64px 12px 24px minmax(0, 1fr) 32px;
+  align-items: start;
+  gap: var(--fg-s3);
+  padding: var(--fg-s3) var(--fg-s2);
+  border-radius: var(--fg-radius);
+  transition: background var(--fg-motion);
+}
+
+.tl-row:hover {
+  background: var(--fg-accent-soft);
+}
+
+.tl-time {
+  height: var(--fg-s8);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.time-text {
+  font-size: var(--fg-text-lead);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.time-alt {
+  font-size: var(--fg-text-label);
+  color: var(--fg-ink-muted);
+  font-family: var(--fg-font-mono);
+}
+
+/* 竖发的 1px 时间轴：首尾收在圆点上 */
+.tl-marker {
+  position: relative;
+  align-self: stretch;
+  display: flex;
+  justify-content: center;
+}
+
+.tl-marker::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: var(--fg-line-w);
+  background: var(--fg-line);
+}
+
+.tl-row:first-child .tl-marker::before {
+  top: var(--fg-s4);
+}
+
+.tl-row:last-child .tl-marker::before {
+  bottom: auto;
+  height: var(--fg-s4);
+}
+
+.tl-dot {
+  position: relative;
+  z-index: 1;
+  width: var(--fg-s2);
+  height: var(--fg-s2);
+  margin-top: var(--fg-s3);
+  border-radius: 50%;
+  border: var(--fg-line-w) solid var(--fg-line-strong);
+  background: var(--fg-surface);
+}
+
+.is-done .tl-dot {
+  border-color: var(--fg-accent);
+  background: var(--fg-accent);
+}
+
+.tl-body {
+  min-width: 0;
+}
+
+.tl-title {
+  height: var(--fg-s8);
+  display: flex;
+  align-items: center;
+  gap: var(--fg-s2);
+  margin: 0;
+  min-width: 0;
+}
+
+.tl-ico {
+  color: var(--fg-ink-muted);
+}
+
+.tl-name {
+  font-size: var(--fg-text-lead);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.is-done .tl-name {
+  text-decoration: line-through;
+  color: var(--fg-ink-muted);
+  font-weight: 500;
+}
+
+.is-done .tl-ico {
+  color: var(--fg-accent);
+}
+
+.tl-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--fg-s2);
+  margin: var(--fg-s2) 0 0;
+}
+
+.meta-text {
+  font-size: var(--fg-text-label);
+}
+
+.tl-more {
+  height: var(--fg-s8);
+  display: flex;
+  align-items: center;
+}
+
+.more-btn {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: var(--fg-line-w) solid transparent;
+  border-radius: var(--fg-radius);
+  background: transparent;
+  color: var(--fg-ink-muted);
+  cursor: pointer;
+  transition: color var(--fg-motion), background var(--fg-motion), border-color var(--fg-motion);
+}
+
+.more-btn:hover {
+  color: var(--fg-accent);
+  background: var(--fg-surface);
+  border-color: var(--fg-line);
+}
+
+.link-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  margin-left: var(--fg-s2);
+  font: inherit;
+  color: var(--fg-danger);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* 24px 打卡框：勾选态一律用 accent */
+.tl-check {
+  margin-right: 0;
+  height: var(--fg-s8);
+  --el-checkbox-input-width: 24px;
+  --el-checkbox-input-height: 24px;
+  --el-checkbox-border-radius: 6px;
+  --el-checkbox-checked-bg-color: var(--fg-accent);
+  --el-checkbox-checked-input-border-color: var(--fg-accent);
+  --el-checkbox-checked-icon-color: var(--fg-surface);
+  --el-checkbox-checked-text-color: var(--fg-accent);
+  --el-checkbox-input-border-color-hover: var(--fg-accent);
+  --el-checkbox-disabled-checked-input-fill: var(--fg-accent);
+  --el-checkbox-disabled-checked-input-border-color: var(--fg-accent);
+  --el-checkbox-disabled-checked-icon-color: var(--fg-surface);
+  --el-checkbox-disabled-input-fill: var(--fg-paper);
+  --el-checkbox-disabled-border-color: var(--fg-line);
+  --el-checkbox-disabled-icon-color: var(--fg-line-strong);
+  --el-checkbox-bg-color: var(--fg-surface);
+  --el-checkbox-input-border: var(--fg-line-w) solid var(--fg-line-strong);
+}
+
+.tl-check :deep(.el-checkbox__inner::after) {
+  width: 5px;
+  height: 10px;
+  border-right-width: 2px;
+  border-bottom-width: 2px;
+}
+
+/* ---------- 侧栏 ---------- */
+.main-col,
+.aside-col {
+  min-width: 0;
+}
+
+.aside-col {
+  position: sticky;
+  top: calc(var(--fg-topbar-h) + var(--fg-s5));
+}
+
+.aside-col .fg-card + .fg-card {
+  margin-top: var(--fg-s5);
+}
+
+.bars {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--fg-s3);
+}
+
+.bar-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
   flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: var(--fg-s2);
+  padding: var(--fg-s2) 0;
+  border-radius: var(--fg-radius);
+  transition: background var(--fg-motion);
 }
 
-.streak-cell.filled {
-  background: #fdf3e7;
-  border-color: var(--fg-primary);
+.bar-col.is-viewed {
+  background: var(--fg-accent-soft);
 }
 
-.streak-count {
-  font-weight: 700;
-  font-size: 18px;
-  color: var(--fg-primary-deep);
-  min-height: 24px;
+.bar-count {
+  font-size: var(--fg-text-label);
+  line-height: 1;
+  color: var(--fg-ink-muted);
+  font-variant-numeric: tabular-nums;
 }
 
-.streak-label {
-  font-size: 12px;
-  color: var(--fg-ink-light);
+.bar-track {
+  height: 48px;
+  width: 12px;
+  display: flex;
+  align-items: flex-end;
+  border-bottom: var(--fg-line-w) solid var(--fg-line);
+}
+
+.bar-fill {
+  width: 12px;
+  background: var(--fg-accent);
+  transition: height var(--fg-motion);
+}
+
+.bar-fill.is-zero {
+  background: var(--fg-line-strong);
+}
+
+.bar-day {
+  font-size: var(--fg-text-label);
+  color: var(--fg-ink-muted);
+}
+
+.bar-note {
+  margin: var(--fg-s3) 0 0;
+  font-size: var(--fg-text-label);
+  line-height: 1.6;
+}
+
+.kv-list {
+  margin-top: calc(-1 * var(--fg-s2));
+}
+
+.kv-value {
+  font-size: var(--fg-text-lead);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ---------- 抽屉表单：发丝边框、无投影 ---------- */
+.num-hint {
+  margin-left: var(--fg-s3);
+  font-size: var(--fg-text-label);
+}
+
+.time-pick {
+  width: 160px;
+}
+
+.weekday-check {
+  margin-right: var(--fg-s4);
+}
+
+/* el-drawer 默认不 append-to-body，节点仍在本页作用域内，可用 :deep 命中 */
+.drawer-host :deep(.el-drawer) {
+  --el-drawer-padding-primary: var(--fg-s5);
+  --el-drawer-bg-color: var(--fg-surface);
+  box-shadow: none;
+  border-left: var(--fg-line-w) solid var(--fg-line);
+}
+
+.drawer-host :deep(.el-drawer__header) {
+  margin-bottom: 0;
+  padding: var(--fg-s4) var(--fg-s5);
+  border-bottom: var(--fg-line-w) solid var(--fg-line);
+  color: var(--fg-ink);
+  font-family: var(--fg-font-serif);
+  font-size: var(--fg-text-h3);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.drawer-host :deep(.el-drawer__body) {
+  padding: var(--fg-s5);
+}
+
+.drawer-host :deep(.el-drawer__footer) {
+  padding: var(--fg-s4) var(--fg-s5);
+  border-top: var(--fg-line-w) solid var(--fg-line);
+}
+
+.drawer-form :deep(.el-form-item) {
+  margin-bottom: var(--fg-s5);
+}
+
+.drawer-form :deep(.el-form-item__label) {
+  font-size: var(--fg-text-label);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-ink-muted);
+  font-weight: 500;
+  padding-bottom: var(--fg-s2);
+}
+
+@media (max-width: 768px) {
+  .tl-row {
+    grid-template-columns: 52px 12px 24px minmax(0, 1fr) 32px;
+    gap: var(--fg-s2);
+  }
 }
 </style>

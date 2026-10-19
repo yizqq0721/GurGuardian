@@ -1,33 +1,29 @@
 <template>
-  <el-container class="app-layout">
-    <el-header class="app-header" height="60px">
-      <div class="header-inner">
-        <router-link to="/pets" class="logo">
-          <span class="logo-icon">🐾</span>
-          <span class="logo-text">FurGuardian</span>
+  <div class="app-layout">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <router-link to="/pets" class="wordmark">
+          <PawPrint :size="20" class="wordmark-icon" />
+          <span>FurGuardian</span>
         </router-link>
 
-        <el-menu
-          :default-active="activeMenu"
-          mode="horizontal"
-          :ellipsis="false"
-          router
-          class="nav-menu"
-        >
-          <el-menu-item index="/pets">我的宠物</el-menu-item>
-          <el-menu-item index="/foods">食品库</el-menu-item>
-          <el-menu-item index="/reminders">提醒</el-menu-item>
-          <el-menu-item index="/reports">周报</el-menu-item>
-          <el-menu-item index="/knowledge">知识库</el-menu-item>
-        </el-menu>
+        <nav class="nav">
+          <router-link
+            v-for="item in navItems"
+            :key="item.path"
+            :to="item.path"
+            class="nav-item"
+            :class="{ 'is-active': isActive(item.path) }"
+          >{{ item.label }}</router-link>
+        </nav>
 
-        <div class="header-right">
+        <div class="topbar-right">
           <PetSwitcher />
-          <el-dropdown @command="handleCommand">
-            <span class="user-entry">
-              {{ userStore.nickname || '用户' }}
-              <el-icon><ArrowDown /></el-icon>
-            </span>
+          <el-dropdown trigger="click" @command="handleCommand">
+            <button type="button" class="user-entry">
+              <span>{{ userStore.nickname || '用户' }}</span>
+              <ChevronDown :size="16" class="fg-icon" />
+            </button>
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item command="settings">设置</el-dropdown-item>
@@ -37,18 +33,18 @@
           </el-dropdown>
         </div>
       </div>
-    </el-header>
+    </header>
 
-    <el-main class="app-main">
+    <main class="app-main">
       <router-view />
-    </el-main>
-  </el-container>
+    </main>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowDown } from '@element-plus/icons-vue'
+import { PawPrint, ChevronDown } from 'lucide-vue-next'
 import { ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { usePetStore } from '@/stores/pet'
@@ -59,14 +55,17 @@ const router = useRouter()
 const userStore = useUserStore()
 const petStore = usePetStore()
 
-const activeMenu = computed(() => {
-  const path = route.path
-  if (path.startsWith('/foods')) return '/foods'
-  if (path.startsWith('/reminders')) return '/reminders'
-  if (path.startsWith('/reports')) return '/reports'
-  if (path.startsWith('/knowledge')) return '/knowledge'
-  return '/pets'
-})
+const navItems = [
+  { path: '/pets', label: '我的宠物' },
+  { path: '/foods', label: '食品库' },
+  { path: '/reminders', label: '提醒' },
+  { path: '/reports', label: '周报' },
+  { path: '/knowledge', label: '知识库' },
+]
+
+function isActive(path: string) {
+  return route.path === path || route.path.startsWith(`${path}/`)
+}
 
 onMounted(() => {
   petStore.fetchPets()
@@ -87,61 +86,105 @@ async function handleCommand(cmd: string) {
 <style scoped>
 .app-layout {
   min-height: 100vh;
+  background: var(--fg-paper);
 }
 
-.app-header {
-  background: #fff;
-  border-bottom: 1px solid var(--fg-border);
-  padding: 0;
+.topbar {
   position: sticky;
   top: 0;
   z-index: 100;
+  height: var(--fg-topbar-h);
+  background: var(--fg-surface);
+  border-bottom: var(--fg-line-w) solid var(--fg-line);
 }
 
-.header-inner {
-  max-width: 1200px;
+.topbar-inner {
+  max-width: var(--fg-content-w);
+  height: var(--fg-topbar-h);
   margin: 0 auto;
-  height: 60px;
+  padding: 0 var(--fg-s5);
   display: flex;
   align-items: center;
-  gap: 24px;
-  padding: 0 24px;
+  gap: var(--fg-s6);
 }
 
-.logo {
+.wordmark {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-weight: 700;
+  gap: var(--fg-s2);
+  font-family: var(--fg-font-serif);
   font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--fg-ink);
 }
 
-.logo-icon {
-  font-size: 22px;
+.wordmark-icon {
+  color: var(--fg-accent);
 }
 
-.nav-menu {
-  flex: 1;
-  border-bottom: none;
-  background: transparent;
-}
-
-.header-right {
+.nav {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--fg-s5);
+  flex: 1;
+  height: 100%;
+}
+
+.nav-item {
+  position: relative;
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--fg-text-body);
+  color: var(--fg-ink-muted);
+  transition: color var(--fg-motion);
+}
+
+.nav-item:hover {
+  color: var(--fg-ink);
+}
+
+.nav-item.is-active {
+  color: var(--fg-ink);
+  font-weight: 500;
+}
+
+.nav-item.is-active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--fg-accent);
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--fg-s4);
 }
 
 .user-entry {
-  cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--fg-s2);
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: var(--fg-text-body);
   color: var(--fg-ink);
 }
 
+.user-entry:hover {
+  color: var(--fg-accent);
+}
+
 .app-main {
-  padding: 0;
+  min-height: calc(100vh - var(--fg-topbar-h));
 }
 </style>

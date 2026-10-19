@@ -5,6 +5,10 @@
 -- 日期: 2026-10-17
 -- ============================================================
 
+-- Windows 上的 mysql 客户端默认字符集常是 latin1(=cp1252)，直接 < 导入会把
+-- UTF-8 中文逐字节误读成西欧字母，存进库就成了双重编码乱码。写在文件里最保险。
+SET NAMES utf8mb4;
+
 CREATE DATABASE IF NOT EXISTS fur_guardian
     DEFAULT CHARACTER SET utf8mb4
     DEFAULT COLLATE utf8mb4_general_ci;
@@ -274,3 +278,40 @@ CREATE TABLE knowledge_docs (
     KEY idx_review_status (review_status),
     KEY idx_topics (topics(100))
 ) ENGINE=InnoDB COMMENT='知识库文档';
+
+-- -----------------------------------------------------------
+-- 14. 知识库问答会话
+-- -----------------------------------------------------------
+-- created_at/updated_at 用 DATETIME(3)：翻页游标取的是上一行的 created_at，
+-- 精度只到秒的话，同一秒内的消息会被 "created_at < cursor" 整段跳过。
+CREATE TABLE knowledge_chat_sessions (
+    id             BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键',
+    user_id        BIGINT       NOT NULL COMMENT '所属用户',
+    title          VARCHAR(100) NOT NULL COMMENT '会话标题(首问前20字, 可重命名)',
+    pet_id         BIGINT       DEFAULT NULL COMMENT '提问时选中的宠物(仅用于回溯上下文)',
+    message_count  INT          NOT NULL DEFAULT 0 COMMENT '消息条数(冗余, 免聚合查询)',
+    source_count   INT          NOT NULL DEFAULT 0 COMMENT '引用来源条数(冗余去重前累加)',
+    created_at     DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    updated_at     DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+    PRIMARY KEY (id),
+    KEY idx_user_updated (user_id, updated_at),
+    KEY idx_user_id (user_id)
+) ENGINE=InnoDB COMMENT='知识库问答会话';
+
+-- -----------------------------------------------------------
+-- 15. 知识库问答消息
+-- -----------------------------------------------------------
+CREATE TABLE knowledge_chat_messages (
+    id            BIGINT      NOT NULL AUTO_INCREMENT COMMENT '主键',
+    session_id    BIGINT      NOT NULL COMMENT '会话ID',
+    user_id       BIGINT      NOT NULL COMMENT '所属用户(冗余, 便于鉴权直查)',
+    role          VARCHAR(10) NOT NULL COMMENT 'user/ai',
+    content       TEXT        NOT NULL COMMENT '消息正文',
+    sources_json  JSON        DEFAULT NULL COMMENT '引用来源快照 [{docId,title,sourceName}]',
+    is_red_line   TINYINT(1)  NOT NULL DEFAULT 0 COMMENT '是否红线症状回答',
+    is_fallback   TINYINT(1)  NOT NULL DEFAULT 0 COMMENT '是否LLM降级回答',
+    created_at    DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    PRIMARY KEY (id),
+    KEY idx_session_created (session_id, created_at),
+    KEY idx_user_id (user_id)
+) ENGINE=InnoDB COMMENT='知识库问答消息';
