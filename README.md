@@ -23,6 +23,7 @@ FurGuardian 面向犬猫主人，用确定性的营养算法回答「每天到�
 - [数据来源与安全边界](#数据来源与安全边界)
 - [已知限制](#已知限制)
 - [常见问题](#常见问题)
+- [数据来源参考](#数据来源参考)
 
 ## 核心功能
 
@@ -423,14 +424,7 @@ npm run build
 
 ## 数据来源与安全边界
 
-营养判定参考：
-
-- GB/T 31216-2014《全价宠物食品 犬粮》
-- GB/T 31217-2014《全价宠物食品 猫粮》
-- WSAVA Global Nutrition Guidelines
-- NRC《Nutrient Requirements of Dogs and Cats》
-
-具体食材营养成分的缺口与推荐数据源（USDA FoodData Central、中国食物成分表、日本食品标准成分表等）见 [docs/food-nutrition-data-sources.md](docs/food-nutrition-data-sources.md)。
+营养规则参考 WSAVA Global Nutrition Guidelines、GB/T 31216-2014、GB/T 31217-2014、NRC 与美国饲料管理官员协会（AAFCO）标准，完整来源清单、法规链接与署名要求见文末 [数据来源参考](#数据来源参考)。
 
 安全边界：
 
@@ -461,3 +455,45 @@ npm run build
 | AI 一直返回兜底内容 | 检查 DashScope Key、余额、模型名和网络；后端日志会记录超时或调用失败 |
 | 中文变问号 / 西欧乱码 | 命令行导入时加 `--default-character-set=utf8mb4`；JDBC URL 保留 `characterEncoding=UTF-8`。已产生的双重编码数据可用 `deploy/fix-mojibake-utf8mb4.sql` 修复 |
 | 前端 401 | Token 过期（7 天）或 Redis 中的登录态被清空，重新登录即可 |
+
+## 数据来源参考
+
+营养计算、营养达标判定与知识库内容的主要依据如下。完整清单、各板块链接、语料落地情况与版权署名要求见 [查看更多：完整数据来源与 WSAVA 资料清单 →](docs/数据来源参考.md)。
+
+### WSAVA（核心依据）
+
+- **WSAVA Global Nutrition Guidelines / GNC Toolkit**：营养评估（第五生命体征）、BCS / MCS、RER / DER、住院喂养、选粮、零食 10% 原则、生肉基饮食、互联网营养信息评估。见 [营养指南](https://wsava.org/global-guidelines/global-nutrition-guidelines/) 与 [营养工具包](https://wsava.org/nutrition-toolkit)。
+- **WSAVA 全球指南 11 个板块**：动物福利、牙科、胃肠、遗传病、肝病、微芯片、疼痛、职业健康、肾病、生殖控制、疫苗接种。见 [WSAVA Global Guidelines](https://wsava.org/global-guidelines/)。
+- **《推进小动物营养六大关键原则》**：营养文化、团队角色、风险评估、快速干预与监测、营养沟通、出院教育。
+- 知识库共收录 845 条语料，其中 765 条由 WSAVA 营养指南与工具包整理而来；每条附来源名称与链接。
+
+> WSAVA 内容的翻译与对外引用受 GNC SOP v4 约束：需先申请、整份翻译、保留 GNC Logo、附指定英文署名声明；BCS / MCS 图表另需版权人单独授权。
+
+### 中国国家标准与法规
+
+- GB/T 31216-2014《全价宠物食品 犬粮》
+- GB/T 31217-2014《全价宠物食品 猫粮》
+- 农业农村部公告第 20 号（2018）：《宠物饲料管理办法》《宠物饲料标签规定》《宠物饲料卫生规定》
+
+### 国际标准与营养需求
+
+- NRC《Nutrient Requirements of Dogs and Cats》(2006)
+- AAFCO 犬猫营养 profiles
+- FEDIAF Nutritional Guidelines
+
+### 食材成分数据
+
+- USDA FoodData Central
+- 中国食物成分表（第 6 版）
+- 日本食品标准成分表（八订）
+- FAO/INFOODS
+
+当前知识库尚未收录猪肝、鸡心等具体食材的每 100 g 数值，补录格式与数据缺口见 [docs/food-nutrition-data-sources.md](docs/food-nutrition-data-sources.md)。
+
+### 临床与安全参考
+
+- Merck Veterinary Manual
+- AAHA / AAFP / ISFM / CAPC / ESCCAP 指南
+- 《宠物饲料卫生规定》
+
+[查看更多：完整数据来源、法规链接、WSAVA 资料清单与署名要求 →](docs/数据来源参考.md)
