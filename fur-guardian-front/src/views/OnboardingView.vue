@@ -36,6 +36,10 @@
             </div>
           </el-form-item>
 
+          <el-form-item label="头像（选填）">
+            <PetAvatarPicker v-model="form.avatar" :species="form.species" />
+          </el-form-item>
+
           <el-form-item label="品种">
             <el-input v-model="form.breed" size="large" placeholder="例如：玩具贵宾 / 英短（选填）" />
           </el-form-item>
@@ -91,6 +95,7 @@
           体况评分 BCS（9 分制）：俯视和侧视观察宠物的腰线与肋骨触感，选择最接近的一档。4-5 分为理想体态。
         </p>
         <BcsScale v-model="form.bcs" />
+        <BcsReference :species="form.species" />
 
         <el-form label-position="top" class="ob-form bcs-form">
           <el-form-item label="当前体重 (kg)">
@@ -151,7 +156,9 @@ import dayjs from 'dayjs'
 import { Cat, CircleCheck, Dog } from 'lucide-vue-next'
 import { petApi } from '@/api/pet'
 import { usePetStore } from '@/stores/pet'
+import BcsReference from '@/components/BcsReference.vue'
 import BcsScale from '@/components/BcsScale.vue'
+import PetAvatarPicker from '@/components/PetAvatarPicker.vue'
 import { ACTIVITY_OPTIONS, PHYSIOLOGY_OPTIONS } from '@/utils/constants'
 import type { ActivityLevel, Physiology, Sex, Species } from '@/types'
 
@@ -174,6 +181,7 @@ const form = reactive({
   name: '',
   species: 'dog' as Species,
   breed: '',
+  avatar: '',
   sex: 'male' as Sex,
   neutered: true,
   birthday: '',
@@ -191,6 +199,7 @@ async function submit() {
       name: form.name.trim(),
       species: form.species,
       breed: form.breed || undefined,
+      avatar: form.avatar || undefined,
       sex: form.sex,
       neutered: form.neutered,
       birthday: form.birthday || undefined,

@@ -45,6 +45,9 @@
               </el-form-item>
             </el-col>
           </el-row>
+          <el-form-item label="头像">
+            <PetAvatarPicker v-model="form.avatar" :species="form.species" />
+          </el-form-item>
         </section>
 
         <section class="block">
@@ -92,6 +95,7 @@
             俯视与侧视观察腰线与肋骨触感，选最接近的一档；4-5 分为理想体态。
           </p>
           <BcsScale v-model="form.bcs" />
+          <BcsReference :species="form.species" />
         </section>
       </el-form>
 
@@ -109,8 +113,10 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Cat, Dog } from 'lucide-vue-next'
 import { petApi } from '@/api/pet'
+import BcsReference from '@/components/BcsReference.vue'
 import BcsScale from '@/components/BcsScale.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import PetAvatarPicker from '@/components/PetAvatarPicker.vue'
 import { usePetStore } from '@/stores/pet'
 import { ACTIVITY_OPTIONS, PHYSIOLOGY_OPTIONS } from '@/utils/constants'
 import type { ActivityLevel, Physiology, Sex, Species } from '@/types'
@@ -127,6 +133,7 @@ const form = reactive({
   name: '',
   species: 'dog' as Species,
   breed: '',
+  avatar: '',
   sex: 'male' as Sex,
   neutered: false,
   birthday: '',
@@ -143,6 +150,7 @@ onMounted(async () => {
       name: pet.name,
       species: pet.species,
       breed: pet.breed || '',
+      avatar: pet.avatar || '',
       sex: pet.sex,
       neutered: !!pet.neutered,
       birthday: pet.birthday || '',
@@ -162,6 +170,7 @@ async function save() {
       name: form.name,
       species: form.species,
       breed: form.breed || undefined,
+      avatar: form.avatar,
       sex: form.sex,
       neutered: form.neutered,
       birthday: form.birthday || undefined,

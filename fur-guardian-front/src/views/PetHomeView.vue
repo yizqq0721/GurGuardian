@@ -9,7 +9,7 @@
       <!-- 宠物抬头：发丝下边框分组，不做卡片 -->
       <header class="pet-head">
         <span class="avatar">
-          <img v-if="pet.avatar" :src="pet.avatar" :alt="`${pet.name} 头像`" />
+          <img v-if="avatarUrl" :src="avatarUrl" :alt="`${pet.name} 头像`" />
           <span v-else class="avatar-initial">{{ pet.name.slice(0, 1) }}</span>
         </span>
 
@@ -145,6 +145,7 @@ import StatTile from '@/components/StatTile.vue'
 import TipCard from '@/components/TipCard.vue'
 import WeightChart from '@/components/WeightChart.vue'
 import { ageText } from '@/utils/format'
+import { petAvatarUrl } from '@/utils/petAvatar'
 import { bcsGroup } from '@/utils/constants'
 import type { Pet, Reminder, WeightLog } from '@/types'
 
@@ -168,6 +169,7 @@ const weightForm = reactive({
 
 const todayReminders = computed(() => reminders.value.slice(0, 6))
 const latestWeight = computed(() => weightLogs.value[weightLogs.value.length - 1])
+const avatarUrl = computed(() => petAvatarUrl(pet.value?.avatar))
 
 const petMeta = computed(() => {
   if (!pet.value) return ''
