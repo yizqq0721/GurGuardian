@@ -78,6 +78,7 @@ public class PetController {
         pet.setName(dto.getName());
         pet.setSpecies(dto.getSpecies());
         pet.setBreed(dto.getBreed());
+        pet.setAvatar(dto.getAvatar());
         pet.setSex(dto.getSex());
         pet.setNeutered(Boolean.TRUE.equals(dto.getNeutered()) ? 1 : 0);
         pet.setBirthday(dto.getBirthday());

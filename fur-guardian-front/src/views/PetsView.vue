@@ -98,8 +98,8 @@
               <div class="head">
                 <div class="photo">
                   <img
-                    v-if="pet.avatar"
-                    :src="pet.avatar"
+                    v-if="petAvatarUrl(pet.avatar)"
+                    :src="petAvatarUrl(pet.avatar)"
                     :alt="`${pet.name} 的照片`"
                     draggable="false"
                   />
@@ -319,6 +319,7 @@ import PageHeader from '@/components/PageHeader.vue'
 import { usePetStore } from '@/stores/pet'
 import { REPEAT_RULE_LABEL } from '@/utils/constants'
 import { ageText, dateText, fromNow } from '@/utils/format'
+import { petAvatarUrl } from '@/utils/petAvatar'
 import type { Food, NutritionPlan, Pet, Reminder } from '@/types'
 
 const router = useRouter()

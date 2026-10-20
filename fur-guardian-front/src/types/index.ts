@@ -50,6 +50,7 @@ export interface PetForm {
   name: string
   species: Species
   breed?: string
+  avatar?: string
   sex: Sex
   neutered?: boolean
   birthday?: string
