@@ -204,7 +204,8 @@ CREATE TABLE reminder_logs (
     note         VARCHAR(255) DEFAULT NULL COMMENT '备注',
     created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    KEY idx_reminder_date (reminder_id, done_date),
+    -- 一项提醒每天只能有一条打卡记录，接口幂等由此兜底
+    UNIQUE KEY uk_reminder_date (reminder_id, done_date),
     KEY idx_user_id (user_id)
 ) ENGINE=InnoDB COMMENT='打卡记录';
 
