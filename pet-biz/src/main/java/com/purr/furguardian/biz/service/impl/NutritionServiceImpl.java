@@ -40,14 +40,7 @@ public class NutritionServiceImpl implements NutritionService {
 
     @Override
     public NutritionResult calculatePlan(Long userId, Long petId, Long foodId) {
-        PetDO petDO = petService.getPet(userId, petId);
-        FoodDO foodDO = foodService.getFood(foodId);
-        FoodNutrientDO nutrientDO = foodService.getNutrients(foodId);
-
-        PetProfile profile = toPetProfile(petDO);
-        FoodLabel label = toFoodLabel(foodDO, nutrientDO);
-
-        NutritionResult result = calculator.calculate(profile, label);
+        NutritionResult result = previewPlan(userId, petId, foodId);
 
         FeedingPlanDO plan = new FeedingPlanDO();
         plan.setPetId(petId);
@@ -66,6 +59,35 @@ public class NutritionServiceImpl implements NutritionService {
         return result;
     }
 
+    @Override
+    public NutritionResult previewPlan(Long userId, Long petId, Long foodId) {
+        PetDO petDO = petService.getPet(userId, petId);
+        FoodDO foodDO = foodService.getFood(foodId);
+        FoodNutrientDO nutrientDO = foodService.getNutrients(foodId);
+
+        validateSpecies(petDO, foodDO);
+
+        PetProfile profile = toPetProfile(petDO);
+        FoodLabel label = toFoodLabel(foodDO, nutrientDO);
+
+        return calculator.calculate(profile, label);
+    }
+
+    /** 猫只能吃 CAT/BOTH，犬只能吃 DOG/BOTH；零食不能当主粮计算 */
+    private void validateSpecies(PetDO pet, FoodDO food) {
+        if ("SNACK".equalsIgnoreCase(food.getProductType())) {
+            throw new BizException(ErrorCode.BAD_REQUEST, "零食不能作为主粮计算，请选择全价粮或补充粮");
+        }
+        String scope = food.getSpeciesScope();
+        if (scope != null && !scope.isBlank() && !"BOTH".equalsIgnoreCase(scope)) {
+            String expected = "dog".equalsIgnoreCase(pet.getSpecies()) ? "DOG" : "CAT";
+            if (!expected.equalsIgnoreCase(scope)) {
+                throw new BizException(ErrorCode.BAD_REQUEST,
+                        "该食品适用物种与当前宠物不一致，请重新选择主粮");
+            }
+        }
+    }
+
     private PetProfile toPetProfile(PetDO petDO) {
         PetProfile profile = new PetProfile();
         profile.setSpecies("dog".equals(petDO.getSpecies()) ? Species.DOG : Species.CAT);
@@ -77,7 +99,7 @@ public class NutritionServiceImpl implements NutritionService {
         } else {
             profile.setAgeInMonths(36);
         }
-        profile.setWeightKg(5.0);
+        profile.setWeightKg(latestWeight(petDO.getUserId(), petDO.getId()));
         profile.setActivityLevel(ActivityLevel.valueOf(petDO.getActivityLevel()));
         profile.setBcs(petDO.getBcs() != null ? petDO.getBcs() : 5);
         profile.setPhysiologyStatus(PhysiologyStatus.valueOf(
@@ -113,6 +135,14 @@ public class NutritionServiceImpl implements NutritionService {
             label.setGuaranteedAnalysis(ga);
         }
         return label;
+    }
+
+    /** 体重取最近一次记录；没有记录时才退回默认值，避免计划与主页体重不一致 */
+    private double latestWeight(Long userId, Long petId) {
+        var logs = petService.getWeightHistory(userId, petId);
+        if (logs.isEmpty()) return 5.0;
+        BigDecimal weight = logs.get(logs.size() - 1).getWeightKg();
+        return weight != null && weight.doubleValue() > 0 ? weight.doubleValue() : 5.0;
     }
 
     private Double toDouble(BigDecimal value) {

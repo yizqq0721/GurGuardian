@@ -103,6 +103,59 @@
             </span>
           </section>
 
+          <section class="fg-card recipe-card">
+            <div class="recipe-head">
+              <h2 class="fg-section-title">每日食谱建议</h2>
+              <el-button
+                v-if="!recipeLoading"
+                text
+                size="small"
+                :disabled="calculating"
+                @click="loadRecipe"
+              >
+                <RefreshCw :size="14" class="fg-icon" />
+                重新生成
+              </el-button>
+            </div>
+
+            <div v-if="recipeLoading" class="recipe-loading" role="status" aria-live="polite">
+              <div class="recipe-loading-line">
+                <span class="gen-spinner" aria-hidden="true" />
+                <span>正在结合主粮、零食与知识库生成…</span>
+              </div>
+              <span
+                v-for="(w, i) in [100, 92, 96, 72]"
+                :key="i"
+                class="sk-line"
+                :style="{ width: `${w}%` }"
+              />
+            </div>
+
+            <template v-else-if="recipe">
+              <p v-if="recipe.isFallback" class="recipe-fallback">
+                AI 暂时不可用，以下为按计算结果生成的确定性建议。
+              </p>
+              <MarkdownContent :content="recipe.content" />
+              <div v-if="recipe.snacks.length" class="recipe-meta">
+                <p class="fg-label">本次参考零食</p>
+                <div class="recipe-chips">
+                  <span v-for="s in recipe.snacks" :key="s.id" class="fg-chip">
+                    {{ s.brand ? s.brand + ' ' : '' }}{{ s.name }}
+                    <template v-if="s.maxGrams"> · 单种上限 {{ s.maxGrams }} g</template>
+                  </span>
+                </div>
+              </div>
+              <div v-if="recipe.sources.length" class="recipe-meta">
+                <p class="fg-label">知识来源</p>
+                <div class="recipe-chips">
+                  <span v-for="s in recipe.sources" :key="s.docId" class="fg-chip">{{ s.title }}</span>
+                </div>
+              </div>
+            </template>
+
+            <p v-else class="fg-muted recipe-empty">计算完成后，这里会生成可执行的每日食谱。</p>
+          </section>
+
           <section v-if="weightAdvice || plan.warnings?.length" class="fg-card">
             <h2 class="fg-section-title">需要注意</h2>
             <div class="callouts">
@@ -126,31 +179,50 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Cat, Dog } from 'lucide-vue-next'
+import { Cat, Dog, RefreshCw } from 'lucide-vue-next'
 import { foodApi } from '@/api/food'
 import { nutritionApi } from '@/api/nutrition'
 import { petApi } from '@/api/pet'
 import { usePetStore } from '@/stores/pet'
 import DisclaimerBar from '@/components/DisclaimerBar.vue'
 import EmptyState from '@/components/EmptyState.vue'
+import MarkdownContent from '@/components/MarkdownContent.vue'
 import NutrientTable from '@/components/NutrientTable.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import StatTile from '@/components/StatTile.vue'
 import StepTimeline, { type TimelineStep } from '@/components/StepTimeline.vue'
 import { ageText } from '@/utils/format'
-import type { Food, NutritionPlan, WeightLog } from '@/types'
+import type { Food, NutritionPlan, NutritionRecipe, WeightLog } from '@/types'
 
 const route = useRoute()
 const petStore = usePetStore()
 const petId = Number(route.params.id)
 
-const foods = ref<Food[]>([])
+const allFoods = ref<Food[]>([])
 const foodId = ref<number>()
 const plan = ref<NutritionPlan | null>(null)
 const calculating = ref(false)
 const latestWeight = ref<WeightLog | null>(null)
+const recipe = ref<NutritionRecipe | null>(null)
+const recipeLoading = ref(false)
+let recipeSeq = 0
 
 const pet = computed(() => petStore.pets.find((p) => p.id === petId))
+
+const speciesScope = computed(() =>
+  pet.value?.species === 'dog' ? 'DOG' : pet.value?.species === 'cat' ? 'CAT' : null,
+)
+
+/** 主粮只保留全价/补充粮，并按宠物物种过滤：猫选 CAT/BOTH，狗选 DOG/BOTH */
+const foods = computed(() =>
+  allFoods.value.filter((f) => {
+    if (f.productType && f.productType !== 'COMPLETE' && f.productType !== 'COMPLEMENTARY') {
+      return false
+    }
+    if (!speciesScope.value || !f.speciesScope || f.speciesScope === 'BOTH') return true
+    return f.speciesScope === speciesScope.value
+  }),
+)
 
 const petMeta = computed(() => {
   if (!pet.value) return ''
@@ -195,27 +267,43 @@ function parseProcess(text: string): TimelineStep[] {
 }
 
 onMounted(async () => {
+  if (!petStore.pets.length) await petStore.fetchPets(true)
   const [page, history] = await Promise.all([
     foodApi.list({ page: 1, size: 100 }),
     petApi.weightHistory(petId).catch(() => [] as WeightLog[]),
   ])
-  foods.value = page.records.filter(
-    (f) => !f.productType || f.productType === 'COMPLETE' || f.productType === 'COMPLEMENTARY',
-  )
-  latestWeight.value = history[0] ?? null
-  if (!petStore.pets.length) await petStore.fetchPets(true)
+  allFoods.value = page.records
+  latestWeight.value = history[history.length - 1] ?? null
 })
 
 async function calculate() {
   if (!foodId.value) return
   calculating.value = true
+  recipeSeq++
+  recipe.value = null
   try {
     plan.value = await nutritionApi.calculate(petId, foodId.value)
+    loadRecipe()
   } catch {
     ElMessage.error('计算失败，请确认宠物档案完整')
     plan.value = null
   } finally {
     calculating.value = false
+  }
+}
+
+async function loadRecipe() {
+  if (!foodId.value) return
+  const seq = ++recipeSeq
+  recipeLoading.value = true
+  recipe.value = null
+  try {
+    const result = await nutritionApi.recipe(petId, foodId.value)
+    if (seq === recipeSeq) recipe.value = result
+  } catch {
+    if (seq === recipeSeq) ElMessage.error('食谱建议生成失败，请稍后重试')
+  } finally {
+    if (seq === recipeSeq) recipeLoading.value = false
   }
 }
 </script>
@@ -354,6 +442,122 @@ async function calculate() {
 
 .density-note {
   margin: var(--fg-s2) 0 var(--fg-s3);
+  font-size: var(--fg-text-label);
+  line-height: 1.7;
+}
+
+/* 每日食谱建议 */
+.recipe-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fg-s2);
+}
+
+.recipe-head .fg-section-title {
+  margin: 0;
+}
+
+.recipe-head :deep(.el-button) {
+  font-size: var(--fg-text-label);
+}
+
+.recipe-head .fg-icon {
+  margin-right: 2px;
+}
+
+.recipe-card :deep(.markdown-body) {
+  margin-top: var(--fg-s3);
+  font-size: var(--fg-text-body);
+  line-height: 1.75;
+}
+
+.recipe-card :deep(.markdown-body h3) {
+  margin: 1.1em 0 0.4em;
+}
+
+.recipe-loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fg-s2);
+  margin-top: var(--fg-s3);
+}
+
+.recipe-loading-line {
+  display: flex;
+  align-items: center;
+  gap: var(--fg-s2);
+  margin-bottom: var(--fg-s1);
+  font-size: var(--fg-text-label);
+  color: var(--fg-ink-muted);
+}
+
+.gen-spinner {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border: 2px solid var(--fg-line);
+  border-top-color: var(--fg-accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.sk-line {
+  display: block;
+  height: 12px;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--fg-line) 0%,
+    var(--fg-paper) 45%,
+    var(--fg-line) 90%
+  );
+  background-size: 220% 100%;
+  animation: shimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 120% 0;
+  }
+  100% {
+    background-position: -120% 0;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.recipe-fallback {
+  margin: var(--fg-s3) 0 0;
+  padding: var(--fg-s2) var(--fg-s3);
+  border-left: var(--fg-line-w) solid var(--fg-warn, #c98a2e);
+  background: var(--fg-paper);
+  font-size: var(--fg-text-label);
+  color: var(--fg-ink-muted);
+}
+
+.recipe-meta {
+  margin-top: var(--fg-s4);
+  padding-top: var(--fg-s3);
+  border-top: var(--fg-line-w) solid var(--fg-line);
+}
+
+.recipe-meta .fg-label {
+  margin: 0 0 var(--fg-s2);
+}
+
+.recipe-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fg-s2);
+}
+
+.recipe-empty {
+  margin: var(--fg-s3) 0 0;
   font-size: var(--fg-text-label);
   line-height: 1.7;
 }

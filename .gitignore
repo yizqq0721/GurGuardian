@@ -5,6 +5,8 @@ target/
 !**/src/test/**/target/
 
 application-local.yml
+.env
+*.log
 backup-*.sql
 
 ### STS ###
