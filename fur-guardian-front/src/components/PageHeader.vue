@@ -66,4 +66,30 @@ defineProps<{
     align-items: flex-start;
   }
 }
+
+/* 响应式新增：<768px 手机端（桌面端不受影响） */
+@media (max-width: 767.98px) {
+  .page-header {
+    flex-wrap: wrap;
+    gap: var(--fg-s3);
+    padding-bottom: var(--fg-s4);
+    margin-bottom: var(--fg-s5);
+  }
+
+  .page-header :deep(.fg-h1) {
+    font-size: 28px;
+  }
+
+  .desc {
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .head-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: var(--fg-s2);
+    padding-bottom: 0;
+  }
+}
 </style>

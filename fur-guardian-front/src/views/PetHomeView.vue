@@ -412,4 +412,75 @@ async function saveWeight() {
     margin-left: auto;
   }
 }
+
+/* ============================================================
+   响应式新增：<768px 手机端（桌面端不受影响）
+   ============================================================ */
+@media (max-width: 767.98px) {
+  .pet-head {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--fg-s3);
+    padding-bottom: var(--fg-s4);
+    margin-bottom: var(--fg-s5);
+  }
+
+  .avatar {
+    width: 48px;
+    height: 48px;
+  }
+
+  .pet-name {
+    font-size: 24px;
+  }
+
+  .head-meta {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .bcs-badge {
+    height: 22px;
+  }
+
+  /* 操作按钮独占一行并等宽 */
+  .head-actions {
+    width: 100%;
+    margin-left: 0;
+    gap: var(--fg-s2);
+  }
+
+  .head-actions :deep(.el-button) {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .head-actions :deep(.el-button + .el-button) {
+    margin-left: 0;
+  }
+
+  .task-row {
+    min-height: 52px;
+    gap: var(--fg-s3);
+  }
+
+  .weight-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--fg-s3);
+  }
+
+  .record-btn {
+    width: 100%;
+  }
+
+  .divider {
+    margin: var(--fg-s4) 0;
+  }
+
+  /* 单列后取消侧栏吸顶 */
+  .aside-col {
+    position: static;
+  }
+}
 </style>

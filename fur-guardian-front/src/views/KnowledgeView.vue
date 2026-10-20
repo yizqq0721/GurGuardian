@@ -2109,4 +2109,189 @@ onMounted(async () => {
     max-width: 86%;
   }
 }
+
+/* ===== 响应式新增：移动端（<768px）===== */
+@media (max-width: 767.98px) {
+  /* 问答：占满动态视口，去掉左右留白 */
+  .chat-page {
+    height: calc(100vh - var(--fg-topbar-h));
+    height: calc(100dvh - var(--fg-topbar-h));
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .sess-pane {
+    width: min(300px, 88vw);
+  }
+
+  .pane-head {
+    padding: 0 var(--fg-s3) 0 var(--fg-s4);
+  }
+
+  .pane-head .icon-btn,
+  .conv-head .icon-btn {
+    min-height: 44px;
+    padding: 0 var(--fg-s2);
+  }
+
+  .sess-search {
+    padding: 0 var(--fg-s3) var(--fg-s3);
+  }
+
+  .sess-search :deep(.el-input__wrapper) {
+    height: 44px;
+  }
+
+  /* 触屏没有 hover，会话操作按钮常显 */
+  .sess-more {
+    opacity: 1;
+    min-width: 32px;
+    min-height: 44px;
+    justify-content: center;
+  }
+
+  .conv-head {
+    gap: var(--fg-s2);
+    padding: 0 var(--fg-s3);
+  }
+
+  .export-btn span {
+    display: none;
+  }
+
+  .rename-input {
+    max-width: none;
+    min-height: 44px;
+  }
+
+  .welcome {
+    margin-top: var(--fg-s5);
+    padding: 0 var(--fg-s2);
+  }
+
+  .welcome-grid {
+    grid-template-columns: minmax(0, 1fr);
+    margin-top: var(--fg-s4);
+  }
+
+  .suggest-card {
+    min-height: 44px;
+  }
+
+  .welcome-browse {
+    min-height: 44px;
+    padding: 0 var(--fg-s3);
+  }
+
+  .composer {
+    padding: var(--fg-s3) var(--fg-s3) calc(var(--fg-s2) + env(safe-area-inset-bottom));
+  }
+
+  .composer .chips {
+    gap: var(--fg-s1);
+  }
+
+  .composer .topic-chip {
+    height: 44px;
+  }
+
+  .input-row {
+    gap: var(--fg-s2);
+  }
+
+  .input-row :deep(.el-textarea__inner) {
+    min-height: 44px;
+    padding: var(--fg-s2) var(--fg-s3);
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  .send-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .composer-foot {
+    flex-wrap: wrap;
+    gap: var(--fg-s1);
+    margin-top: var(--fg-s2);
+  }
+
+  /* 浏览：检索与筛选改为单列 */
+  .hero {
+    margin-bottom: var(--fg-s4);
+  }
+
+  .hero-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--fg-s2);
+  }
+
+  .hero-row :deep(.el-button) {
+    width: 100%;
+  }
+
+  .hero-filters {
+    flex-direction: column;
+    gap: var(--fg-s4);
+  }
+
+  .filter-block {
+    width: 100%;
+  }
+
+  .filter-block .chips {
+    gap: var(--fg-s1);
+  }
+
+  .topic-chip {
+    height: 44px;
+  }
+
+  .dims {
+    width: 100%;
+    gap: var(--fg-s2);
+  }
+
+  .dim-select {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+  }
+
+  .mode-btn {
+    min-height: 44px;
+    margin-right: var(--fg-s2);
+  }
+
+  .aside-col .mode-btn {
+    margin-right: 0;
+  }
+
+  .back-btn {
+    min-height: 44px;
+  }
+
+  .reading {
+    max-width: none;
+  }
+
+  .reading-title {
+    font-size: 24px;
+  }
+
+  .meta-source {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .doc-title {
+    overflow-wrap: anywhere;
+  }
+
+  .aside-col {
+    position: static;
+  }
+}
 </style>

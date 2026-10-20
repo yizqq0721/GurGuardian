@@ -236,10 +236,25 @@
                       class="rem-list"
                       :class="{ 'is-open': openReminders.has(pet.id) }"
                     >
-                      <li v-for="r in shownReminders(pet.id)" :key="r.id" class="rem">
+                      <li
+                        v-for="r in shownReminders(pet.id)"
+                        :key="r.id"
+                        class="rem"
+                        :class="{ 'is-done': isDone(pet.id, r.id) }"
+                      >
                         <span class="rem-time fg-num">{{ timeOf(r) }}</span>
                         <span class="rem-title">{{ r.title }}</span>
                         <span class="rem-rule">{{ repeatLabel(r) }}</span>
+                        <button
+                          class="rem-check"
+                          :class="{ 'is-done': isDone(pet.id, r.id) }"
+                          :disabled="isDone(pet.id, r.id) || checkingId.has(r.id)"
+                          :aria-label="isDone(pet.id, r.id) ? `今日已完成：${r.title}` : `打卡：${r.title}`"
+                          :aria-pressed="isDone(pet.id, r.id)"
+                          @click.stop="checkIn(pet.id, r)"
+                        >
+                          <Check :size="14" />
+                        </button>
                       </li>
                     </ul>
                     <p v-else class="panel-note">还没有设置提醒，去提醒页添加。</p>
@@ -302,7 +317,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import dayjs from 'dayjs'
 import {
+  Check,
   ChevronLeft,
   ChevronRight,
   Plus,
@@ -342,6 +360,9 @@ interface PlanCell {
 
 const planMap = ref<Record<number, PlanCell>>({})
 const reminderMap = ref<Record<number, Reminder[]>>({})
+/** petId → 今日已打卡的提醒 id，卡片上的勾选态全部由它驱动 */
+const doneMap = ref<Record<number, Set<number>>>({})
+const checkingId = ref<Set<number>>(new Set())
 
 const pets = computed(() => petStore.pets)
 const activePet = computed(() => pets.value[activeIndex.value])
@@ -381,6 +402,7 @@ async function load() {
     activeIndex.value = at > -1 ? at : 0
     void loadWeights()
     void loadReminders()
+    void loadTodayDone()
     void loadPlans()
   } catch {
     error.value = '宠物列表加载失败，请检查网络后重试'
@@ -418,6 +440,21 @@ async function loadReminders() {
     }),
   )
   reminderMap.value = { ...reminderMap.value, ...Object.fromEntries(entries) }
+}
+
+async function loadTodayDone() {
+  const today = dayjs().format('YYYY-MM-DD')
+  const entries = await Promise.all(
+    pets.value.map(async (p) => {
+      try {
+        const logs = await reminderApi.logs({ petId: p.id, startDate: today, endDate: today })
+        return [p.id, new Set(logs.map((l) => l.reminderId))] as const
+      } catch {
+        return [p.id, new Set<number>()] as const
+      }
+    }),
+  )
+  doneMap.value = { ...doneMap.value, ...Object.fromEntries(entries) }
 }
 
 /** /api/nutrition/calculate 必须带 foodId，而 feeding_plans 表后端没有读写接口，
@@ -495,6 +532,29 @@ function toggleReminders(id: number) {
   if (next.has(id)) next.delete(id)
   else next.add(id)
   openReminders.value = next
+}
+
+function isDone(petId: number, reminderId: number) {
+  return doneMap.value[petId]?.has(reminderId) ?? false
+}
+
+/** 打卡只进不退：成功后本地直接标记，失败提示由 request 拦截器统一弹出 */
+async function checkIn(petId: number, row: Reminder) {
+  if (isDone(petId, row.id) || checkingId.value.has(row.id)) return
+  checkingId.value = new Set(checkingId.value).add(row.id)
+  try {
+    await reminderApi.checkin(row.id, { doneDate: dayjs().format('YYYY-MM-DD') })
+    const next = new Set(doneMap.value[petId])
+    next.add(row.id)
+    doneMap.value = { ...doneMap.value, [petId]: next }
+    ElMessage.success(`已完成「${row.title}」`)
+  } catch {
+    /* 拦截器已经提示过，这里只保留未打卡状态 */
+  } finally {
+    const settled = new Set(checkingId.value)
+    settled.delete(row.id)
+    checkingId.value = settled
+  }
 }
 
 const WARN_LIMIT = 1
@@ -1090,6 +1150,44 @@ function onPointerLeave() {
   color: var(--fg-ink-muted);
 }
 
+/* 行内 baseline 对齐下，圆形按钮要单独回到视觉中线 */
+.rem-check {
+  flex: 0 0 auto;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: var(--fg-line-w) solid var(--fg-line);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--fg-line);
+  cursor: pointer;
+  transition: border-color 0.16s ease, background-color 0.16s ease, color 0.16s ease;
+}
+
+.rem-check:hover:not(:disabled) {
+  border-color: var(--fg-accent);
+  background: var(--fg-accent-soft);
+  color: var(--fg-accent);
+}
+
+.rem-check:disabled {
+  cursor: default;
+}
+
+.rem-check.is-done {
+  border-color: var(--fg-accent);
+  background: var(--fg-accent);
+  color: #fff;
+}
+
+.rem.is-done .rem-title {
+  color: var(--fg-ink-muted);
+}
+
 .rem-more {
   align-self: flex-start;
   margin-top: var(--fg-s2);
@@ -1323,6 +1421,102 @@ function onPointerLeave() {
 @media (hover: none) {
   .nav {
     display: none;
+  }
+}
+
+/* ============================================================
+   响应式新增：<768px 手机端细化
+   桌面端（>=768px）不受影响
+   ============================================================ */
+@media (max-width: 767.98px) {
+  .carousel {
+    margin-top: var(--fg-s5);
+  }
+
+  .pet-card {
+    padding: var(--fg-s4);
+  }
+
+  /* 照片缩到 96px，资料区留出足够宽度 */
+  .head {
+    grid-template-columns: 96px minmax(0, 1fr);
+    gap: var(--fg-s3);
+    height: auto;
+  }
+
+  .photo {
+    width: 96px;
+    height: 96px;
+  }
+
+  .facts {
+    padding: 0;
+  }
+
+  .name {
+    font-size: 22px;
+  }
+
+  .meta {
+    font-size: 12px;
+  }
+
+  /* 三项指标改为两列，「最近更新」独占一行 */
+  .stats {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--fg-s2) var(--fg-s3);
+    padding-top: var(--fg-s2);
+  }
+
+  .stats .stat:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .stat-v {
+    font-size: 16px;
+  }
+
+  .panels {
+    gap: var(--fg-s4);
+    margin-top: var(--fg-s4);
+    padding-top: var(--fg-s4);
+  }
+
+  .panel + .panel {
+    padding-top: var(--fg-s4);
+  }
+
+  .cells {
+    gap: var(--fg-s3) var(--fg-s4);
+  }
+
+  .cell-v {
+    font-size: 16px;
+  }
+
+  .rem {
+    gap: var(--fg-s2);
+  }
+
+  .rem-time {
+    width: 42px;
+    font-size: 13px;
+  }
+
+  /* 圆形打卡键视觉仍为 22px，用伪元素把点击热区扩到 44px */
+  .rem-check {
+    position: relative;
+  }
+
+  .rem-check::after {
+    content: '';
+    position: absolute;
+    inset: -11px;
+    border-radius: 50%;
+  }
+
+  .pager {
+    margin-top: var(--fg-s4);
   }
 }
 

@@ -116,4 +116,17 @@ function silhouette(n: number) {
 .desc.is-danger {
   color: var(--fg-danger);
 }
+
+/* 响应式新增：<768px 缩小轮廓，避免 9 列在窄屏被裁切 */
+@media (max-width: 767.98px) {
+  .seg {
+    padding: var(--fg-s2) 0;
+  }
+
+  .seg svg {
+    width: 100%;
+    max-width: 30px;
+    height: auto;
+  }
+}
 </style>

@@ -405,4 +405,39 @@ async function save() {
     padding-top: var(--fg-s4);
   }
 }
+
+/* ===== 响应式新增：移动端（<768px）===== */
+@media (max-width: 767.98px) {
+  .form-shell {
+    max-width: none;
+  }
+
+  .form-card {
+    padding: var(--fg-s4) var(--fg-s4) var(--fg-s1);
+  }
+
+  .section + .section {
+    margin-top: var(--fg-s4);
+    padding-top: var(--fg-s4);
+  }
+
+  .unit-field--wide {
+    max-width: none;
+  }
+
+  .dm-panel .fg-mono {
+    overflow-wrap: anywhere;
+  }
+
+  .action-bar {
+    flex-wrap: wrap;
+    margin-top: var(--fg-s4);
+    padding: var(--fg-s3) var(--fg-s4);
+  }
+
+  .action-bar :deep(.el-button) {
+    flex: 1;
+    margin-left: 0;
+  }
+}
 </style>

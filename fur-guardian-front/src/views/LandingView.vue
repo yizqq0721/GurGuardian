@@ -897,4 +897,189 @@ function goAuth() {
     padding: var(--fg-s5);
   }
 }
+
+/* ============================================================
+   响应式新增：<768px 手机端
+   桌面端（>=768px）不应用以下任何规则
+   ============================================================ */
+@media (max-width: 767.98px) {
+  /* 顶栏 */
+  .head-inner {
+    padding: 0 var(--fg-s4);
+    gap: var(--fg-s3);
+  }
+
+  .wordmark {
+    font-size: 16px;
+  }
+
+  .head-actions {
+    gap: var(--fg-s3);
+  }
+
+  .head-login {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  /* Hero：单列、按钮铺满 */
+  .hero {
+    padding: 24px 0 40px;
+  }
+
+  .hero-inner {
+    padding: 0 var(--fg-s4);
+    gap: var(--fg-s5);
+  }
+
+  .hero-title {
+    font-size: 30px;
+  }
+
+  .hero-sub {
+    margin: var(--fg-s4) 0 var(--fg-s5);
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--fg-s3);
+  }
+
+  .hero-actions :deep(.el-button) {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .hero-note {
+    margin-top: var(--fg-s4);
+  }
+
+  .hero-panel {
+    padding: var(--fg-s4);
+  }
+
+  .spark-head,
+  .spark-note,
+  .panel-foot {
+    flex-wrap: wrap;
+    row-gap: var(--fg-s2);
+  }
+
+  /* 信任条 */
+  .trust-inner {
+    padding: var(--fg-s3) var(--fg-s4);
+    gap: var(--fg-s2);
+  }
+
+  /* 内容区块 */
+  .block {
+    margin-top: var(--fg-s5);
+  }
+
+  .block-title {
+    margin-bottom: var(--fg-s5);
+  }
+
+  /* 问题 → 解法：单列，数字保留在左侧 */
+  .prob {
+    grid-template-columns: 24px minmax(0, 1fr);
+    gap: var(--fg-s3);
+    padding: var(--fg-s5) 0;
+  }
+
+  .prob-idx {
+    padding-top: 2px;
+  }
+
+  .prob-title {
+    font-size: var(--fg-text-h3);
+    margin-bottom: var(--fg-s2);
+  }
+
+  .prob-line {
+    line-height: 1.7;
+  }
+
+  .prob-tag {
+    margin-right: var(--fg-s2);
+  }
+
+  .prob-vis {
+    margin-top: var(--fg-s3);
+    padding-left: 0;
+    border-left: none;
+  }
+
+  /* 三条不能省 */
+  .promise {
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: var(--fg-s3);
+    padding: var(--fg-s4) 0;
+  }
+
+  .promise-idx {
+    font-size: var(--fg-text-h3);
+  }
+
+  .promise-title {
+    align-items: flex-start;
+  }
+
+  .promise-text {
+    line-height: 1.7;
+  }
+
+  /* 计算器：字段单列 */
+  .calc-card {
+    padding: var(--fg-s4);
+  }
+
+  .calc-lead {
+    margin-bottom: var(--fg-s4);
+  }
+
+  .calc-fields {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--fg-s3);
+  }
+
+  .seg-group {
+    display: flex;
+    width: 100%;
+  }
+
+  .seg-btn {
+    flex: 1;
+    height: 44px;
+    justify-content: center;
+  }
+
+  .calc-card :deep(.el-input__wrapper),
+  .calc-card :deep(.el-select__wrapper) {
+    height: 44px;
+  }
+
+  .calc-card :deep(.el-switch) {
+    align-self: flex-start;
+  }
+
+  /* 长公式允许折行，避免横向滚动 */
+  .calc-formula p {
+    margin: 0;
+    overflow-wrap: anywhere;
+    line-height: 1.6;
+  }
+
+  /* 页脚 */
+  .foot-inner {
+    padding: var(--fg-s5) var(--fg-s4);
+  }
+
+  .foot-brand {
+    flex-wrap: wrap;
+    row-gap: var(--fg-s1);
+  }
+}
 </style>

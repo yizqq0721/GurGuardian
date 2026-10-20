@@ -288,4 +288,64 @@ async function removePet() {
     padding-right: var(--fg-s3);
   }
 }
+
+/* ============================================================
+   响应式新增：<768px 手机端（桌面端不受影响）
+   ============================================================ */
+@media (max-width: 767.98px) {
+  .profile-card {
+    max-width: none;
+  }
+
+  .block {
+    margin-bottom: var(--fg-s4);
+  }
+
+  .block-hint {
+    margin-top: 0;
+  }
+
+  /* el-col span=12 在手机上改为整行 */
+  .profile-form :deep(.el-row) {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .profile-form :deep(.el-col-12) {
+    max-width: 100%;
+    flex: 0 0 100%;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .profile-form :deep(.el-input__wrapper),
+  .profile-form :deep(.el-select__wrapper) {
+    min-height: 44px;
+  }
+
+  .profile-form :deep(.el-form-item) {
+    margin-bottom: var(--fg-s3);
+  }
+
+  /* 分段按钮等宽铺满 */
+  .seg {
+    display: flex;
+    width: 100%;
+  }
+
+  .seg :deep(.el-radio-button) {
+    flex: 1;
+  }
+
+  .seg :deep(.el-radio-button__inner) {
+    width: 100%;
+    height: 44px;
+  }
+
+  .form-actions {
+    flex-wrap: wrap;
+    margin-top: var(--fg-s4);
+    padding-top: var(--fg-s4);
+  }
+}
 </style>

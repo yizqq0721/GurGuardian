@@ -32,8 +32,49 @@
             </template>
           </el-dropdown>
         </div>
+
+        <!-- 响应式新增：移动端汉堡按钮（桌面端 display:none） -->
+        <button
+          type="button"
+          class="nav-toggle"
+          :aria-label="mobileNavOpen ? '关闭导航菜单' : '打开导航菜单'"
+          :aria-expanded="mobileNavOpen"
+          aria-controls="mobile-nav"
+          @click="mobileNavOpen = !mobileNavOpen"
+        >
+          <component :is="mobileNavOpen ? X : Menu" :size="22" class="fg-icon" />
+        </button>
       </div>
     </header>
+
+    <!-- 响应式新增：移动端折叠导航（桌面端不显示） -->
+    <transition name="mobile-nav">
+      <div v-if="mobileNavOpen" class="mobile-nav-mask" @click="closeMobileNav"></div>
+    </transition>
+    <transition name="mobile-nav">
+      <nav v-if="mobileNavOpen" id="mobile-nav" class="mobile-nav" aria-label="移动端导航">
+        <router-link
+          v-for="item in navItems"
+          :key="item.path"
+          :to="item.path"
+          class="mobile-nav-item"
+          :class="{ 'is-active': isActive(item.path) }"
+          @click="closeMobileNav"
+        >{{ item.label }}</router-link>
+
+        <div class="mobile-nav-divider"></div>
+
+        <router-link
+          to="/settings"
+          class="mobile-nav-item"
+          :class="{ 'is-active': route.path === '/settings' }"
+          @click="closeMobileNav"
+        >设置</router-link>
+        <button type="button" class="mobile-nav-item mobile-nav-item--danger" @click="logoutFromMobile">
+          退出登录
+        </button>
+      </nav>
+    </transition>
 
     <main class="app-main">
       <router-view />
@@ -42,9 +83,9 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { PawPrint, ChevronDown } from 'lucide-vue-next'
+import { PawPrint, ChevronDown, Menu, X } from 'lucide-vue-next'
 import { ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { usePetStore } from '@/stores/pet'
@@ -67,9 +108,51 @@ function isActive(path: string) {
   return route.path === path || route.path.startsWith(`${path}/`)
 }
 
+/* ---------- 响应式新增：移动端汉堡菜单状态 ---------- */
+const mobileNavOpen = ref(false)
+let desktopMq: MediaQueryList | null = null
+
+function closeMobileNav() {
+  mobileNavOpen.value = false
+}
+
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape') closeMobileNav()
+}
+
+function onDesktopChange(e: MediaQueryListEvent) {
+  if (e.matches) closeMobileNav()
+}
+
+watch(mobileNavOpen, (open) => {
+  // 展开抽屉时锁定背景滚动
+  document.body.style.overflow = open ? 'hidden' : ''
+})
+
+// 路由变化后自动收起
+watch(() => route.path, closeMobileNav)
+
 onMounted(() => {
   petStore.fetchPets()
+  window.addEventListener('keydown', onKeydown)
+  desktopMq = window.matchMedia('(min-width: 768px)')
+  desktopMq.addEventListener('change', onDesktopChange)
 })
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeydown)
+  desktopMq?.removeEventListener('change', onDesktopChange)
+  document.body.style.overflow = ''
+})
+
+async function logoutFromMobile() {
+  closeMobileNav()
+  try {
+    await handleCommand('logout')
+  } catch {
+    // 用户取消退出
+  }
+}
 
 async function handleCommand(cmd: string) {
   if (cmd === 'settings') {
@@ -186,5 +269,154 @@ async function handleCommand(cmd: string) {
 
 .app-main {
   min-height: calc(100vh - var(--fg-topbar-h));
+}
+
+/* ============================================================
+   响应式新增：移动端汉堡导航
+   以下基础规则在桌面端不参与任何布局（元素默认隐藏）。
+   ============================================================ */
+.nav-toggle {
+  display: none;
+}
+
+.mobile-nav,
+.mobile-nav-mask {
+  display: none;
+}
+
+.mobile-nav-enter-active,
+.mobile-nav-leave-active {
+  transition: opacity var(--fg-motion), transform var(--fg-motion);
+}
+
+.mobile-nav-enter-from,
+.mobile-nav-leave-to {
+  opacity: 0;
+}
+
+.mobile-nav-enter-from.mobile-nav,
+.mobile-nav-leave-to.mobile-nav {
+  transform: translateY(-8px);
+}
+
+@media (max-width: 767.98px) {
+  /* ---------- 响应式新增：顶栏紧凑化 ---------- */
+  .topbar-inner {
+    gap: var(--fg-s2);
+    padding: 0 var(--fg-s3);
+  }
+
+  .wordmark {
+    flex: none;
+    font-size: 16px;
+    gap: var(--fg-s1);
+  }
+
+  /* 横向导航改为汉堡菜单 */
+  .nav {
+    display: none;
+  }
+
+  .topbar-right {
+    margin-left: auto;
+    gap: var(--fg-s2);
+    min-width: 0;
+  }
+
+  .topbar-right :deep(.pet-switcher) {
+    width: auto;
+    max-width: 104px;
+  }
+
+  .topbar-right :deep(.pet-switcher .el-select__wrapper) {
+    padding-right: 2px;
+  }
+
+  /* 用户名入口收进折叠菜单 */
+  .user-entry {
+    display: none;
+  }
+
+  .nav-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: var(--fg-line-w) solid var(--fg-line);
+    border-radius: var(--fg-radius);
+    background: var(--fg-surface);
+    color: var(--fg-ink);
+    cursor: pointer;
+  }
+
+  .nav-toggle:active {
+    background: var(--fg-paper);
+  }
+
+  /* ---------- 响应式新增：折叠导航面板 ---------- */
+  .mobile-nav-mask {
+    display: block;
+    position: fixed;
+    inset: var(--fg-topbar-h) 0 0;
+    z-index: 98;
+    background: rgba(22, 24, 26, 0.32);
+  }
+
+  .mobile-nav {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: var(--fg-topbar-h);
+    left: 0;
+    right: 0;
+    z-index: 99;
+    max-height: calc(100vh - var(--fg-topbar-h));
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: var(--fg-s2) var(--fg-s4) calc(var(--fg-s4) + env(safe-area-inset-bottom));
+    background: var(--fg-surface);
+    border-bottom: var(--fg-line-w) solid var(--fg-line);
+  }
+
+  .mobile-nav-item {
+    display: flex;
+    align-items: center;
+    min-height: 48px;
+    padding: 0 var(--fg-s3);
+    border: none;
+    border-radius: var(--fg-radius);
+    background: none;
+    font-family: inherit;
+    font-size: var(--fg-text-lead);
+    color: var(--fg-ink);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .mobile-nav-item.is-active {
+    background: var(--fg-accent-soft);
+    color: var(--fg-accent);
+    font-weight: 500;
+  }
+
+  .mobile-nav-divider {
+    height: var(--fg-line-w);
+    margin: var(--fg-s2) 0;
+    background: var(--fg-line);
+  }
+
+  .mobile-nav-item--danger {
+    color: var(--fg-danger);
+  }
+}
+
+/* 超窄屏兜底：隐藏品牌文字，保证顶栏不溢出 */
+@media (max-width: 359.98px) {
+  .wordmark span {
+    display: none;
+  }
 }
 </style>

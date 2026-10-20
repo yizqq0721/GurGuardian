@@ -198,4 +198,35 @@ async function logout() {
     gap: var(--fg-s3);
   }
 }
+
+/* ===== 响应式新增：移动端（<768px）===== */
+@media (max-width: 767.98px) {
+  .settings {
+    max-width: none;
+  }
+
+  .set-section + .set-section {
+    margin-top: var(--fg-s5);
+    padding-top: var(--fg-s4);
+  }
+
+  .row-value {
+    flex-wrap: wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .fg-kv {
+    flex-wrap: wrap;
+  }
+
+  .row-control {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .about-text {
+    line-height: 1.75;
+  }
+}
 </style>

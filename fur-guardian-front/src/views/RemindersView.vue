@@ -143,7 +143,7 @@
 
             <div class="fg-divider" />
 
-            <div class="bars" role="img" :aria-label="`近 7 天每日打卡次数：${barsAria}`">
+            <div class="bars" role="img" :aria-label="`近 7 天每日完成提醒项数：${barsAria}`">
               <div
                 v-for="d in weekDays"
                 :key="d.date"
@@ -157,7 +157,7 @@
                 <span class="bar-day">{{ d.weekday }}</span>
               </div>
             </div>
-            <p class="bar-note fg-muted">柱高按当日打卡次数，单位：次</p>
+            <p class="bar-note fg-muted">柱高按当日已完成的提醒条目数，单位：项</p>
           </section>
 
           <section class="fg-card">
@@ -165,7 +165,7 @@
             <div class="kv-list">
               <div class="fg-kv">
                 <span class="fg-label">近 7 天累计</span>
-                <span class="fg-num kv-value">{{ weekTotal }} 次</span>
+                <span class="fg-num kv-value">{{ weekTotal }} 项</span>
               </div>
               <div class="fg-kv">
                 <span class="fg-label">有打卡的天数</span>
@@ -371,6 +371,17 @@ const todayRate = computed(() =>
   reminders.value.length ? Math.round((doneToday.value / reminders.value.length) * 100) : 0,
 )
 
+/** 按提醒条目去重后统计，避免同一提醒的多条日志把柱高与累计次数抬高 */
+const doneIdsByDate = computed(() => {
+  const map = new Map<string, Set<number>>()
+  logs.value.forEach((l) => {
+    const set = map.get(l.doneDate) ?? new Set<number>()
+    set.add(l.reminderId)
+    map.set(l.doneDate, set)
+  })
+  return map
+})
+
 const weekDays = computed(() => {
   return Array.from({ length: 7 }, (_, i) => {
     const d = dayjs().subtract(6 - i, 'day')
@@ -379,7 +390,7 @@ const weekDays = computed(() => {
       date,
       label: i === 6 ? '今天' : d.format('MM-DD'),
       weekday: WEEKDAY_CN[d.day()],
-      count: logs.value.filter((l) => l.doneDate === date).length,
+      count: doneIdsByDate.value.get(date)?.size ?? 0,
     }
   })
 })
@@ -393,7 +404,7 @@ const streak = computed(() => {
   let n = 0
   for (let i = 0; i < 7; i += 1) {
     const date = dayjs().subtract(i, 'day').format('YYYY-MM-DD')
-    const count = logs.value.filter((l) => l.doneDate === date).length
+    const count = doneIdsByDate.value.get(date)?.size ?? 0
     if (count > 0) n += 1
     else if (i === 0) continue
     else break
@@ -402,7 +413,7 @@ const streak = computed(() => {
 })
 
 const barsAria = computed(() =>
-  weekDays.value.map((d) => `${d.label} ${d.count} 次`).join('，'),
+  weekDays.value.map((d) => `${d.label} ${d.count} 项`).join('，'),
 )
 
 const scopeLabel = computed(() =>
@@ -1074,6 +1085,140 @@ async function remove(row: Reminder) {
   .tl-row {
     grid-template-columns: 52px 12px 24px minmax(0, 1fr) 32px;
     gap: var(--fg-s2);
+  }
+}
+
+/* ===== 响应式新增：移动端（<768px）===== */
+@media (max-width: 767.98px) {
+  .day-nav {
+    width: 100%;
+  }
+
+  .day-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .day-label {
+    flex: 1;
+    min-width: 0;
+    justify-content: flex-start;
+    text-align: left;
+  }
+
+  .head-divider {
+    display: none;
+  }
+
+  .toolbar {
+    gap: var(--fg-s2);
+    padding: var(--fg-s3) 0;
+    margin-bottom: var(--fg-s4);
+  }
+
+  .toolbar :deep(.el-radio-group) {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--fg-s1);
+  }
+
+  .toolbar :deep(.el-radio-button) {
+    flex: 1 1 auto;
+  }
+
+  .toolbar :deep(.el-radio-button__inner) {
+    width: 100%;
+    padding: 0 var(--fg-s3);
+  }
+
+  .todo-check {
+    margin-left: 0;
+  }
+
+  .tl-card {
+    min-height: 0;
+  }
+
+  .tl-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--fg-s1);
+    margin-bottom: var(--fg-s3);
+  }
+
+  .tl-row {
+    grid-template-columns: 48px 44px minmax(0, 1fr) 44px;
+    gap: var(--fg-s2);
+    padding: var(--fg-s3) 0;
+  }
+
+  .tl-marker {
+    display: none;
+  }
+
+  .tl-time {
+    height: auto;
+    align-items: flex-start;
+    padding-top: var(--fg-s2);
+  }
+
+  .tl-check {
+    width: 44px;
+    height: auto;
+    min-height: 44px;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: var(--fg-s1);
+  }
+
+  .tl-title {
+    height: auto;
+    align-items: flex-start;
+  }
+
+  .tl-name {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+
+  .tl-more {
+    height: auto;
+  }
+
+  .more-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .aside-col {
+    position: static;
+  }
+
+  .drawer-host :deep(.el-drawer__header),
+  .drawer-host :deep(.el-drawer__footer) {
+    padding: var(--fg-s3) var(--fg-s4);
+  }
+
+  .drawer-host :deep(.el-drawer__body) {
+    padding: var(--fg-s4);
+  }
+
+  .time-pick {
+    width: 100%;
+  }
+
+  .num-hint {
+    display: block;
+    margin-left: 0;
+    margin-top: var(--fg-s2);
+  }
+
+  .weekday-check {
+    margin-right: var(--fg-s3);
   }
 }
 </style>

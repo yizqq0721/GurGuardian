@@ -420,4 +420,60 @@ const hasWarn = computed(() => triggeredRules.value.some((x) => x.severity === '
     font-size: 28px;
   }
 }
+
+/* ===== 响应式新增：移动端（<768px）===== */
+@media (max-width: 767.98px) {
+  .letter-head {
+    gap: var(--fg-s3);
+    padding-bottom: var(--fg-s4);
+  }
+
+  .letter-title {
+    font-size: 26px;
+    line-height: 1.3;
+  }
+
+  .polish-btn {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .summary-block {
+    padding: var(--fg-s4) 0;
+  }
+
+  .metrics-card {
+    margin-top: var(--fg-s4);
+    padding: var(--fg-s3);
+  }
+
+  .report-metrics :deep(.fg-value) {
+    font-size: 22px;
+  }
+
+  .section-block {
+    margin-top: var(--fg-s5);
+  }
+
+  .chart-card {
+    padding: var(--fg-s3);
+  }
+
+  .rule-item {
+    padding: var(--fg-s3) 0;
+  }
+
+  .rule-suggestion {
+    line-height: 1.75;
+    overflow-wrap: anywhere;
+  }
+
+  .rule-detail {
+    overflow-wrap: anywhere;
+  }
+
+  .disclosure {
+    margin-top: var(--fg-s5);
+  }
+}
 </style>

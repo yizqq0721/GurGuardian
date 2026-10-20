@@ -28,6 +28,58 @@
 
     <!-- 周报表格 -->
     <section v-else v-loading="loading" class="fg-card table-card">
+      <!-- 响应式新增：移动端卡片列表（<768px 显示，替代宽表格） -->
+      <div class="report-cards">
+        <article
+          v-for="row in reports"
+          :key="row.id"
+          class="report-card"
+          role="button"
+          tabindex="0"
+          @click="openReport(row)"
+          @keydown.enter="openReport(row)"
+        >
+          <header class="report-card-head">
+            <div class="report-card-week">
+              <span class="week-no fg-num">第 {{ weekNo(row.weekStart) }} 周</span>
+              <span class="fg-mono week-range">{{ rangeText(row.weekStart, row.weekEnd) }}</span>
+            </div>
+            <span class="fg-chip" :class="statusChip(row.status).cls">
+              {{ statusChip(row.status).text }}
+            </span>
+          </header>
+
+          <dl class="report-card-metrics">
+            <div class="metric">
+              <dt>体重变化</dt>
+              <dd class="fg-num" :class="{ 'is-warn': isSignificant(row.weightChangePct) }">
+                {{ signedPct(row.weightChangePct) }}
+              </dd>
+              <span class="fg-mono metric-sub">{{ weightRangeText(row) }}</span>
+            </div>
+            <div class="metric">
+              <dt>BCS 变化</dt>
+              <dd class="fg-num">
+                {{ dash(row.bcsStart) }} → {{ dash(row.bcsEnd) }}<span class="fg-unit">/9</span>
+              </dd>
+            </div>
+            <div class="metric">
+              <dt>触发规则数</dt>
+              <dd class="fg-num">{{ ruleCountText(row) }}</dd>
+            </div>
+            <div class="metric">
+              <dt>喂养合规度</dt>
+              <dd class="fg-num">{{ complianceText(row.feedingCompliance) }}</dd>
+            </div>
+          </dl>
+
+          <footer class="report-card-foot">
+            <span class="view-link">查看详情</span>
+            <ChevronRight :size="16" class="fg-icon" />
+          </footer>
+        </article>
+      </div>
+
       <el-table
         :data="reports"
         row-key="id"
@@ -114,7 +166,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import dayjs from 'dayjs'
-import { Plus } from 'lucide-vue-next'
+import { ChevronRight, Plus } from 'lucide-vue-next'
 import { reportApi } from '@/api/report'
 import { usePetStore } from '@/stores/pet'
 import EmptyState from '@/components/EmptyState.vue'
@@ -246,6 +298,11 @@ function statusChip(status: string): { text: string; cls: string } {
   padding: var(--fg-s2) var(--fg-s5) var(--fg-s4);
 }
 
+/* 响应式新增：移动端卡片列表默认隐藏，仅 <768px 显示 */
+.report-cards {
+  display: none;
+}
+
 .report-table {
   --el-table-row-hover-bg-color: var(--fg-accent-soft);
 }
@@ -293,5 +350,108 @@ function statusChip(status: string): { text: string; cls: string } {
   align-items: center;
   gap: var(--fg-s1);
   color: var(--fg-accent);
+}
+
+/* ===== 响应式新增：移动端（<768px）===== */
+@media (max-width: 767.98px) {
+  .table-card {
+    padding: 0;
+    background: transparent;
+    border: none;
+  }
+
+  .table-card :deep(.el-table) {
+    display: none;
+  }
+
+  .report-cards {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fg-s3);
+  }
+
+  .report-card {
+    padding: var(--fg-s4);
+    background: var(--fg-surface);
+    border: var(--fg-line-w) solid var(--fg-line);
+    border-radius: var(--fg-radius);
+    cursor: pointer;
+    transition: border-color var(--fg-motion);
+  }
+
+  .report-card:hover,
+  .report-card:focus-visible {
+    border-color: var(--fg-line-strong);
+  }
+
+  .report-card:focus-visible {
+    outline: 2px solid var(--fg-accent);
+    outline-offset: 2px;
+  }
+
+  .report-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--fg-s3);
+  }
+
+  .report-card-week {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fg-s1);
+    min-width: 0;
+  }
+
+  .report-card-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--fg-s3);
+    margin: var(--fg-s3) 0 0;
+    padding-top: var(--fg-s3);
+    border-top: var(--fg-line-w) solid var(--fg-line);
+  }
+
+  .metric {
+    min-width: 0;
+  }
+
+  .metric dt {
+    font-size: var(--fg-text-label);
+    color: var(--fg-ink-muted);
+  }
+
+  .metric dd {
+    margin: 2px 0 0;
+    font-size: var(--fg-text-lead);
+    font-weight: 600;
+    color: var(--fg-ink);
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+
+  .metric dd.is-warn {
+    color: var(--fg-warning);
+  }
+
+  .metric-sub {
+    display: block;
+    margin-top: 2px;
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--fg-ink-muted);
+  }
+
+  .report-card-foot {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--fg-s1);
+    margin-top: var(--fg-s3);
+    padding-top: var(--fg-s3);
+    border-top: var(--fg-line-w) solid var(--fg-line);
+    color: var(--fg-accent);
+    font-size: var(--fg-text-label);
+  }
 }
 </style>

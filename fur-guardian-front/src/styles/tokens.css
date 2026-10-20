@@ -222,10 +222,11 @@ h4 {
   box-shadow: 0 0 0 2px var(--fg-accent-soft) !important;
 }
 
-/* 无障碍焦点环 */
+/* 无障碍焦点环：原生输入框由 .el-input__wrapper.is-focus 的边框负责，这里必须排除，
+   否则内层 input 的 [tabindex] 会再叠一层 outline + 阴影，形成错位的双环 */
 a:focus-visible,
 button:focus-visible,
-[tabindex]:focus-visible {
+[tabindex]:not(input):not(textarea):focus-visible {
   outline: 1px solid var(--fg-accent);
   outline-offset: 2px;
   box-shadow: 0 0 0 3px var(--fg-accent-soft);

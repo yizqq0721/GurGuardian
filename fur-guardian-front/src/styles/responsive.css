@@ -1,0 +1,170 @@
+/* ============================================================
+   响应式增强（移动端）
+   仅作用于 <768px（767.98px 起生效），>=768px 桌面端不受任何影响。
+   页面级布局补充见各视图 <style scoped> 内的「响应式新增」块。
+   ============================================================ */
+
+@media (max-width: 767.98px) {
+  /* ---------- 响应式新增：杜绝横向滚动 ---------- */
+  html,
+  body {
+    overflow-x: hidden;
+  }
+
+  /* ---------- 响应式新增：图片自适应 ---------- */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* ---------- 响应式新增：移动端字号（桌面 token 不变） ---------- */
+  :root {
+    --fg-text-display: 36px;
+    --fg-text-h1: 30px;
+    --fg-text-h2: 24px;
+    --fg-text-h3: 18px;
+    --fg-text-lead: 15px;
+  }
+
+  .fg-display {
+    font-size: 36px;
+  }
+
+  .fg-h1 {
+    font-size: 30px;
+  }
+
+  .fg-h2 {
+    font-size: 24px;
+  }
+
+  .fg-h3 {
+    font-size: 18px;
+  }
+
+  .fg-value {
+    font-size: 32px;
+  }
+
+  .fg-value--hero {
+    font-size: 36px;
+  }
+
+  .fg-lead {
+    line-height: 1.7;
+  }
+
+  /* ---------- 响应式新增：页面容器与卡片间距 ---------- */
+  .fg-page {
+    padding: 20px 16px 48px;
+  }
+
+  .fg-card {
+    padding: var(--fg-s4);
+  }
+
+  .fg-card + .fg-card {
+    margin-top: var(--fg-s3);
+  }
+
+  .fg-kv {
+    gap: var(--fg-s3);
+  }
+
+  .fg-split {
+    gap: var(--fg-s4);
+  }
+
+  .fg-section-title {
+    margin-bottom: var(--fg-s3);
+  }
+
+  /* 指标行在窄屏堆叠后不再保留右侧留白 */
+  .fg-metric-row > * {
+    padding-right: 0;
+  }
+
+  /* ---------- 响应式新增：触摸目标最小 44px ---------- */
+  .el-button {
+    min-height: 44px;
+    padding-left: var(--fg-s4);
+    padding-right: var(--fg-s4);
+  }
+
+  .el-button--small {
+    min-height: 44px;
+  }
+
+  .el-button.is-text {
+    padding-left: var(--fg-s2);
+    padding-right: var(--fg-s2);
+  }
+
+  .el-input__wrapper,
+  .el-select__wrapper {
+    min-height: 44px;
+  }
+
+  .el-input__inner,
+  .el-textarea__inner {
+    font-size: 16px; /* 避免 iOS 聚焦输入框时自动放大页面 */
+  }
+
+  .el-textarea__inner {
+    min-height: 88px;
+  }
+
+  .el-radio-button__inner {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .el-checkbox,
+  .el-radio {
+    min-height: 44px;
+  }
+
+  /* ---------- 响应式新增：弹窗 / 抽屉 / 提示占满可用宽度 ---------- */
+  .el-dialog {
+    --el-dialog-margin-top: 8vh;
+    width: calc(100vw - 32px) !important;
+    max-width: 560px;
+    max-height: 84vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .el-dialog__body {
+    overflow-y: auto;
+  }
+
+  .el-message-box {
+    width: calc(100vw - 48px) !important;
+    max-width: 420px;
+  }
+
+  .el-drawer {
+    width: 100vw !important;
+    max-width: 480px;
+  }
+
+  .el-message {
+    min-width: 0;
+    width: calc(100vw - 32px);
+    max-width: 420px;
+  }
+
+  /* ---------- 响应式新增：分页在窄屏折行居中 ---------- */
+  .el-pagination {
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: var(--fg-s2);
+  }
+
+  .el-pagination .el-pagination__sizes,
+  .el-pagination .el-pagination__jump {
+    display: none;
+  }
+}

@@ -79,4 +79,34 @@ tr:last-child td {
 .fg-chip {
   justify-content: center;
 }
+
+/* 响应式新增：<768px 压缩四列，保证 320px 不横向溢出 */
+@media (max-width: 767.98px) {
+  .nutrient-table {
+    font-size: 13px;
+  }
+
+  th {
+    font-size: 11px;
+    padding: var(--fg-s2) 0;
+  }
+
+  td {
+    padding: var(--fg-s2) 0;
+  }
+
+  .num {
+    white-space: normal;
+  }
+
+  .verdict {
+    width: 64px;
+  }
+
+  .fg-chip {
+    height: 20px;
+    padding: 0 5px;
+    font-size: 11px;
+  }
+}
 </style>

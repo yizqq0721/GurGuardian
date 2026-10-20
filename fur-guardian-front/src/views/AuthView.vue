@@ -351,4 +351,76 @@ async function handleRegister() {
     max-width: none;
   }
 }
+
+/* ============================================================
+   响应式新增：<768px 手机端（桌面端不受影响）
+   ============================================================ */
+@media (max-width: 767.98px) {
+  .auth-page {
+    align-items: flex-start;
+    padding: 24px var(--fg-s4) 40px;
+  }
+
+  .auth-inner {
+    gap: var(--fg-s6);
+    max-width: none;
+  }
+
+  .form-col {
+    max-width: none;
+  }
+
+  .brand {
+    font-size: 17px;
+  }
+
+  .form-title {
+    margin: var(--fg-s5) 0 var(--fg-s2);
+    font-size: 28px;
+  }
+
+  .form-sub {
+    margin-bottom: var(--fg-s5);
+  }
+
+  /* 输入框与主按钮 44px 触摸高度 */
+  .auth-form :deep(.el-input__wrapper) {
+    height: 44px;
+  }
+
+  .auth-form :deep(.el-form-item) {
+    margin-bottom: var(--fg-s4);
+  }
+
+  .demo-hint {
+    font-size: var(--fg-text-label);
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+  }
+
+  .full-btn {
+    height: 44px;
+  }
+
+  .toggle-line {
+    margin-top: var(--fg-s3);
+  }
+
+  .toggle-btn {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 var(--fg-s1);
+  }
+
+  /* 预览面板 */
+  .preview-panel {
+    padding: var(--fg-s4);
+  }
+
+  .preview-foot {
+    flex-wrap: wrap;
+    row-gap: var(--fg-s2);
+  }
+}
 </style>

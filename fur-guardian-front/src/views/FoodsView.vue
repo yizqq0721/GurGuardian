@@ -50,6 +50,60 @@
     </section>
 
     <section class="fg-card table-card">
+      <!-- 响应式新增：<768px 卡片列表（桌面端隐藏） -->
+      <div v-loading="loading" class="food-cards">
+        <article v-for="row in visible" :key="row.id" class="food-card">
+          <div class="food-card-title">
+            <span class="food-name">{{ row.brand ? `${row.brand} ` : '' }}{{ row.name }}</span>
+            <span
+              v-if="row.productType"
+              class="fg-chip"
+              :class="row.productType === 'COMPLETE' ? 'fg-chip--ok' : 'fg-chip--warn'"
+            >{{ PRODUCT_TYPE_SHORT[row.productType] || row.productType }}</span>
+          </div>
+          <p v-if="row.ingredients" class="ingredients fg-muted">{{ row.ingredients.slice(0, 30) }}</p>
+
+          <dl class="food-meta">
+            <div>
+              <dt class="fg-label">类型</dt>
+              <dd>{{ (row.foodType && FOOD_TYPE_LABEL[row.foodType]) || row.foodType || '—' }}</dd>
+            </div>
+            <div>
+              <dt class="fg-label">适用阶段</dt>
+              <dd>{{ (row.speciesScope && SPECIES_SCOPE_LABEL[row.speciesScope]) || '—' }} · {{ (row.lifeStage && LIFE_STAGE_LABEL[row.lifeStage]) || '—' }}</dd>
+            </div>
+            <div>
+              <dt class="fg-label">代谢能</dt>
+              <dd class="fg-num">{{ row.labeledMeKcal ? `${row.labeledMeKcal} kcal/kg` : '未标注' }}</dd>
+            </div>
+            <div>
+              <dt class="fg-label">粗蛋白 %DM</dt>
+              <dd class="fg-num">{{ proteinDm(row) ?? '—' }}</dd>
+            </div>
+            <div class="food-meta-time">
+              <dt class="fg-label">更新时间</dt>
+              <dd class="fg-muted">{{ updateTime(row) }}</dd>
+            </div>
+          </dl>
+
+          <div class="food-card-actions">
+            <el-button size="small" text type="primary" @click="router.push(`/foods/${row.id}/edit`)">
+              编辑
+            </el-button>
+            <el-button size="small" text type="danger" @click="remove(row)">删除</el-button>
+          </div>
+        </article>
+
+        <EmptyState
+          v-if="!loading && !visible.length"
+          variant="foods"
+          :description="isFiltering ? '当前筛选没有匹配的食品' : '食品库还是空的，录入第一袋粮'"
+        >
+          <el-button v-if="isFiltering" @click="clearFilters">清除筛选</el-button>
+          <el-button v-else type="primary" @click="router.push('/foods/new')">录入食品</el-button>
+        </EmptyState>
+      </div>
+
       <el-table v-loading="loading" :data="visible" row-key="id">
         <el-table-column label="名称" min-width="260">
           <template #default="{ row }">
@@ -382,6 +436,128 @@ async function remove(row: Food) {
   .table-foot {
     flex-direction: column;
     align-items: flex-start;
+  }
+}
+
+/* ============================================================
+   响应式新增：<768px 卡片列表替代宽表格
+   ============================================================ */
+.food-cards {
+  display: none;
+}
+
+@media (max-width: 767.98px) {
+  /* 工具栏纵向堆叠 */
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--fg-s3);
+    margin-bottom: var(--fg-s4);
+  }
+
+  .search {
+    width: 100%;
+  }
+
+  .filters {
+    gap: var(--fg-s2);
+  }
+
+  .fchip {
+    height: 44px;
+    padding: 0 var(--fg-s3);
+  }
+
+  .create {
+    width: 100%;
+    height: 44px;
+    margin-left: 0;
+    align-self: stretch;
+  }
+
+  /* 隐藏宽表格，改用卡片 */
+  .table-card {
+    padding: 0 var(--fg-s4);
+  }
+
+  .table-card :deep(.el-table) {
+    display: none;
+  }
+
+  .food-cards {
+    display: block;
+    min-height: 120px;
+  }
+
+  .food-card {
+    padding: var(--fg-s4) 0;
+    border-bottom: var(--fg-line-w) solid var(--fg-line);
+  }
+
+  .food-card:last-of-type {
+    border-bottom: none;
+  }
+
+  .food-card-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--fg-s2);
+  }
+
+  .food-card-title .food-name {
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+
+  /* 两列字段，更新时间独占一行 */
+  .food-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--fg-s2) var(--fg-s3);
+    margin: var(--fg-s3) 0 0;
+  }
+
+  .food-meta > div {
+    min-width: 0;
+  }
+
+  .food-meta dt {
+    font-size: 11px;
+  }
+
+  .food-meta dd {
+    margin: 2px 0 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--fg-ink);
+    overflow-wrap: anywhere;
+  }
+
+  .food-meta-time {
+    grid-column: 1 / -1;
+  }
+
+  .food-card-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--fg-s1);
+    margin-top: var(--fg-s1);
+  }
+
+  .food-card-actions :deep(.el-button + .el-button) {
+    margin-left: 0;
+  }
+
+  .table-foot {
+    padding: var(--fg-s4) 0;
+    gap: var(--fg-s3);
+  }
+
+  .pager {
+    align-self: center;
   }
 }
 </style>
