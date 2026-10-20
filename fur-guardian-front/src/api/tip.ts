@@ -14,7 +14,7 @@ export const tipApi = {
   checkRedline(text: string) {
     return request.post<boolean>('/api/tip/check-redline', null, { params: { text } })
   },
-  streamUrl(petId: number, mock = false) {
-    return `/api/tip/stream?petId=${petId}&mock=${mock}`
+  streamUrl(petId: number, mock = false, refresh = false) {
+    return `/api/tip/stream?petId=${petId}&mock=${mock}&refresh=${refresh}`
   },
 }

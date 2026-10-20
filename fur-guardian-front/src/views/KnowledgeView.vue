@@ -125,8 +125,8 @@
             </div>
           </template>
 
-          <!-- 欢迎页：没有选中会话 -->
-          <div v-else-if="!activeId" class="welcome">
+          <!-- 欢迎页：没有选中会话，且没有正在提问/错误 -->
+          <div v-else-if="!activeId && !asking && !askError" class="welcome">
             <h2 class="welcome-title">问问 FurGuardian</h2>
             <p class="welcome-sub fg-muted">
               喂养、护理、症状都能问。回答只取自已审核的知识库条目，并附上来源。
@@ -297,10 +297,10 @@
         breadcrumb="知识库 / 浏览"
       >
         <template #actions>
-          <button type="button" class="mode-btn" @click="mode = 'chat'">
-            <MessagesSquare :size="16" class="fg-icon" />
-            知识问答
-          </button>
+          <el-button type="primary" size="large" class="back-chat-btn" @click="mode = 'chat'">
+            <MessagesSquare :size="18" class="fg-icon" />
+            返回知识问答
+          </el-button>
           <span v-if="searched" class="fg-muted result-count">
             共 <span class="fg-num">{{ docs.length }}</span> 条结果
           </span>
@@ -399,7 +399,7 @@
                   />
                 </div>
 
-                <p v-if="doc.content" class="doc-excerpt">{{ doc.content }}</p>
+                <p v-if="doc.content" class="doc-excerpt">{{ plainText(doc.content) }}</p>
 
                 <div class="row-meta">
                   <span class="meta-source" @click.stop>
@@ -438,7 +438,7 @@
             </div>
 
             <div class="reading-body">
-              <p v-for="(para, i) in paragraphs(activeDoc.content)" :key="i">{{ para }}</p>
+              <MarkdownContent :content="activeDoc.content" />
             </div>
 
             <blockquote v-if="activeDoc.sourceName || activeDoc.sourceUrl" class="citation">
@@ -484,12 +484,12 @@
               问答挪到会话里了
             </h2>
             <p class="fg-muted card-text">
-              提问、追问和的历史都会保留在「知识问答」，这里只负责按关键词浏览知识库。
+              提问、追问的历史都会保留在「知识问答」，这里只负责按关键词浏览知识库。
             </p>
-            <button type="button" class="mode-btn is-block" @click="mode = 'chat'">
+            <el-button type="primary" class="mode-cta" @click="mode = 'chat'">
               <ArrowLeft :size="16" class="fg-icon" />
               返回知识问答
-            </button>
+            </el-button>
           </section>
 
           <p class="fg-muted aside-note">
@@ -525,6 +525,7 @@ import { tipApi } from '@/api/tip'
 import { usePetStore } from '@/stores/pet'
 import DisclaimerBar from '@/components/DisclaimerBar.vue'
 import EmptyState from '@/components/EmptyState.vue'
+import MarkdownContent from '@/components/MarkdownContent.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import SeverityDot from '@/components/SeverityDot.vue'
 import SourceChip from '@/components/SourceChip.vue'
@@ -808,10 +809,9 @@ async function submit(rawQuestion: string) {
       sources = resp.sources
     }
   } catch (e) {
-    // 没答上来的问题不写进历史，只留一条错误条 + 重试
+    // 没答上来的问题不写进历史，只留一条错误条 + 重试；保留问题文本供重试
     askError.value = e instanceof Error && e.message ? e.message : '请求失败，请稍后重试'
     asking.value = false
-    askingQuestion.value = ''
     return
   }
 
@@ -1066,12 +1066,21 @@ function topicList(topicsField?: string, limit = 3): string[] {
     .slice(0, limit)
 }
 
-function paragraphs(content?: string): string[] {
-  if (!content) return []
+/** 列表摘要去掉 markdown 标记，正文详情再由 MarkdownContent 渲染 */
+function plainText(content?: string): string {
+  if (!content) return ''
   return content
-    .split(/\n+/)
-    .map((p) => p.trim())
-    .filter(Boolean)
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/!\[[^\]]*]\([^)]*\)/g, ' ')
+    .replace(/\[([^\]]*)]\([^)]*\)/g, '$1')
+    .replace(/^\s{0,3}#{1,6}\s+/gm, '')
+    .replace(/^\s{0,3}>\s?/gm, '')
+    .replace(/^\s*[-*+]\s+/gm, '')
+    .replace(/^\s*\d+\.\s+/gm, '')
+    .replace(/^\s*\|?(?:\s*:?-+:?\s*\|)+.*$/gm, '')
+    .replace(/[|*_~`]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 const relatedDocs = computed(() => {
@@ -1723,27 +1732,17 @@ onMounted(async () => {
 /* ============================================================
    浏览模式（原有样式）
    ============================================================ */
-.mode-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--fg-s2);
-  padding: 0;
-  margin-right: var(--fg-s4);
-  border: none;
-  background: none;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: var(--fg-text-label);
-  color: var(--fg-accent);
-  transition: color var(--fg-motion);
+.back-chat-btn .fg-icon {
+  margin-right: var(--fg-s2);
 }
 
-.mode-btn:hover {
-  color: var(--fg-accent-hover);
+.mode-cta {
+  width: 100%;
+  margin-top: var(--fg-s4);
 }
 
-.mode-btn.is-block {
-  margin: var(--fg-s4) 0 0;
+.mode-cta .fg-icon {
+  margin-right: var(--fg-s2);
 }
 
 .result-count {

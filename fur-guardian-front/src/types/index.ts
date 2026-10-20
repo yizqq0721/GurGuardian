@@ -134,6 +134,29 @@ export interface NutritionPlan {
   warnings: string[]
 }
 
+export interface RecipeSource {
+  docId: number
+  title: string
+  sourceName?: string
+}
+
+export interface RecipeSnack {
+  id: number
+  name: string
+  brand?: string
+  labeledMeKcal?: number
+  /** 零食额度全部给这一种时的每日上限克数 */
+  maxGrams?: number
+}
+
+export interface NutritionRecipe {
+  content: string
+  sources: RecipeSource[]
+  snacks: RecipeSnack[]
+  /** AI 不可用时返回的确定性兜底建议 */
+  isFallback: boolean
+}
+
 export interface Reminder {
   id: number
   petId: number
@@ -172,7 +195,8 @@ export interface Tip {
   content: string
   sourceDocId?: number
   sourceName?: string
-  feedback?: 'like' | 'dislike' | null
+  /** 1 有用 / 0 没帮助 / null 未反馈（对应后端 tips.feedback TINYINT） */
+  feedback?: number | null
   isMock: number
   createdAt?: string
 }

@@ -1,14 +1,22 @@
 <template>
-  <div v-loading="loading && !streaming" class="tip-card">
-    <template v-if="streaming || streamText">
-      <p class="tip-content">
-        {{ streamText }}<span v-if="streaming" class="cursor" aria-hidden="true" />
-      </p>
-      <p class="gen-note">正在基于知识库生成，生成完成后可查看来源。</p>
+  <div class="tip-card">
+    <!-- 生成中：加载动画，不展示半成品或原始 SSE 数据 -->
+    <template v-if="busy">
+      <div class="tip-generating" role="status" aria-live="polite">
+        <span class="gen-spinner" aria-hidden="true" />
+        <span class="gen-text">正在结合知识库生成新的 Tip…</span>
+      </div>
+      <div class="gen-skeleton" aria-hidden="true">
+        <span class="sk-line" style="width: 92%" />
+        <span class="sk-line" style="width: 78%" />
+        <span class="sk-line" style="width: 56%" />
+      </div>
     </template>
 
     <template v-else-if="tip">
-      <p class="tip-content">{{ tip.content }}</p>
+      <Transition name="tip-swap" mode="out-in">
+        <p :key="tip.id" class="tip-content">{{ tip.content }}</p>
+      </Transition>
 
       <div class="tip-foot">
         <SourceChip v-if="tip.sourceName" :label="`来源 · ${tip.sourceName}`" />
@@ -16,31 +24,41 @@
           <button
             type="button"
             class="fb-btn"
-            :disabled="streaming"
+            :disabled="busy"
             @click="regenerate"
           >
-            <RefreshCw :size="20" class="fg-icon" :class="{ 'is-spin': streaming }" />
+            <RefreshCw :size="20" class="fg-icon" />
             换一条
           </button>
           <button
             type="button"
             class="fb-btn"
-            :class="{ 'is-active': tip.feedback === 'like' }"
+            :class="{ 'is-active': tip.feedback === 1, 'is-bump': bump === 'like' }"
+            :disabled="feedbackBusy"
             @click="sendFeedback('like')"
           >
-            <ThumbsUp :size="20" class="fg-icon" />
+            <ThumbsUp :size="20" class="fg-icon fb-icon" />
             有用
           </button>
           <button
             type="button"
             class="fb-btn"
-            :class="{ 'is-active': tip.feedback === 'dislike' }"
+            :class="{ 'is-active': tip.feedback === 0, 'is-bump': bump === 'dislike' }"
+            :disabled="feedbackBusy"
             @click="sendFeedback('dislike')"
           >
-            <ThumbsDown :size="20" class="fg-icon" />
+            <ThumbsDown :size="20" class="fg-icon fb-icon" />
             没帮助
           </button>
         </span>
+      </div>
+    </template>
+
+    <template v-else-if="loading">
+      <div class="gen-skeleton" aria-hidden="true">
+        <span class="sk-line" style="width: 90%" />
+        <span class="sk-line" style="width: 72%" />
+        <span class="sk-line" style="width: 48%" />
       </div>
     </template>
 
@@ -51,7 +69,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { RefreshCw, ThumbsDown, ThumbsUp } from 'lucide-vue-next'
 import { tipApi } from '@/api/tip'
@@ -65,11 +83,15 @@ const props = defineProps<{ petId: number }>()
 
 const loading = ref(false)
 const tip = ref<Tip | null>(null)
-const { streaming, content: streamContent, start } = useTipStream()
+const feedbackBusy = ref(false)
+const bump = ref<'like' | 'dislike' | null>(null)
+let bumpTimer: ReturnType<typeof setTimeout> | undefined
 
-const streamText = computed(() => streamContent.value)
+const { streaming, start, stop } = useTipStream()
+const busy = computed(() => loading.value || streaming.value)
 
 onMounted(fetchTip)
+onBeforeUnmount(() => clearTimeout(bumpTimer))
 
 async function fetchTip() {
   loading.value = true
@@ -83,22 +105,36 @@ async function fetchTip() {
 }
 
 async function regenerate() {
+  if (busy.value) return
   try {
-    await start(props.petId)
-    // 流式结束后刷新正式 Tip（含来源与 id）
+    await start(props.petId, { refresh: true })
+    // SSE 只负责触发生成，正式内容（id/来源/反馈）仍从 /today 回读
     await fetchTip()
-  } catch {
-    ElMessage.warning('生成失败，展示已有内容')
-    fetchTip()
+  } catch (e) {
+    ElMessage.warning((e as Error).message || '生成失败，请稍后重试')
   }
 }
 
 async function sendFeedback(feedback: 'like' | 'dislike') {
-  if (!tip.value) return
-  await tipApi.feedback(tip.value.id, feedback)
-  tip.value.feedback = feedback
-  ElMessage.success('感谢反馈')
+  if (!tip.value || feedbackBusy.value) return
+  const value = feedback === 'like' ? 1 : 0
+  const previous = tip.value.feedback
+  tip.value.feedback = value
+  feedbackBusy.value = true
+  bump.value = feedback
+  clearTimeout(bumpTimer)
+  bumpTimer = setTimeout(() => (bump.value = null), 420)
+
+  try {
+    await tipApi.feedback(tip.value.id, feedback)
+  } catch {
+    tip.value.feedback = previous
+  } finally {
+    feedbackBusy.value = false
+  }
 }
+
+onBeforeUnmount(stop)
 </script>
 
 <style scoped>
@@ -107,30 +143,83 @@ async function sendFeedback(feedback: 'like' | 'dislike') {
   font-size: var(--fg-text-body);
   line-height: 1.7;
   color: var(--fg-ink);
+  white-space: pre-wrap;
 }
 
-.gen-note {
-  margin: 0;
+/* ---------- 生成中 ---------- */
+.tip-generating {
+  display: flex;
+  align-items: center;
+  gap: var(--fg-s2);
+  margin-bottom: var(--fg-s3);
   font-size: var(--fg-text-label);
-  line-height: 1.6;
   color: var(--fg-ink-muted);
 }
 
-/* 流式光标：用色块画，不靠字符 */
-.cursor {
-  display: inline-block;
-  width: 2px;
-  height: 1em;
-  margin-left: var(--fg-s1);
-  vertical-align: -0.15em;
-  background: var(--fg-accent);
-  animation: blink 0.8s step-end infinite;
+.gen-spinner {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border: 2px solid var(--fg-line);
+  border-top-color: var(--fg-accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 
-@keyframes blink {
-  50% {
-    opacity: 0;
+.gen-text {
+  letter-spacing: 0.01em;
+}
+
+.gen-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fg-s2);
+  margin-bottom: var(--fg-s3);
+}
+
+.sk-line {
+  display: block;
+  height: 12px;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--fg-line) 0%,
+    var(--fg-paper) 45%,
+    var(--fg-line) 90%
+  );
+  background-size: 220% 100%;
+  animation: shimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 120% 0;
   }
+  100% {
+    background-position: -120% 0;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- 内容切换 ---------- */
+.tip-swap-enter-active,
+.tip-swap-leave-active {
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.tip-swap-enter-from {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+.tip-swap-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 
 .tip-foot {
@@ -179,13 +268,23 @@ async function sendFeedback(feedback: 'like' | 'dislike') {
   color: var(--fg-accent);
 }
 
-.is-spin {
-  animation: spin 0.9s linear infinite;
+/* 点击时图标弹一下，作为反馈已提交的即时反馈 */
+.fb-btn.is-bump .fb-icon {
+  animation: bump 0.42s ease;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+@keyframes bump {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.35) rotate(-6deg);
+  }
+  70% {
+    transform: scale(0.92) rotate(3deg);
+  }
+  100% {
+    transform: scale(1);
   }
 }
 

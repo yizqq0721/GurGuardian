@@ -52,28 +52,31 @@ public class TipGenerationService {
         this.redisTemplate = redisTemplate;
     }
 
-    public SseEmitter generateTipStream(Long userId, Long petId, boolean mockMode) {
+    public SseEmitter generateTipStream(Long userId, Long petId, boolean mockMode, boolean refresh) {
         SseEmitter emitter = new SseEmitter(60000L);
 
         CompletableFuture.runAsync(() -> {
             try {
                 PetDO pet = petService.getPet(userId, petId);
                 LocalDate today = LocalDate.now();
+                TipDO previousTip = tipService.getTodayTip(userId, petId, today);
 
-                TipDO cachedTip = tipService.getTodayTip(userId, petId, today);
-                if (cachedTip != null) {
-                    sendSseEvent(emitter, cachedTip.getContent(),
-                            cachedTip.getSourceName(), cachedTip.getIsMock() == 1);
-                    emitter.complete();
-                    return;
-                }
+                // “换一条”必须绕过当日 Tip 与 Redis 缓存，否则永远返回同一条
+                if (!refresh) {
+                    if (previousTip != null) {
+                        sendSseEvent(emitter, previousTip.getContent(),
+                                previousTip.getSourceName(), previousTip.getIsMock() == 1);
+                        emitter.complete();
+                        return;
+                    }
 
-                String cacheKey = buildCacheKey(petId, today);
-                String cachedContent = redisTemplate.opsForValue().get(cacheKey);
-                if (cachedContent != null && !cachedContent.isEmpty()) {
-                    sendSseEvent(emitter, cachedContent, "知识库精选", false);
-                    emitter.complete();
-                    return;
+                    String cachedContent = redisTemplate.opsForValue()
+                            .get(buildCacheKey(petId, today));
+                    if (cachedContent != null && !cachedContent.isEmpty()) {
+                        sendSseEvent(emitter, cachedContent, "知识库精选", false);
+                        emitter.complete();
+                        return;
+                    }
                 }
 
                 String species = pet.getSpecies();
@@ -90,6 +93,18 @@ public class TipGenerationService {
                     }
                 }
 
+                // 换一条时尽量换掉上一条引用的知识条目
+                if (refresh && previousTip != null && previousTip.getSourceDocId() != null
+                        && candidates.size() > 1) {
+                    Long previousDocId = previousTip.getSourceDocId();
+                    List<KnowledgeDocDO> filtered = candidates.stream()
+                            .filter(d -> !previousDocId.equals(d.getId()))
+                            .collect(Collectors.toList());
+                    if (!filtered.isEmpty()) {
+                        candidates = filtered;
+                    }
+                }
+
                 if (candidates.isEmpty()) {
                     sendSseEvent(emitter, "暂无适合的知识建议，请稍后再试。", null, false);
                     emitter.complete();
@@ -98,6 +113,8 @@ public class TipGenerationService {
 
                 String knowledgeRefs = formatKnowledgeRefs(candidates);
                 String petSummary = buildPetSummary(pet);
+                String previousContent = refresh && previousTip != null
+                        ? previousTip.getContent() : null;
 
                 String tipContent;
                 String sourceName;
@@ -110,7 +127,7 @@ public class TipGenerationService {
                 } else {
                     tipContent = llmService.chatWithTimeout(
                             promptTemplates.getTipSystemPrompt(),
-                            promptTemplates.buildTipUserPrompt(petSummary, knowledgeRefs));
+                            promptTemplates.buildTipUserPrompt(petSummary, knowledgeRefs, previousContent));
 
                     if (tipContent == null) {
                         tipContent = buildFallbackTip(candidates, pet);
@@ -135,7 +152,7 @@ public class TipGenerationService {
                 tipService.saveTip(tip);
 
                 if (!isMock) {
-                    redisTemplate.opsForValue().set(cacheKey, tipContent,
+                    redisTemplate.opsForValue().set(buildCacheKey(petId, today), tipContent,
                             java.time.Duration.ofHours(CACHE_TTL_HOURS));
                 }
 
