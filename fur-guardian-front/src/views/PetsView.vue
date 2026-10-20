@@ -666,9 +666,25 @@ function cssNum(name: string) {
   return parseFloat(getComputedStyle(el).getPropertyValue(name)) || 0
 }
 
+/** 手机端 --side-w 为 0，一次手势只切一张 */
+function isSingleCard() {
+  return cssNum('--side-w') === 0
+}
+
+function activeCardWidth() {
+  return trackEl.value?.querySelector<HTMLElement>('.pet-card.active')?.offsetWidth ?? 0
+}
+
 function stepPx(forward: boolean) {
   const gap = cssNum('--gap')
-  return (forward ? cssNum('--center-w') : cssNum('--side-w')) + gap
+  const declared = forward ? cssNum('--center-w') : cssNum('--side-w')
+  /* 手机端 --center-w 是 calc()，parseFloat 得到 NaN，改量真实卡片宽度 */
+  const step = declared > 0 ? declared : activeCardWidth()
+  return (step > 0 ? step : carouselEl.value?.clientWidth ?? 1) + gap
+}
+
+function dragLimit() {
+  return isSingleCard() ? Math.max(64, activeCardWidth() * 0.35) : Infinity
 }
 
 function onPointerDown(e: PointerEvent) {
@@ -683,8 +699,11 @@ function onPointerDown(e: PointerEvent) {
 
 function onPointerMove(e: PointerEvent) {
   if (!dragging.value) return
-  dragX.value = e.clientX - dragStartX
-  if (Math.abs(dragX.value) > 8) {
+  const raw = e.clientX - dragStartX
+  /* 单卡模式下限制拖动距离，避免整张卡被拖出视口 */
+  const limit = dragLimit()
+  dragX.value = Number.isFinite(limit) ? Math.max(-limit, Math.min(limit, raw)) : raw
+  if (Math.abs(raw) > 8) {
     dragMoved = true
     /* 越过阈值才捕获指针：在 pointerdown 就 setPointerCapture 会把后续
        pointerup 与 click 一起重定向到 track，卡片里的按钮永远点不中 */
@@ -698,7 +717,9 @@ function onPointerUp() {
   if (dragMoved) {
     const forward = dragX.value < 0
     const raw = Math.abs(dragX.value) / stepPx(forward)
-    const steps = raw < 0.25 ? 0 : Math.max(1, Math.round(raw))
+    const single = isSingleCard()
+    /* 手机端一次手势最多切一张，避免步长失真时直接跳到首/尾 */
+    const steps = raw < (single ? 0.2 : 0.25) ? 0 : single ? 1 : Math.max(1, Math.round(raw))
     go(activeIndex.value + (forward ? steps : -steps))
   }
   dragX.value = 0
@@ -1407,8 +1428,12 @@ function onPointerLeave() {
     border-top: var(--fg-line-w) solid var(--fg-line);
   }
 
-  /* 窄屏一次只看一张 */
+  /* 窄屏一次只看一张；隐藏卡必须连 padding/border 一起收掉，
+     否则 width:0 仍会占 34px，后面的卡片会被挤到右侧 */
   .pet-card:not(.active) {
+    width: 0;
+    padding: 0;
+    border-width: 0;
     opacity: 0;
     pointer-events: none;
   }
