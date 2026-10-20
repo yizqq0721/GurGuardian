@@ -5,6 +5,7 @@ target/
 !**/src/test/**/target/
 
 application-local.yml
+backup-*.sql
 
 ### STS ###
 .apt_generated

@@ -1,0 +1,42 @@
+# ============================================================
+# 本地连接配置模板
+#
+# 用法：
+#   1) 复制成同目录的 application-local.yml
+#        cp application-local.yml.example application-local.yml
+#   2) 只改 4 个 CHANGE_ME（MySQL 密码 / Redis 密码 / 两个 DashScope Key）
+#   3) application-local.yml 已被 .gitignore 排除，不会进仓库
+#
+# 本模板按「SSH 隧道」写：MySQL 127.0.0.1:3307，Redis 127.0.0.1:6380
+# 如果你把安全组开了、直连公网 IP，把下面的 host 换成 <公网IP>、
+#   3307 → 3306、6380 → 6379 即可。
+# ============================================================
+
+spring:
+  datasource:
+    # characterEncoding 必须写 UTF-8（Connector/J 9.x 不认 utf8mb4 这个名字）
+    url: jdbc:mysql://127.0.0.1:3307/fur_guardian?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: fur
+    password: "CHANGE_ME_MYSQL_PASSWORD"
+
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6380
+      password: "CHANGE_ME_REDIS_PASSWORD"
+
+# LangChain4j 的 Redis 是独立的一套配置，和上面 spring.data.redis 不是同一个 Bean
+# 两处必须指向同一个 Redis，只改一处会出现「能登录但 RAG 连不上」
+langchain4j:
+  community:
+    redis:
+      host: 127.0.0.1
+      port: 6380
+      password: "CHANGE_ME_REDIS_PASSWORD"
+      index-name: fur-guardian-embeddings
+      dimension: 1024
+    dashscope:
+      chat-model:
+        api-key: "sk-CHANGE_ME"
+      embedding-model:
+        api-key: "sk-CHANGE_ME"

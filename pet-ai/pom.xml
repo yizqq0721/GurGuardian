@@ -19,10 +19,28 @@
             <groupId>com.purr</groupId>
             <artifactId>pet-common</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.purr</groupId>
+            <artifactId>pet-biz</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.purr</groupId>
+            <artifactId>pet-knowledge</artifactId>
+        </dependency>
         <!-- LangChain4j DashScope (Tongyi Qianwen) Boot 4 starter -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-community-dashscope-spring-boot4-starter</artifactId>
+        </dependency>
+        <!-- LangChain4j core -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j</artifactId>
+        </dependency>
+        <!-- Redis for tip caching -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
     </dependencies>
 

@@ -19,6 +19,10 @@
             <groupId>com.purr</groupId>
             <artifactId>pet-common</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.purr</groupId>
+            <artifactId>pet-biz</artifactId>
+        </dependency>
         <!-- LangChain4j Redis embedding store (Boot 4 suffix required) -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
