@@ -105,12 +105,13 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { PawPrint } from 'lucide-vue-next'
 import { authApi } from '@/api/auth'
 import { useUserStore } from '@/stores/user'
+import { consumeFlashMessage } from '@/utils/flash'
 import SourceChip from '@/components/SourceChip.vue'
 import StatTile from '@/components/StatTile.vue'
 
@@ -120,6 +121,13 @@ const userStore = useUserStore()
 
 const mode = ref<'login' | 'register'>('login')
 const loading = ref(false)
+
+onMounted(() => {
+  const flash = consumeFlashMessage()
+  if (flash) {
+    ElMessage.warning(flash)
+  }
+})
 
 const loginFormRef = ref<FormInstance>()
 const loginForm = reactive({ username: '', password: '' })
@@ -151,19 +159,23 @@ function redirectAfterLogin() {
 }
 
 async function handleLogin() {
-  await loginFormRef.value?.validate()
+  const valid = await loginFormRef.value?.validate().catch(() => false)
+  if (!valid) return
   loading.value = true
   try {
     await userStore.login(loginForm.username, loginForm.password)
     ElMessage.success('登录成功')
     redirectAfterLogin()
+  } catch {
+    // 账号或密码错误等提示由请求拦截器统一弹出
   } finally {
     loading.value = false
   }
 }
 
 async function handleRegister() {
-  await regFormRef.value?.validate()
+  const valid = await regFormRef.value?.validate().catch(() => false)
+  if (!valid) return
   loading.value = true
   try {
     await authApi.register({
@@ -174,6 +186,8 @@ async function handleRegister() {
     await userStore.login(regForm.username, regForm.password)
     ElMessage.success('注册成功，已自动登录')
     router.push('/onboarding')
+  } catch {
+    // 用户名已存在等提示由请求拦截器统一弹出
   } finally {
     loading.value = false
   }
