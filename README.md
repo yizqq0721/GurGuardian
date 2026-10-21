@@ -488,7 +488,6 @@ npm run build
 - 日本食品标准成分表（八订）
 - FAO/INFOODS
 
-当前知识库尚未收录猪肝、鸡心等具体食材的每 100 g 数值，补录格式与数据缺口见 [docs/food-nutrition-data-sources.md](docs/food-nutrition-data-sources.md)。
 
 ### 临床与安全参考
 
