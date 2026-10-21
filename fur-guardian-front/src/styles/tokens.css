@@ -1,0 +1,269 @@
+/* ============================================================
+   FurGuardian 设计 token —— editorial clinical
+   必须在 element-plus/dist/index.css 之后引入，才能覆盖 EP 变量。
+   ============================================================ */
+
+:root {
+  /* ---------- color ---------- */
+  --fg-paper: #f7f6f2;
+  --fg-surface: #ffffff;
+  --fg-ink: #16181a;
+  --fg-ink-muted: #6b6f76;
+  --fg-line: #e6e4de;
+  --fg-line-strong: #d5d2c9;
+  --fg-accent: #1f5c4a;
+  --fg-accent-hover: #18493b;
+  --fg-accent-soft: #e8f0ec;
+  --fg-warning: #b45309;
+  --fg-warning-soft: #fbf1e6;
+  --fg-danger: #b42318;
+  --fg-danger-soft: #fbecea;
+  --fg-success: #1f7a4d;
+
+  /* ---------- type ---------- */
+  --fg-font-serif: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', SimSun, serif;
+  --fg-font-sans: 'HarmonyOS Sans SC', 'Noto Sans SC', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', system-ui, sans-serif;
+  --fg-font-num: 'Inter', 'HarmonyOS Sans SC', 'Noto Sans SC', system-ui, sans-serif;
+  --fg-font-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+
+  --fg-text-label: 12px;
+  --fg-text-body: 14px;
+  --fg-text-lead: 16px;
+  --fg-text-h3: 20px;
+  --fg-text-h2: 28px;
+  --fg-text-h1: 40px;
+  --fg-text-display: 48px;
+
+  /* ---------- space & shape ---------- */
+  --fg-s1: 4px;
+  --fg-s2: 8px;
+  --fg-s3: 12px;
+  --fg-s4: 16px;
+  --fg-s5: 24px;
+  --fg-s6: 32px;
+  --fg-s7: 48px;
+  --fg-s8: 64px;
+  --fg-radius: 8px;
+  --fg-line-w: 1px;
+  --fg-content-w: 1120px;
+  --fg-topbar-h: 64px;
+  --fg-motion: 150ms ease-out;
+}
+
+/* ============================================================
+   Element Plus 覆盖
+   ============================================================ */
+:root {
+  --el-color-primary: var(--fg-accent);
+  --el-color-primary-light-3: #628d80;
+  --el-color-primary-light-5: #8faea5;
+  --el-color-primary-light-7: #bccec9;
+  --el-color-primary-light-8: #d2dedb;
+  --el-color-primary-light-9: var(--fg-accent-soft);
+  --el-color-primary-dark-2: #194a3b;
+
+  --el-color-success: var(--fg-success);
+  --el-color-success-light-9: var(--fg-accent-soft);
+  --el-color-warning: var(--fg-warning);
+  --el-color-warning-light-9: var(--fg-warning-soft);
+  --el-color-danger: var(--fg-danger);
+  --el-color-danger-light-9: var(--fg-danger-soft);
+  --el-color-error: var(--fg-danger);
+  --el-color-error-light-9: var(--fg-danger-soft);
+  --el-color-info: var(--fg-ink-muted);
+  --el-color-info-light-9: #f0f0ee;
+
+  --el-bg-color: var(--fg-surface);
+  --el-bg-color-page: var(--fg-paper);
+  --el-bg-color-overlay: var(--fg-surface);
+  --el-fill-color-blank: var(--fg-surface);
+  --el-fill-color-light: var(--fg-paper);
+  --el-fill-color-lighter: #faf9f6;
+
+  --el-text-color-primary: var(--fg-ink);
+  --el-text-color-regular: #3a3e44;
+  --el-text-color-secondary: var(--fg-ink-muted);
+  --el-text-color-placeholder: #a3a6ac;
+  --el-text-color-disabled: #b8babf;
+
+  --el-border-color: var(--fg-line);
+  --el-border-color-light: var(--fg-line);
+  --el-border-color-lighter: var(--fg-line);
+  --el-border-color-extra-light: var(--fg-line);
+  --el-border-color-hover: var(--fg-line-strong);
+
+  --el-font-family: var(--fg-font-sans);
+  --el-font-size-extra-small: 12px;
+  --el-font-size-small: 13px;
+  --el-font-size-base: 14px;
+  --el-font-size-medium: 16px;
+
+  /* 简报硬约束：无投影、无胶囊 */
+  --el-box-shadow: none;
+  --el-box-shadow-light: none;
+  --el-box-shadow-lighter: none;
+  --el-box-shadow-dark: none;
+  --el-box-shadow-extra-light: none;
+  --el-box-shadow-extra-lighter: none;
+
+  --el-border-radius-base: 8px;
+  --el-border-radius-small: 6px;
+  --el-border-radius-round: 8px;
+  --el-border-radius-circle: 8px;
+
+  --el-transition-duration: 0.15s;
+
+  --el-disabled-bg-color: #f2f1ee;
+  --el-disabled-border-color: var(--fg-line);
+}
+
+/* ============================================================
+   全局排版与 Element Plus 组件级修正
+   ============================================================ */
+body {
+  font-family: var(--fg-font-sans);
+  font-size: var(--fg-text-body);
+  line-height: 1.7;
+  color: var(--fg-ink);
+  background-color: var(--fg-paper);
+  font-feature-settings: 'tnum' 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--fg-font-serif);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--fg-ink);
+  margin: 0;
+}
+
+/* 浮层去掉投影，改 1px 发丝边框 */
+.el-popper,
+.el-select-dropdown,
+.el-dropdown-menu,
+.el-picker-panel,
+.el-message-box,
+.el-dialog,
+.el-card {
+  box-shadow: none !important;
+  border: var(--fg-line-w) solid var(--fg-line) !important;
+}
+
+.el-popper.is-dark {
+  background: var(--fg-ink);
+  border-color: var(--fg-ink);
+}
+
+/* 表格：去斑马纹、留发丝行线、数字列右对齐由页面自己加 .fg-num */
+.el-table {
+  --el-table-border-color: var(--fg-line);
+  --el-table-header-bg-color: var(--fg-paper);
+  --el-table-header-text-color: var(--fg-ink-muted);
+  --el-table-row-hover-bg-color: var(--fg-accent-soft);
+  --el-table-bg-color: var(--fg-surface);
+  --el-table-tr-bg-color: var(--fg-surface);
+  background: var(--fg-surface);
+}
+
+.el-table th.el-table__cell {
+  font-family: var(--fg-font-sans);
+  font-size: var(--fg-text-label);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.el-table td.el-table__cell,
+.el-table th.el-table__cell {
+  border-bottom: var(--fg-line-w) solid var(--fg-line);
+}
+
+.el-table__inner-wrapper::before {
+  display: none;
+}
+
+/* 按钮：8px 圆角、无阴影、次级按钮用发丝边框 */
+.el-button {
+  border-radius: var(--fg-radius);
+  font-weight: 500;
+}
+
+.el-button--small {
+  border-radius: 6px;
+}
+
+.el-button.is-text {
+  color: var(--fg-accent);
+}
+
+.el-button.is-text:hover {
+  background: var(--fg-accent-soft);
+}
+
+/* 输入控件 */
+.el-input__wrapper,
+.el-textarea__inner,
+.el-select__wrapper {
+  box-shadow: none !important;
+  border: var(--fg-line-w) solid var(--fg-line);
+  border-radius: var(--fg-radius);
+  background: var(--fg-surface);
+}
+
+.el-input__wrapper.is-focus,
+.el-textarea__inner:focus,
+.el-select__wrapper.is-focused {
+  border-color: var(--fg-accent);
+  box-shadow: 0 0 0 2px var(--fg-accent-soft) !important;
+}
+
+/* 无障碍焦点环：原生输入框由 .el-input__wrapper.is-focus 的边框负责，这里必须排除，
+   否则内层 input 的 [tabindex] 会再叠一层 outline + 阴影，形成错位的双环 */
+a:focus-visible,
+button:focus-visible,
+[tabindex]:not(input):not(textarea):focus-visible {
+  outline: 1px solid var(--fg-accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px var(--fg-accent-soft);
+}
+
+/* 标签：不用胶囊，改 6px 圆角发丝块 */
+.el-tag {
+  border-radius: 6px;
+  font-family: var(--fg-font-num);
+  font-variant-numeric: tabular-nums;
+  border-color: var(--fg-line);
+  background: var(--fg-paper);
+  color: var(--fg-ink-muted);
+}
+
+.el-tag--small {
+  height: 22px;
+  padding: 0 6px;
+}
+
+.el-progress-bar__outer {
+  background: var(--fg-line);
+}
+
+.el-message {
+  border: var(--fg-line-w) solid var(--fg-line);
+  box-shadow: none;
+}
+
+.el-empty__description p {
+  color: var(--fg-ink-muted);
+  font-size: var(--fg-text-body);
+}
+
+.el-descriptions__label {
+  font-size: var(--fg-text-label);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-ink-muted);
+}

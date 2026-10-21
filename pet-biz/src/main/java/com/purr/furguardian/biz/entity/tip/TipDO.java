@@ -18,7 +18,8 @@ public class TipDO {
     private String content;
     private Long sourceDocId;
     private String sourceName;
-    private String feedback;
+    /** 1 有用 / 0 没帮助 / null 未反馈，对应 tips.feedback TINYINT */
+    private Integer feedback;
     private Integer isMock;
     private LocalDateTime createdAt;
 
@@ -36,8 +37,8 @@ public class TipDO {
     public void setSourceDocId(Long sourceDocId) { this.sourceDocId = sourceDocId; }
     public String getSourceName() { return sourceName; }
     public void setSourceName(String sourceName) { this.sourceName = sourceName; }
-    public String getFeedback() { return feedback; }
-    public void setFeedback(String feedback) { this.feedback = feedback; }
+    public Integer getFeedback() { return feedback; }
+    public void setFeedback(Integer feedback) { this.feedback = feedback; }
     public Integer getIsMock() { return isMock; }
     public void setIsMock(Integer isMock) { this.isMock = isMock; }
     public LocalDateTime getCreatedAt() { return createdAt; }

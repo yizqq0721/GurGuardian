@@ -20,6 +20,9 @@ public class PetCreateDTO {
     @Schema(description = "品种", example = "玩具贵宾")
     private String breed;
 
+    @Schema(description = "宠物头像标识", example = "萌犬肖像集2-01.png")
+    private String avatar;
+
     @NotBlank(message = "性别不能为空")
     @Schema(description = "性别: male/female", example = "male")
     private String sex;
@@ -46,6 +49,8 @@ public class PetCreateDTO {
     public void setSpecies(String species) { this.species = species; }
     public String getBreed() { return breed; }
     public void setBreed(String breed) { this.breed = breed; }
+    public String getAvatar() { return avatar; }
+    public void setAvatar(String avatar) { this.avatar = avatar; }
     public String getSex() { return sex; }
     public void setSex(String sex) { this.sex = sex; }
     public Boolean getNeutered() { return neutered; }

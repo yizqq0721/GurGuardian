@@ -69,12 +69,13 @@ export const REPEAT_RULE_LABEL = Object.fromEntries(REPEAT_RULE_OPTIONS.map((o) 
 export const ACTIVITY_LABEL = Object.fromEntries(ACTIVITY_OPTIONS.map((o) => [o.value, o.label]))
 export const PHYSIOLOGY_LABEL = Object.fromEntries(PHYSIOLOGY_OPTIONS.map((o) => [o.value, o.label]))
 
-/** BCS 1-9 分制描述（配图引导见 BcsPicker 组件） */
+/** BCS 1-9 分制描述（配图引导见 BcsScale 组件）。
+ *  配色遵循「单一 accent + 语义色只留给风险」：理想=accent，偏瘦/偏重=warning，肥胖=danger */
 export const BCS_GROUPS = [
-  { range: [1, 3], label: '偏瘦', desc: '肋骨、腰椎明显可见，缺乏体脂覆盖', color: '#5b9bd5' },
-  { range: [4, 5], label: '理想', desc: '肋骨可触及但不明显，腰部线条清晰', color: '#67c23a' },
-  { range: [6, 7], label: '偏重', desc: '肋骨较难触及，腰部线条不明显', color: '#e6a23c' },
-  { range: [8, 9], label: '肥胖', desc: '肋骨无法触及，腹部明显下垂', color: '#f56c6c' },
+  { range: [1, 3], label: '偏瘦', desc: '肋骨、腰椎明显可见，缺乏体脂覆盖', color: '#b45309' },
+  { range: [4, 5], label: '理想', desc: '肋骨可触及但不明显，腰部线条清晰', color: '#1f5c4a' },
+  { range: [6, 7], label: '偏重', desc: '肋骨较难触及，腰部线条不明显', color: '#b45309' },
+  { range: [8, 9], label: '肥胖', desc: '肋骨无法触及，腹部明显下垂', color: '#b42318' },
 ]
 
 export function bcsGroup(bcs: number) {

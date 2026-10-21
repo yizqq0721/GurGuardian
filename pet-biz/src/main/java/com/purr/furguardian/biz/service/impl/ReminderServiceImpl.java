@@ -9,6 +9,7 @@ import com.purr.furguardian.biz.mapper.reminder.ReminderMapper;
 import com.purr.furguardian.biz.service.ReminderService;
 import com.purr.furguardian.common.exception.BizException;
 import com.purr.furguardian.common.result.ErrorCode;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -68,15 +69,28 @@ public class ReminderServiceImpl implements ReminderService {
     @Override
     public void checkIn(Long userId, Long reminderId, LocalDate doneDate, String note) {
         ReminderDO reminder = getReminder(userId, reminderId);
+        LocalDate date = doneDate != null ? doneDate : LocalDate.now();
+
+        LambdaQueryWrapper<ReminderLogDO> done = new LambdaQueryWrapper<>();
+        done.eq(ReminderLogDO::getReminderId, reminderId)
+                .eq(ReminderLogDO::getDoneDate, date);
+        if (logMapper.selectCount(done) > 0) {
+            return;
+        }
+
         ReminderLogDO log = new ReminderLogDO();
         log.setReminderId(reminderId);
         log.setPetId(reminder.getPetId());
         log.setUserId(userId);
-        log.setDoneDate(doneDate != null ? doneDate : LocalDate.now());
+        log.setDoneDate(date);
         log.setDoneTime(LocalTime.now());
         log.setNote(note);
         log.setCreatedAt(LocalDateTime.now());
-        logMapper.insert(log);
+        try {
+            logMapper.insert(log);
+        } catch (DuplicateKeyException concurrentCheckIn) {
+            // 并发重复打卡由 uk_reminder_date 唯一索引拦下，结果与「已打卡」一致
+        }
     }
 
     @Override

@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 
 const router = createRouter({
@@ -48,6 +49,7 @@ router.beforeEach((to) => {
   document.title = to.meta.title ? `${to.meta.title} · FurGuardian` : 'FurGuardian · 养宠智能助手'
   const userStore = useUserStore()
   if (!to.meta.public && !userStore.isLoggedIn) {
+    ElMessage({ message: '请先登录', type: 'warning', grouping: true })
     return { name: 'auth', query: { redirect: to.fullPath } }
   }
   return true

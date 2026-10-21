@@ -36,9 +36,10 @@ public class TipController {
     @Operation(summary = "SSE流式获取今日Tip",
                description = "流式返回今日养宠建议，支持mock模式")
     public SseEmitter streamTip(@RequestParam Long petId,
-                                @RequestParam(defaultValue = "false") boolean mock) {
+                                @RequestParam(defaultValue = "false") boolean mock,
+                                @RequestParam(defaultValue = "false") boolean refresh) {
         return tipGenerationService.generateTipStream(
-                UserContext.getUserId(), petId, mock);
+                UserContext.getUserId(), petId, mock, refresh);
     }
 
     @GetMapping("/today")

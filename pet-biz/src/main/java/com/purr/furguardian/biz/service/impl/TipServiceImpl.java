@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.purr.furguardian.biz.entity.tip.TipDO;
 import com.purr.furguardian.biz.mapper.tip.TipMapper;
 import com.purr.furguardian.biz.service.TipService;
+import com.purr.furguardian.common.exception.BizException;
+import com.purr.furguardian.common.result.ErrorCode;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -30,6 +32,7 @@ public class TipServiceImpl implements TipService {
                .eq(TipDO::getPetId, petId)
                .eq(TipDO::getTipDate, date)
                .orderByDesc(TipDO::getCreatedAt)
+               .orderByDesc(TipDO::getId)
                .last("LIMIT 1");
         return tipMapper.selectOne(wrapper);
     }
@@ -46,12 +49,16 @@ public class TipServiceImpl implements TipService {
 
     @Override
     public void updateFeedback(Long userId, Long tipId, String feedback) {
+        Integer value = "like".equals(feedback) ? 1 : "dislike".equals(feedback) ? 0 : null;
+        if (value == null) {
+            throw new BizException(ErrorCode.BAD_REQUEST, "反馈类型仅支持 like / dislike");
+        }
         LambdaQueryWrapper<TipDO> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(TipDO::getId, tipId)
                .eq(TipDO::getUserId, userId);
         TipDO tip = tipMapper.selectOne(wrapper);
         if (tip != null) {
-            tip.setFeedback(feedback);
+            tip.setFeedback(value);
             tipMapper.updateById(tip);
         }
     }
