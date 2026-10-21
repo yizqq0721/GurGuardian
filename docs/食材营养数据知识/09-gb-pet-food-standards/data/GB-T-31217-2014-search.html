@@ -1,0 +1,1438 @@
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="icon" href="/bzgk/favicon.ico">
+<link rel="shortcut icon" href="/bzgk/favicon.ico">
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<!--[if lt IE 9]>
+<script src="/bzgk/js/html5.js"></script>
+<![endif]-->
+<link href="../css/qbcx.css?1" rel="stylesheet" type="text/css" />
+<link href="/bzgk/css/bootstrap.min.css" rel="stylesheet" />
+<script type="text/javascript" src="/bzgk/js/jquery-1.11.3.min.js"></script>
+<title>国家标准全文阅读|标准检索</title>
+</head>
+<style>
+@media ( max-width : 768px) and (-webkit-min-device-pixel-ratio: 2) {
+	body {
+		width: 1px;
+		min-width: 100%;
+		*width: 100%;
+	}
+	#stage {
+		overflow: auto;
+		min-height: 100vh;
+		-webkit-overflow-scrolling: touch;
+	}
+}
+
+body {
+	background-color: #F5F5F5;
+}
+
+.screenOrder {
+	cursor: pointer;
+}
+
+.result_list th {
+	padding: 0 !important;
+	line-height: 35px !important;
+}
+/*.container{background-color:#ffffff;}*/
+</style>
+<body>
+	
+	
+
+
+<style>
+	@media (max-width: 568px) {
+	  #xsMainLogo{width:90%;z-index:1000;margin:0 auto;margin-top:15px;display:block}
+	  #xsSubLogo{float:right;z-index:1000;margin:5px 5%;}
+	  #xsQwLogo{float:left;width:50%;z-index:1000;margin:7px 5%;} 
+	}
+	@media (min-width: 568px){
+	  #xsMainLogo{float:left;width:90%;z-index:1000;margin-top:15px;margin-left:6%;}
+	  #xsSubLogo{width:33%;z-index:1000;margin-top:40px;margin-right:1%;}
+	  #xsQwLogo{float:right;width:90%;z-index:1000;margin:15px 5%;margin-left:6%;}
+	  .xsDiv{width:65%}
+	} 
+	.popover .popover-title{text-align:center;} 
+	#sacLogo{text-decoration:none;position:absolute;font-size:12px;z-index:1000;top:10px;left:20px;color:#E4E4E4;display:inline-block;}
+	#sacLogo:hover{color:white;text-decoration:none;}
+	#sacLogo:visited{ text-decoration:none; }
+	
+    .nav-menu {
+        background-color: #005da8;
+        overflow: hidden;
+    }
+	
+    .nav-menu ul {
+        margin-bottom: 0 !important;
+        padding-left: 0;
+    }
+
+    .navbar-toggle {
+        position: absolute !important;
+        right: 6px;
+        cursor: pointer;
+    }
+
+    .navbar-toggle:hover {
+        background-color: #418ede;
+    }
+
+	.navbar-toggle .icon-bar {
+	    background-color: white;
+	}
+	
+    .nav-menu ul li {
+        cursor: pointer;
+        list-style: none;
+        min-width: 96px;
+        text-align: center;
+        float: left;
+        height: 43px;
+        line-height: 43px;
+        color: #fff;
+        margin-right: 7px;
+        font-size: 16px;
+        padding: 0 15px;
+    }
+
+    .nav-menu ul li:hover {
+        background-color: #338eff;
+    }
+    .nav-menu ul li a {
+        color: #fff;
+    }
+
+    .nav-menu ul li a:hover, .nav-menu li a:focus, .nav-menu li a:link {
+        text-decoration: none;
+    }
+
+    .nav-menu .nav_in {
+        background-color: #0f89eb;
+    }
+
+	.nav-menu ul li:hover {
+	    background-color: #338eff;
+	}
+	
+	.nav-menu ul li.two-line{
+		line-height: 16px;
+    	padding-top: 7px;
+	}
+	.nav-menu ul li.two-line a {
+		font-size: 14px;
+	}
+	.nav-menu ul li.two-line a span {
+		font-size: 12px;
+		display: block;
+	}
+	
+    @media (max-width: 1200px) {
+ 		min-width: 84px;
+    }
+
+    @media (max-width: 992px) {
+        .nav-menu ul li {
+            min-width: 68px;
+            margin-right: 4px;
+            font-size: 14px;
+        }
+
+        #login-area {
+            top: 3px !important;
+            right: 3px !important;
+        }
+    }
+
+    @media (max-width: 368px) {
+        .navbar-brand small {
+            display: none;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .main-body {
+            padding: 0;
+        }
+
+        .nav-menu-show {
+            display: block !important;
+            height: 200px !important;
+        }
+
+        .nav-menu {
+            height: 0;
+            background-color: #3f75b7;
+            transition: height 500ms;
+            -moz-transition: height 500ms; /* Firefox 4 */
+            -webkit-transition: height 500ms; /* Safari and Chrome */
+            -o-transition: height 500ms; /* Opera */
+        }
+
+        .nav-menu .nav_in {
+            background-color: #338eff;
+        }
+
+        .nav-menu ul li {
+            display: block;
+            width: 50%;
+            height: 50px;
+            line-height: 50px;
+            font-size: 16px;
+            margin-right: 0;
+            border-top: 1px solid #ddd;
+            font-family: arial, tahoma, 'Microsoft Yahei', '\5b8b\4f53', sans-serif;
+        }
+
+        .nav-menu ul li:nth-child(-1n+4) {
+            border-top: 0;
+        }
+
+        .nav-menu ul li a {
+            color: white;
+        }
+
+		.nav-menu ul li.two-line a span {
+		    line-height: 10px;
+		}
+		
+        .header-carousel {
+            border: 0;
+        }
+
+        #top-bg {
+            background: url(/bzgk//images/logoimg.jpg) right -110px center no-repeat #187ed0 !important;
+        }
+
+       
+
+    }
+    
+</style>
+<script type="text/javascript" src="/bzgk/js/uni-webview-js@0.0.3/index.js"></script>
+<script>
+var isAppPlus = false;
+$(function(){
+	$('.navbar-toggle').click(function () {
+        $('.nav-menu').toggleClass("nav-menu-show");
+    });
+    $('.nav-menu li').click(function () {
+		var target = $(this).find("a").attr('target');
+		var href = $(this).find("a").attr('href')
+		if (target == null || target == '') {
+			window.location.href = href;
+		} else {
+			window.open(href);
+		}
+		return false;
+	});
+	uni.getEnv(function(res){
+    		console.log('当前环境：' + JSON.stringify(res));
+    		var userAgent = 'Mozilla/5.0';
+    		if(res.plus||(res.h5&&userAgent.indexOf("HBuilderX")>-1)){
+    			isAppPlus = true;
+    			$(document).on("click", "a", function (event) {
+    				var href = $(this).attr('href');
+    				if(href!=null&&href!=''){
+    					uni.navigateTo({
+    						url: '/pages/outter/outter?title=国标通-全文阅读&src='+href
+    					});
+    					event.stopPropagation();
+    					return false;
+    				}
+    			});
+    		}
+    	});
+	$('#mobileEwm').popover({html:true});
+})
+</script>
+
+<div class="top_nav" style="background:url(/bzgk//images/bgrep-top.jpg) top repeat-x;width:100%;background-color: #187ed0;">
+    <!-- <div style="background-color:rgba(83, 83, 83, 0.32);">
+        <div class="container">
+            <div class="row">
+                <div class="col-sm-12">
+                    <div style="color:#ff9c3d;padding:5px 0"><span class="label label-danger" style="margin-right: 15px;">重要通知</span>因机房设备维修，2022年10月28日17点到10月29日24点，系统暂时停止访问服务，望请知悉，带来不便，敬请谅解。</div>
+                </div>
+            </div>
+        </div>
+    </div>-->
+    <div class="container" style="overflow: visible;">
+        <div class="row" style="overflow: visible;">
+            <div id="top-bg" class="col-sm-12" style="overflow: visible;width:100%;font-family: arial,tahoma,'Microsoft Yahei','\5b8b\4f53',sans-serif;z-index:2;">
+                <img class="hidden-xs" src="/bzgk//images/bgrep.gif" style="position:absolute;right:-180px;top:0;height:100%;z-index:-1;"/>
+                <img class="hidden-xs" src="/bzgk//images/logonew.png" style="z-index:2;"/>
+
+                <div style="padding:5px 0;padding-right:30px;" class="visible-xs" class="navbar-header">
+                    <button class=" navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#bs-navbar" aria-controls="bs-navbar" aria-expanded="false">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a style="color:white;padding:15px 0;" href="https://std.samr.gov.cn/" class="navbar-brand">
+                        <img style="display:inline-block;margin-right:10px;margin-top:-5px;" width="30px" src="/bzgk//images/shareLogo.png"/>
+                        全国标准信息公共服务平台
+                    </a>
+
+                    <div style="clear:both;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="nav-menu">
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-12">
+            	<ul>
+            		<li class="hidden-xs"><a href="https://std.samr.gov.cn/">首页</a></li>
+            		<li class="hidden-xs"><a href="/bzgk//std/">国家标准</a></li>
+			        <li class=""><a href="/bzgk/std/std_list_type?p.p1=1&p.p90=circulation_date&p.p91=desc">强制性国家标准</a></li>
+			        <li class=""><a href="/bzgk/std/std_list_type?p.p1=2&p.p90=circulation_date&p.p91=desc">推荐性国家标准</a></li>
+			        <li class=""><a href="/bzgk/std/std_list_type?p.p1=3&p.p90=circulation_date&p.p91=desc">指导性技术文件</a></li>
+			        <li class="two-line"><a href="/bzgk/std/std_list_type?p.p1=6&p.p90=circulation_date&p.p91=desc">国家标准外文版<span>(National standards in foreign language version)</span></a></li>
+			    </ul>
+			    <ul class="navbar-right">
+			      	
+			      	
+			      	
+			      	<li class="nav_in"><a>标准检索结果</a></li>
+			    </ul>
+            </div>
+        </div>
+    </div>
+    <div style="clear:both;"></div>
+</div>
+
+
+</div>
+	
+	<div class="repbg1" id="stage">
+		<div class="container">
+			<ol class="breadcrumb" style="margin-top:10px;margin-bottom:20px;padding-bottom:0;">
+			  <li><a href="index"><span class="glyphicon glyphicon-home"></span>&nbsp;首页</a></li>
+			  <li><a href="gbMainQuery">标准检索</a></li>
+			  
+			   <li class="active">检索结果</li>
+			</ol>
+			
+			 
+
+
+
+
+
+
+<!-- 设置fmt标签的locale -->
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>搜索表单</title>
+<style>
+.icstype {
+	cursor: pointer;
+}
+
+.multiSelectBtn {
+	padding: 0 5px !important;
+	white-space:nowrap;
+ 	margin-right:10px;
+}
+
+.icsSelectBtn {
+	margin:5px 20px 5px 0;
+	width:initial !important;
+}
+.multiSelectBtn:hover {
+	background-color: #ebebeb;
+}
+
+.multiSelectBtn-s {
+	background-color: #f3f3f3;
+	border-color: #dddddd;
+	color: #e4393c;
+}
+.mCheck{
+	vertical-align:top;
+	margin-right:5px !important;;
+}
+.c-red {
+	color: red;
+}
+
+.m-10 {
+	margin:5px 0;
+}
+
+#ics a:HOVER {
+	background-color: #ebebeb;
+	text-decoration: none;
+}
+
+.icslist1:HOVER {
+	background-color: #ebebeb;
+	text-decoration: none;
+	cursor: pointer;
+}
+.nav-tabs .badge{
+	font-size:75%;
+	background-color:#aaa;
+	padding:2px 5px;
+	vertical-align:sub;
+	margin-left:2px;
+}
+.modal .statementUl li{background:url('../images/point.png') no-repeat 8px 6px;}
+.modal .smgg li{padding:0 22px;margin:15px 0;line-height:25px;}
+#type li{float:none;display:inline-block;}
+</style>
+</head>
+<body>
+<div class="row" id="topPanel" >
+<div class="col-xs-12">
+
+<div class="panel panel-default" style="margin-bottom:0;">
+<div class="panel-body" style="background-color:#FBFBFB">
+
+<span class="text-danger visible-xs" style="font-size:10px;margin-bottom:5px">*标准类别可左右滑动</span>
+
+<ul id="type" class="nav nav-tabs" role="tablist" style="width:100%;overflow-x:auto;overflow-y:hidden;padding-left:0px;white-space:nowrap;height:41px;border-bottom:0;">
+	
+	<li role="presentation" class="active"><a style="font-weight: bold;" href="#" id="0"><span>全部<span class="badge">1</span></span></a></li>
+	
+	<li role="presentation"><a style="font-weight: bold;" href="#" id="2"><span>推荐性国家标准<span class="badge">1</span></span></a></li>
+	
+</ul>
+
+<div class="panel panel-default" style="margin-top:-2px;margin-bottom:0;"> 
+		<div id="tjPanel" class="panel-body">
+			<div class="page-header" style="margin:0;color:gray;">
+		  		<h5><span class="glyphicon glyphicon-zoom-in"></span>&nbsp;筛选条件</h5>
+			</div>
+			
+			
+			<div class="row m-10" style="border-bottom: 1px solid #EEEEEE; padding-bottom: 5px;">
+				<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+					<table style="width:100%">
+						<tr>
+							<td width="80" style="line-height: 30px; vertical-align: top;">
+								<span style="font-weight: bold;">标准状态：</span>
+								</td>
+							<td>
+								<ul class="nav nav-pills" id="state">
+									
+									<li role="presentation"><a class="btn multiSelectBtn" href="#" id="PUBLISHED"><span>现行(1)</a></span></li>
+									
+								</ul>
+								</td>
+							<td class="hidden-xs" width="90" style="text-align:right;">
+								<button type="button" style="padding: 0 3px; margin-left: 5px;" class="btn btn-default multiSelect"><span style="color:gray" class="glyphicon glyphicon-check"></span>&nbsp;多选</button>
+								<div style="display:none;">
+									<button type="button" style="padding: 0 3px; margin-left: 5px;display:inline-block;" class="btn btn-default confirmSelect">确认</button>
+									<button type="button" style="padding: 0 3px; margin-left: 5px;display:inline-block;" class="btn btn-default cancelSelect">取消</button>
+								</div>
+								</td>
+							</tr>
+						</table>
+				</div>
+			</div>
+			
+			
+			<div class="row m-10" style="border-bottom: 1px solid #EEEEEE; padding-bottom: 5px;">
+				<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+					<table style="width:100%">
+						<tr>
+							<td width="80" style="line-height: 30px; vertical-align: top;">
+								<span style="font-weight: bold;">发布日期：</span>
+								</td>
+							<td>
+								<ul class="nav nav-pills" id="date">
+									
+									<li role="presentation"><a class="btn multiSelectBtn" href="#" id="6"><span>三年以上(1)</span></a></li>
+									
+								</ul>
+								</td>	
+							</tr>
+						</table>
+				</div>
+			</div>
+			
+			
+			
+			 
+			<div class="row m-10" style="padding-bottom: 5px;" id="ics-div">
+				<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 ">
+					<table style="width:100%">
+						<tr>
+							<td width="80" style="line-height: 30px; vertical-align: top; white-space: nowrap;">
+								<span style="font-weight: bold;">ICS 分类：</span>
+								</td>
+							<td>
+								<ul class="nav nav-pills hidden-xs" id="ics-view">
+									
+									
+										
+										<li role="presentation">
+											<a class="btn multiSelectBtn icsSelectBtn" id="65">65_农业(1)</a>
+										</li>
+										
+									
+								</ul>
+								<button class="visible-xs" type="button" style="padding: 0 3px; margin-left: 5px;" class="btn btn-default" data-toggle="modal" data-target="#myModal"><span style="color:gray;vertical-align:text-top;" class="glyphicon glyphicon-plus-sign"></span>&nbsp;更多</button>
+								</td>
+							<td class="hidden-xs" width="40">
+								<button type="button" style="padding: 0 3px; margin-left: 5px;" class="btn btn-default" data-toggle="modal" data-target="#myModal"><span style="color:gray;vertical-align:text-top;" class="glyphicon glyphicon-plus-sign"></span>&nbsp;更多</button>
+								</td>
+							</tr>
+						</table>
+				</div>
+			</div>
+			<div class="modal fade" id="myModal" role="dialog" aria-labelledby="myModalLabel">
+				<div class="modal-dialog">
+					<div class="modal-content">
+						<div class="modal-header" style="padding: 15px 35px 5px 35px;">
+							<button type="button" class="close" data-dismiss="modal"
+								aria-label="Close">
+								<span aria-hidden="true">&times;</span>
+							</button>
+							<h4 class="modal-title" style="margin-bottom: 10px;">
+								选择ICS分类(可复选)<small>&nbsp;&nbsp;点击左侧黄色文件夹可展开下一级</small>
+							</h4>
+							<ol class="breadcrumb"
+								style="background-color: white; margin-bottom: 0; padding-left: 0;"
+								id="line">
+								<li><a href="#">全部</a></li>
+							</ol>
+						</div>
+						<div class="modal-body">
+							<div class="container-fluid">
+								<div class="row" style="margin-bottom: 0;">
+									
+		
+										<div class="col-md-6">
+											<a class="btn multiSelectBtn icslist1"
+												style="width: 100%; text-align: left; padding-left: 4px !important; margin-bottom: 5px;">
+		
+												
+													<span class="glyphicon glyphicon-folder-open icstype"
+														style="float: left; width: 10%; color: #f8da70;"
+														id="65" name="农业"></span>
+												 <span class="icslist" id="65"
+												style="float: left; width: 80%; white-space: normal;"
+												name="农业"> 65_农业 （<span>1</span>）
+											</span><span style="float:right;margin:2px;" class="text-success glyphicon glyphicon-ok-circle hidden"></span>
+											</a>
+		
+										</div>
+										
+									
+								</div>
+		
+							</div>
+						</div>
+						<div class="modal-footer">
+							<span
+								style="float: left; word-break: break-all; width: 390px; text-align: left;"
+								id="showics"></span>
+							<button type="button" class="btn btn-default" data-dismiss="modal"
+								id="cancel">取消</button>
+							<button type="button" class="btn btn-primary" id="confirm"
+								data-dismiss="modal">确认</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			
+			
+		</div>
+	</div>
+	
+	
+	<div class="row" style="padding:0 15px;margin-top:15px;">
+		<div class="col-lg-10 col-md-10 col-sm-10 col-xs-10 ">
+			<div>
+				<div class="form-group" style="margin-bottom: 0;" id="selected">
+					<label style="color: gray; width: 100px;"><span style="vertical-align:text-top;" class="glyphicon glyphicon-screenshot"></span>&nbsp;关键字：</label>&nbsp;
+					
+					<button type="button" class="btn btn-default btn-xs" title="移除" id="p2_0" index=0 text="GB/T 31217-2014">
+						GB/T 31217-2014
+						<span style="color: red; margin-left: 5px;" class="glyphicon glyphicon-remove"></span>
+					</button>
+					
+				</div>
+			</div>
+		</div>
+	</div>
+						 
+</div>
+<div class="modal fade" id="noStandardModal" role="dialog" aria-labelledby="myModalLabel">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header" style="padding: 15px 35px 5px 35px;">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" style="margin-bottom: 10px;">
+						<span class="glyphicon glyphicon-warning-sign" style="color:#be865b;margin-top:2px;"> </span><span>&nbsp;特别声明</span>
+					</h4>
+				</div>
+				<div class="modal-body">
+					<div class="container-fluid">
+						<div class="row" style="margin-bottom: 0;">
+							<div class="col-md-12 smgg">
+								<ul class="statementUl ">
+									<li>本系统对国家市场监督管理总局、国家标准委自2017年1月1日后新发布的国家标准，将在《国家标准批准发布公告》发布后20个工作日内公开标准文本，其中涉及采标的推荐性国家标准和指导性技术文件的公开，将在遵守国际版权政策前提下进行。</li>
+									<li>本系统公开了国家市场监督管理总局、国家标准委2017年1月1日前已批准发布的所有强制性国家标准、推荐性国家标准（非采标）、指导性技术文件（非采标）。</li>
+									
+									
+									<li>食品安全、环境保护、工程建设方面的国家标准未纳入本系统，请咨询相关部委。</li>
+								</ul>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+							<button type="button" class="btn btn-default" data-dismiss="modal"
+								id="cancel">确认</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</div></div></div>
+</body>
+
+<script type="text/javascript">
+		var lineList = new Array();
+		var currentLang = 'zh';
+
+		var p1 = '0';
+		var p2 = decodeHtml('GB/T 31217-2014');
+		var p5 = '';
+		var p6 = '';
+		var p7 = '';
+		var p8 = '';
+		var p9 = '';
+		var p90 = 'circulation_date';
+		var p91 = 'desc';
+		var nextpage = 1;
+		var action = 'std/std_list';
+		var pageSize = 10;
+		var count = 1;
+		
+		function decodeHtml(str) {
+		  const ta = document.createElement("textarea");
+		  ta.innerHTML = str;
+		  return ta.value;
+		}
+		
+		// 国际化文本映射
+		var i18n = {
+			'zh': {
+				'selectedIcs': '已选择ICS分类：',
+				'all': '全部'
+			},
+			'en': {
+				'selectedIcs': 'Selected ICS: ',
+				'all': 'All'
+			}
+		};
+		
+		var currentI18n = currentLang === 'zh' ? i18n.zh : i18n.en;
+		
+		function jumpPage(page){
+			
+			window.location.href = '/bzgk/'+action
+					+ '?r=' + Math.random()
+					+ (page ? ('&page=' + page + "&pageSize=" + pageSize):'')
+					+ (p1 ? ('&p.p1=' + p1) : '')
+					+ (p2 ? ('&p.p2=' + encodeURIComponent(p2)): '') 
+					+ (p5 ? ('&p.p5=' + p5) : '')
+					+ (p6 ? ('&p.p6=' + p6) : '')
+					+ (p7 ? ('&p.p7=' + p7) : '')
+					+ (p8 ? ('&p.p8=' + p8) : '')
+					+ (p9 ? ('&p.p9=' + p9) : '')
+					+ (p90 ? ('&p.p90=' + p90) : '')
+					+ (p91 ? ('&p.p91=' + p91) : '');
+		}
+		
+		function showContent(o) {
+			if (o.crtTitle == undefined) {
+				o.crtTitle = 'true';
+				o.title = o.scrollWidth > o.clientWidth ? o.innerHTML : "";
+			}
+		}
+		function showInfo(hcno) {
+			var url = "newGbInfo";
+			url += "?hcno=" + hcno;
+			window.open(url);
+		};
+		function search() {
+			if (p2 != null && p2 != '')
+				p2 = p2 + '+' + $("input[name='search1']").val();
+			else
+				p2 = $("input[name='search1']").val();
+			jumpPage();
+		}
+		$(function() {
+			$('.pageNumSelect').val(pageSize);
+			$('.pageNumSelect').change(function(){
+				pageSize = $(this).val();
+				jumpPage(nextpage);
+			});
+			if (count != null && count > 0) {
+				//分页
+				laypage({
+					cont : $("#pagenav2"),
+					pages : "1", //可以叫服务端把总页数放在某一个隐藏域，再获取。假设我们获取到的是18
+					curr : function() { //通过url获取当前页，也可以同上（pages）方式获取
+						var page = location.search.match(/page=(\d+)/);
+						return page ? page[1] : 1;
+					}(),
+					skin : '#337ab7',
+					prev : '<span class="glyphicon glyphicon-menu-left" style="padding:0"> </span>',
+					next : '<span class="glyphicon glyphicon-menu-right" style="padding:0"> </span>',
+					skip : false,
+					jump : function(e, first) { //触发分页后的回调
+						if (!first) { //一定要加此判断，否则初始时会无限刷新
+							jumpPage(e.curr);
+						}
+					}
+				});
+
+			}
+			//标准类别
+			$("#type li a").on(
+					"click",
+					function(event) {
+						var type = $.trim($(this).attr("id"));
+						if (type != 0) {
+							if (type == 1) {
+								$("#REVISED").parent("li").hide();
+								$("#language-div").hide(); 
+								p1 = 1;
+							}
+							if (type == 2) {
+								$("#REVISED").parent("li").hide();
+								$("#REPLACED").parent("li").hide();
+								//$("#ics-div").hide(); 
+								$("#language-div").hide(); 
+								p1 = 2;
+							}
+							if (type == 3) {
+								$("#REVISED").parent("li").hide();
+								$("#REPLACED").parent("li").hide();
+								//$("#ics-div").hide(); 
+								$("#language-div").hide(); 
+								p1 = 3;
+							}
+							if (type == 6) {
+								$("#REVISED").parent("li").hide();
+								$("#REPLACED").parent("li").hide();
+								//$("#ics-div").hide(); 
+								p1 = 6;
+							}
+						} else {
+							p1 = 0;
+						}
+						jumpPage();
+
+					});
+			//公告号
+			$("#anouncement li a").on(
+					"click",
+					function(event) {
+						p8 = $.trim($(this).attr("id"));
+						var reg=/[\u4E00-\u9FA5]/g;
+						var result=p8.replace(reg,'');
+						if(result.length==5){
+							result = result.substring(0,4)+'0'+result.substring(4,5);
+						}
+						window.open("http://www.sac.gov.cn/gzfw/ggcx/gjbzgg/"+result,"_blank");
+						
+					});
+			//标准状态
+			$("#state li a").on(
+				"click",
+				function(event) {
+					if($(this).find('.mCheck').length>0){
+						$(this).find('.mCheck').prop({checked:!$(this).find('.mCheck').prop('checked')});
+					} else {
+						var state = $.trim($(this).attr("id"));
+						if (state != 'ALL') {
+							p5 = state;
+						} else {
+							p5 = '';
+						}
+						jumpPage();
+					}
+				}
+			);
+			//发布日期
+			$("#date li a").on(
+				"click",
+				function(event) {
+					p7 = $.trim($(this).attr("id"));
+					jumpPage();
+				}
+			);
+			//语种
+			$("#language li a").on(
+				"click",
+				function(event) {
+					if($(this).find('.mCheck').length>0){
+						$(this).find('.mCheck').prop({checked:!$(this).find('.mCheck').prop('checked')});
+					} else {
+						var language = $.trim($(this).attr("id"));
+						if (language != 'ALL') {
+							p9 = language;
+						} else {
+							p9 = '';
+						}
+						jumpPage();
+					}
+				}
+			);
+			$("#ics-view li a").on(
+					"click",
+					function(event) {
+						p6 = $.trim($(this).text() == currentI18n.all ? "" : $(this).attr('id'));
+						jumpPage();
+					});
+			$("#selected button").on(
+				"click",
+				function(event) {
+					if ($(this).attr("id").indexOf('p2_') != -1) {
+						var index = $.trim($(this).attr("index"));
+						var newP2s = p2.split('+');
+						newP2s = newP2s.unique();
+						var text = $(this).attr('text');
+						console.log(text);
+						var temp = '';
+						for (var i = 0; i < newP2s.length; i++) {
+							if(text!=newP2s[i]) {
+								temp += '+' + newP2s[i];
+							}
+						}
+						if(temp!='') {
+							temp = temp.substr(1);
+						}
+						p2 = temp;
+						jumpPage();
+					} else {
+						var code = $.trim($(this).attr("id"));
+						var url = location.href;
+						url = url.replace(code, '');
+						window.open(url, '_self');
+					}
+				}
+			);
+			//搜索框
+			$("#search1").on("click", function() {
+				search();
+			});
+
+			//排序 事件
+			$(".screenOrder").on(
+				'click',
+				function() {
+					var el = $(this);
+					if(el.attr('sortname')==''){
+						el.attr('sortname','desc');
+					} else {
+						el.attr('sortname') == 'asc' ? el.attr('sortname',
+						'desc') : el.attr('sortname', 'asc');
+					}
+					p90 = el.attr('sortcol');
+					p91 = el.attr('sortname');
+					jumpPage();
+				}
+			);
+
+			function ss() {
+				var str = $.trim($(this).attr("id"));
+				var name = $.trim($(this).attr("name"));
+				if(str!='-1'){
+					$("#showics").html(currentI18n.selectedIcs +str+'_'+name);
+				} else {
+					$("#showics").html('');
+				}
+				
+				$.ajax({
+							type : "post",
+							url : '/bzgk/' + 'std/ajaxIcsList',
+							data : {
+								"pcode" : str,
+								"p.p1" : p1,
+								"p.p2" : p2.replace(/\+/g, '%2B'),
+								"p.p5" : p5,
+								"p.p7" : p7,
+								"p.p8" : p8,
+								"p.p9" : p9
+							},
+							dateType : "json",
+							success : function(data) {
+								if (data.length > 0) {//如果有下级
+									var html = '<div class="row" style="margin-bottom: 0;">';
+
+										for (var ii = 0; ii < data.length; ii++) {
+											html += '<div class="col-md-6"><a class="btn multiSelectBtn icslist1"style="width:100%;text-align:left;padding-left:4px !important;margin-bottom:5px;">';
+											if (data[ii].leaf=="0"||(data[ii].icsChilds!=null&&data[ii].icsChilds.length > 0)) {
+												html += '<span class="glyphicon glyphicon-folder-open icstype" style="float:left;width:10%;color:#f8da70;" id="'
+														+ data[ii].icsCode
+														+ '" name="'
+														+ data[ii].icsName_cn
+														+ '"></span>';
+											} else {
+												html += '<span class="glyphicon glyphicon-list-alt icslist" style="float:left;width:10%;color:##d8d8d8;" id="'
+														+ data[ii].icsCode
+														+ '" name="'
+														+ data[ii].icsName_cn
+														+ '">&nbsp;</span>';
+											}
+											html += '<span class="icslist" style="float:left;width:80%;white-space:normal;" id="'
+													+ data[ii].icsCode
+													+ '" name="'
+													+ data[ii].icsName_cn
+													+ '"> '
+													+ data[ii].icsCode
+													+ '_'
+													+ data[ii].icsName_cn
+													+ '（<span>'
+													+ (data[ii].count ? data[ii].count
+															: 0)
+													+ '</span>）</span><span style="float:right;margin:2px;" class="text-success glyphicon glyphicon-ok-circle hidden"></span></a></div>';
+											if (ii % 2 == 1) {
+												html += '</div><div class="row" style="margin-bottom: 0;">';
+											}
+										}
+									
+
+									$(".container-fluid").html(html);
+									//面包屑栈操作
+									var obj = new Object();
+									obj.code = str;
+									obj.name = name;
+									if (lineList.length == 0) {
+										lineList.push(obj);
+									} else {
+										try {
+											var j = 0;
+											for (; j < lineList.length; j++) {
+												if (str
+														.indexOf(lineList[j].code) >= 0) {
+													break;
+												}
+											}
+											if (j < lineList.length
+													&& lineList[j].code == str) {
+												lineList
+														.splice(j,
+																lineList.length
+																		- j + 1);
+											} else {
+												lineList.splice(j + 1,
+														lineList.length - j);
+											}
+
+											lineList.push(obj)
+										} catch (e) {
+											throw e;
+										}
+
+									}
+									var line = '<li><a href="#" class="icstype" id="-1" name="'+currentI18n.all+'">'+currentI18n.all+'</a></li>';
+									if (str == -1) {
+										lineList = new Array();
+									}
+									for (var i = 0; i < lineList.length; i++) {
+										line = line
+												+ '<li class="active icstype" id="'+lineList[i].code+'" name="'+lineList[i].name+'"><a>'
+												+ lineList[i].code
+												+'_'
+												+ lineList[i].name + '</a></li>';
+										;
+									}
+
+									$("#line").empty().append(line);
+									$(".icstype").on("click", ss);
+									$(".icslist").on("click", tt);
+
+								} else {//如果没有下级
+
+									return;
+								}
+							},
+							error : function() {
+
+							}
+
+						});
+
+			}
+
+			function tt() {
+				$(this).parent("a").toggleClass("multiSelectBtn-s");
+				$(this).parent().find(".glyphicon-ok-circle").toggleClass("hidden");
+				var text = '',codes = '';
+				$('#myModal .multiSelectBtn-s').each(function(){
+					var icsList = $(this).find('.icslist');
+					text += ($.trim(icsList.attr("id"))+'_'+$.trim(icsList.attr("name"))+'|');
+					codes += ($.trim(icsList.attr("id"))+'|');
+				});
+				if(text==''){
+					var icsType = $('.breadcrumb .icstype:last');
+					if($.trim(icsType.attr("id"))=='-1'){
+						$("#showics").html('');
+					} else{
+						$("#showics").html(currentI18n.selectedIcs + $.trim(icsType.attr("id"))+'_'+$.trim(icsType.attr("name")));
+					}
+				} else {
+					$("#showics").html(currentI18n.selectedIcs + text.substring(0,text.length-1));
+				}
+				p6 = codes.substring(0,codes.length-1);
+			}
+
+			//选择css分类
+			$(".icstype").on("click", ss);
+			$(".icslist").on("click", tt);
+
+			$("#confirm").on("click",function(event) {
+					$("#ics").text(p6).show();
+					jumpPage();
+			});
+			$("#cancel").on("click", function(event) {
+				$("#ics").text('');
+			});
+			$("#type li a").each(function() {
+				if (p1 == '1') {
+					$("#REVISED").parent("li").hide();
+				}
+				if (p1 == '2') {
+					$("#REVISED").parent("li").hide();
+					$("#REPLACED").parent("li").hide();
+				}
+
+				var tmp = $(this).attr("id");
+				if ($.trim(tmp) == $.trim(p1)) {
+					$("#type li").removeClass('active');
+					$(this).parent().addClass('active');
+				}
+
+			});
+			$("#state li a").each(function() {
+
+				var tmp1 = $(this).attr("id");
+
+				if ($.trim(tmp1) == $.trim(p5)) {
+					$("#state li a").removeClass('multiSelectBtn-s');
+					$(this).addClass('multiSelectBtn-s');
+				}
+
+			});
+			$("#date li a").each(function() {
+
+				var tmp2 = $(this).attr("id");
+
+				if ($.trim(tmp2) == $.trim(p7)) {
+					$("#date li a").removeClass('multiSelectBtn-s');
+					$(this).addClass('multiSelectBtn-s');
+				}
+
+			});
+			$("#language li a").each(function() {
+
+				var tmp2 = $(this).attr("id");
+
+				if ($.trim(tmp2) == $.trim(p9)) {
+					$("#language li a").removeClass('multiSelectBtn-s');
+					$(this).addClass('multiSelectBtn-s');
+				}
+
+			});
+			$("#ics-view a").each(function() {
+				var tmp3 = $(this).text();
+				if ($.trim(p6) == '' && $.trim(tmp3) == currentI18n.all) {
+					$("#ics-view a").removeClass('multiSelectBtn-s');
+					$(this).addClass('multiSelectBtn-s');
+				} else if ($.trim(tmp3) == $.trim(p6)) {
+					$("#ics-view a").removeClass('multiSelectBtn-s');
+					$(this).addClass('multiSelectBtn-s');
+				}
+			});
+			//前一页
+			$(".pre").on(
+					"click",
+					function(event) {
+						if (nextpage > 1) {
+							nextpage--;
+						} else {
+							return;
+						}
+						jumpPage(nextpage);
+					});
+			//后一页
+			$(".next").on(
+					"click",
+					function(event) {
+						if (nextpage < '1') {
+							nextpage++;
+						} else {
+							return;
+						}
+						jumpPage(nextpage);
+					});
+			if($('#tjPanel .row').length==0){
+				$('#tjPanel').parent().hide(); 
+			}
+		});
+		$('.multiSelect').on("click",function(){
+			$(this).parent().prev().find('.multiSelectBtn').prepend("<input class='mCheck' onclick='event.stopPropagation();' type='checkbox'/>");
+			$(this).hide();
+			$(this).next().show();
+		})
+		$('.confirmSelect').on("click",function(){
+			var id = $(this).parent().parent().prev().find('ul').attr('id');
+			if(id=='state') {
+				p5 = '';
+				$(this).parent().parent().prev().find('.mCheck:checked').each(function(){
+					p5 += ('|'+$(this).parent().attr('id'));
+				});
+				p5 = p5.substring(1)
+			} else if(id=='language') {
+				p9 = '';
+				$(this).parent().parent().prev().find('.mCheck:checked').each(function(){
+					p9 += ('|'+$(this).parent().attr('id'));
+				});
+				p9 = p9.substring(1)
+			}
+			jumpPage();
+		})
+		$('.cancelSelect').on("click",function(){
+			$(this).parent().parent().prev().find('.mCheck').remove();;
+			$(this).parent().hide();
+			$(this).parent().prev().show();
+		})
+		
+	</script>
+</html>
+
+			<div class="panel panel-default" style="margin-top: 20px;">
+				<div class="panel-body">
+					<div class="row">
+						<div class="col-xs-12">
+							<div style="margin:5px 0; height: 50px;">
+								<table style="width: 100%; height: 100%;">
+									<tr>
+										<td class="hidden-sm hidden-xs"
+											style="white-space: nowrap; padding-left: 5px;"><span>
+												<a style="color: grey;">每页显示</a>&nbsp;<select class="pageNumSelect"><option value="10">10</option><option value="25">25</option><option value="50">50</option></select>&nbsp;<a
+												style="color: grey;">条,共</a>&nbsp;1&nbsp;<a
+												style="color: grey;">条标准</a> &nbsp;<a style="color: red;">1</a>&nbsp;/&nbsp;1
+										</span></td>
+										<td class="hidden-xs"></td>
+										<td align="right">
+											 <div class="input-group input-group-sm" style="float:right;max-width:300px;width:100%;line-height:normal;margin-top:0;">
+											 	<input type="text" name="search1" value="" class="form-control" placeholder="标准号或标准名称" onkeydown="if(event.keyCode==13) search();" class="form-control" aria-label="...">
+												<span class="input-group-btn">
+													<button id="search1" class="btn btn-default" type="button" >
+														在结果中筛选
+													</button>
+												</span>
+											</div>
+										</td>
+									</tr>
+								</table>
+							</div>
+							<span class="text-danger visible-xs" style="font-size:10px;">*左右滑动列表或横屏查看更多内容</span>
+							<div class="table-responsive" style="margin-top:15px;">
+							<table class="table result_list table-striped table-hover" style="min-width:768px;"
+								width="100%" cellspacing="0" cellpadding="0" border="0">
+								<tbody>
+									<tr>
+										<th width="50">序号</th>
+										<th width="140"><div
+												class='screenOrder '
+												sortname="desc" sortcol="standard_no">标准号</div></th>
+										<th width="80"><div
+												class='screenOrder '
+												sortname="desc" sortcol="language">语种</div></th>
+										<th width="80"><div
+												class='screenOrder '
+												sortname="desc" sortcol="caibiao_status">是否采标</div></th>
+										<th width="*"><div
+												class='screenOrder '
+												sortname="desc" sortcol="cn_name">标准名称</div></th>
+										<th width="80"><div
+												class='screenOrder '
+												sortname="desc" sortcol="standard_type">类别</div></th>
+										<th width="80"><div
+												class='screenOrder '
+												sortname="desc" sortcol="status">状态</div></th>
+										<th width="90"><div
+												class='screenOrder screenOrderDown'
+												sortname="desc" sortcol="circulation_date">发布日期</div></th>
+										<th width="90"><div
+												class='screenOrder '
+												sortname="desc" sortcol="implement_date">实施日期</div></th>
+										<th width="80">操作</th>
+									</tr>
+								</tbody>
+								<tbody style="border:1px solid #ddd;border-top:2px solid #ddd;">
+									
+										<tr>
+											<td>1</td>
+											<td style="text-align: left;"><a href="javascript:void(0)"
+												onclick="showInfo('9496ABE283E8EB1FF58DF961B2DBAC9B');">GB/T 31217-2014</a></td>
+											<td></td>
+											<td>
+											
+												 
+											
+								 			
+											</td>
+											<td class="mytxt"
+												style="text-align: left; padding: 0 8px 0 8px;"><a
+												href="javascript:void(0)" style="color: gray;"
+												onclick="showInfo('9496ABE283E8EB1FF58DF961B2DBAC9B');">全价宠物食品  猫粮</a></td>
+											<td>
+													
+													
+														推标
+													
+													
+												</td>
+											<td>
+											
+												
+													<span class="text-success" style="font-size:13px;">现行</span>
+												 
+												
+												
+												
+												
+											
+											
+											</td>
+											<td>2014-09-03 00:00:00.0</td>
+											<td>
+												
+													
+														2015-03-08 00:00:00.0
+													
+												
+											</td>
+											<td><button class="btn btn-sm btn-default"
+													onclick="showInfo('9496ABE283E8EB1FF58DF961B2DBAC9B');" class="detail">查看详细</button></td>
+										</tr>
+									
+								</tbody>
+							</table>
+							</div>
+							
+
+							<div style="margin: 20px; height: 50px;" class="visible-xs">
+								<table style="width: 100%; height: 100%;">
+									<tr>
+										<td class="hidden-xs" style="min-width: 65px; _width: 65px;">
+											<span> 每页显示&nbsp;<select class="pageNumSelect"><option value="10">10</option><option value="25">25</option><option value="50">50</option></select>&nbsp;条标准 </span>
+										</td>
+										<td class="hidden-xs" width="40%"></td>
+										<td width="20%" style="min-width: 260px; _width: 260px;">
+											<div>
+												<table style="width: 100%; height: 100%;">
+													<tr>
+														<td><span style="width: 120px;"> <a
+																style="color: grey;">共</a>&nbsp;1&nbsp;<a
+																style="color: grey;">条标准</a> &nbsp;<a
+																style="color: red;">1</a>&nbsp;/&nbsp;1
+														</span></td>
+														<td></td>
+														<td style="width: 80px;">
+															<div align="right" class="btn-group" role="group"
+																aria-label="..." style="align: right;">
+																<button type="button" class="btn btn-default pre">
+																	<span class="glyphicon glyphicon-menu-left"></span>
+																</button>
+																<button type="button" class="btn btn-default next">
+																	<span class="glyphicon glyphicon-menu-right"></span>
+																</button>
+															</div>
+														</td>
+													</tr>
+												</table>
+											</div>
+										</td>
+									</tr>
+								</table>
+
+							</div>
+
+							<div style="margin: 10px; height: 50px;" class="hidden-xs">
+								<table style="width: 100%">
+									<tr>
+										<td class="hidden-sm hidden-xs"
+											style="white-space: nowrap; padding-left: 5px;"><span>
+												<a style="color: grey;">每页显示</a>&nbsp;<select class="pageNumSelect"><option value="10">10</option><option value="25">25</option><option value="50">50</option></select>&nbsp;<a
+												style="color: grey;">条,共</a>&nbsp;1&nbsp;<a
+												style="color: grey;">条标准</a> &nbsp;<a style="color: red;">1</a>&nbsp;/&nbsp;1
+										</span></td>
+										<td class="hidden-xs"></td>
+										<td width="30%" style="min-width: 260px; _width: 260px;">
+											<div>
+												<table style="width: 100%; height: 100%;">
+													<tr>
+														<td style="white-space: nowrap; padding-left: 5px;"><span>
+
+														</span> <span class="hidden-md hidden-lg"> <a
+																style="color: grey;">共</a>&nbsp;1&nbsp;<a
+																style="color: grey;">条标准</a>
+														</span> <span class="hidden-md hidden-lg"> &nbsp;<a
+																style="color: red;">1</a>&nbsp;/&nbsp;1
+														</span></td>
+														<td class="hidden-md hidden-lg" style="width: 80px;">
+															<div align="right" class="btn-group" role="group"
+																aria-label="..." style="align: right;">
+																<button type="button" class="btn btn-default pre">
+																	<span class="glyphicon glyphicon-menu-left"></span>
+																</button>
+																<button type="button" class="btn btn-default next">
+																	<span class="glyphicon glyphicon-menu-right"></span>
+																</button>
+															</div>
+														</td>
+														<td class="hidden-xs hidden-sm"
+															style="white-space: nowrap;">
+																<div style="float: right;" id="pagenav2"></div>
+															</td>
+													</tr>
+												</table>
+											</div>
+										</td>
+									</tr>
+								</table>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+
+<style>
+@media (max-width: 768px) {
+	.footer-body li {
+	    color: white;
+	    font-size: 12px;
+	}
+}
+</style>
+
+<div class="footer-body" style="background-color: #0566ab;font-family: arial,tahoma,'Microsoft Yahei','\5b8b\4f53',sans-serif;">
+	<div class="container">
+		<div class="row" style="padding:15px 0;">
+			<div class="col-sm-5 col-xs-6">
+				<ul style="list-style:none;">
+					<li style="margin: 10px 0px;"><h6 style="color:white;font-weight: bold;line-height: 1.1;font-size: 14px;">版权所有 侵权必究</h6></li>
+					<li style="margin: 2px 0px;color:#bec8ce;" >主管：国家市场监督管理总局 国家标准化管理委员会</li>
+					<li style="margin: 2px 0px;color:#bec8ce;" >主办：国家市场监督管理总局国家标准技术审评中心</li>
+					<li style="margin: 2px 0px;color:#bec8ce;" >技术支持：北京中标赛宇科技有限公司</li>
+					<li style="margin: 2px 0px;color:#bec8ce;" >支持电话：010-82261056</li>
+					<li style="margin: 2px 0px;color:#bec8ce;" >备案号：<a style="color:#bec8ce;" href="https://beian.miit.gov.cn/" target="_blank">京ICP备18022388号-1</a></li>
+				</ul>
+			</div>
+			<div class="col-sm-3 col-xs-6">
+				<ul style="list-style:none;"> 
+					<li style="margin: 10px 0px"><h6 style="color:white;font-weight: bold;line-height: 1.1;font-size: 14px;">重要网站链接</h6></li>
+					<li style="margin: 2px 0px;color:#bec8ce;" ><a style="color:#bec8ce;" href="http://www.samr.gov.cn/" target="_blank">国家市场监督管理总局</a></li>
+					<li style="margin: 2px 0px;color:#bec8ce;" ><a style="color:#bec8ce;" href="http://www.sac.gov.cn/" target="_blank">国家标准化管理委员会</a></li> 
+					<li style="margin: 2px 0px;color:#bec8ce;" ><a style="color:#bec8ce;" href="http://ncse.ac.cn/" target="_blank">国家市场监督管理总局国家标准技术审评中心</a></li>
+				</ul>
+			</div>
+			<div class="col-sm-2" style="text-align:center;">
+				<div>
+				<a href="javascript:return void(0);" onclick="Link('bm31370001')"><img src="/bzgk//images/jiucuo.png" style="width: 90px;"/></a>
+				</div>
+				<div style="margin-top: 15px;">
+				<a target="_blank" href="https://bszs.conac.cn/sitename?method=show&id=A1B86006AA736CD2E05310291AAC4CC7"><img src="/bzgk//images/dzjg.png" /></a>
+				</div>
+			</div>
+			<div class="col-sm-2 hidden-xs" style="text-align:center;"> 
+				<img width="100%" src="/bzgk//images/ewm.jpg" style="width: 128px;height: 128px;"/> 
+			</div>
+		</div>
+	</div>
+	
+	
+	<script>
+		var  _hmt  =  _hmt  ||  [];
+		
+		function open_new_window(full_link){
+			window.open('javascript:window.name;', '<script>location.replace("'+full_link+'")<\/script>');
+		}
+	
+		(function()  {
+		    var  hm  =  document.createElement("script");
+		    hm.src  =  "https://hm.baidu.com/hm.js?50758913e6f0dfc9deacbfebce3637e4";
+		    var  s  =  document.getElementsByTagName("script")[0];  
+		    s.parentNode.insertBefore(hm,  s);
+		    
+		    
+		    $('.outer-link').click(function(){
+		    	open_new_window($(this).attr('href'));
+		    	return false;
+		    });
+		})();
+        //点击图标
+        function Link(site_code) {
+            //获取该站点需要纠错页面的url地址
+            var url = getCurrUrl();
+            //跳转至纠错系统填写页面 
+            window.open("https://zfwzgl.www.gov.cn/exposure/jiucuo.html?site_code=" + site_code + "&url=" + encodeURIComponent(url));
+        }
+        //获取该站点需要纠错页面的url地址
+        function getCurrUrl() {
+            var url = "";
+            if (parent !== window) {
+                try {
+                    url = window.top.location.href;
+                } catch (e) {
+                    url = window.top.document.referrer;
+                }
+            }
+            if (url.length == 0)
+                url = document.location.href;
+            return url;
+        }
+    </script>
+</div>
+	<!--[if lt IE 9]>
+	<script type="text/javascript" src="/bzgk/js/respond.min.js"></script>
+	<![endif]-->
+	<!--[if lt IE 10]>
+	<script type="text/javascript" src="/bzgk/js/requestAnimationFrame.js"></script>
+	<![endif]-->
+	<script type="text/javascript" src="/bzgk/laypage/laypage.js"></script>
+	<script type="text/javascript" src='/bzgk/js/bootstrap.js'></script>
+	<script type="text/javascript" src='/bzgk/js/common.js'></script>
+</body>
+</html>
