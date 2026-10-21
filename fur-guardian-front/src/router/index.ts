@@ -38,6 +38,8 @@ const router = createRouter({
         { path: 'reports', name: 'reports', component: () => import('@/views/ReportsView.vue'), meta: { title: '周报列表' } },
         { path: 'reports/:id', name: 'report-detail', component: () => import('@/views/ReportDetailView.vue'), meta: { title: '周报详情' } },
         { path: 'knowledge', name: 'knowledge', component: () => import('@/views/KnowledgeView.vue'), meta: { title: '知识库' } },
+        { path: 'nearby', name: 'nearby', component: () => import('@/views/NearbyView.vue'), meta: { title: '周边资源' } },
+        { path: 'profile', name: 'profile', component: () => import('@/views/UserProfileView.vue'), meta: { title: '用户信息' } },
         { path: 'settings', name: 'settings', component: () => import('@/views/SettingsView.vue'), meta: { title: '设置' } },
       ],
     },

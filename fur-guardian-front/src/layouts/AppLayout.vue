@@ -26,6 +26,7 @@
             </button>
             <template #dropdown>
               <el-dropdown-menu>
+                <el-dropdown-item command="profile">用户信息</el-dropdown-item>
                 <el-dropdown-item command="settings">设置</el-dropdown-item>
                 <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
               </el-dropdown-menu>
@@ -65,6 +66,12 @@
         <div class="mobile-nav-divider"></div>
 
         <router-link
+          to="/profile"
+          class="mobile-nav-item"
+          :class="{ 'is-active': route.path === '/profile' }"
+          @click="closeMobileNav"
+        >用户信息</router-link>
+        <router-link
           to="/settings"
           class="mobile-nav-item"
           :class="{ 'is-active': route.path === '/settings' }"
@@ -102,6 +109,7 @@ const navItems = [
   { path: '/reminders', label: '提醒' },
   { path: '/reports', label: '周报' },
   { path: '/knowledge', label: '知识库' },
+  { path: '/nearby', label: '周边' },
 ]
 
 function isActive(path: string) {
@@ -134,6 +142,9 @@ watch(() => route.path, closeMobileNav)
 
 onMounted(() => {
   petStore.fetchPets()
+  void userStore.fetchProfile(true).catch(() => {
+    // 资料刷新失败不阻塞页面，继续使用本地缓存
+  })
   window.addEventListener('keydown', onKeydown)
   desktopMq = window.matchMedia('(min-width: 768px)')
   desktopMq.addEventListener('change', onDesktopChange)
@@ -155,7 +166,9 @@ async function logoutFromMobile() {
 }
 
 async function handleCommand(cmd: string) {
-  if (cmd === 'settings') {
+  if (cmd === 'profile') {
+    router.push('/profile')
+  } else if (cmd === 'settings') {
     router.push('/settings')
   } else if (cmd === 'logout') {
     await ElMessageBox.confirm('确定退出登录吗？', '提示', { type: 'warning' })
@@ -297,6 +310,17 @@ async function handleCommand(cmd: string) {
 .mobile-nav-enter-from.mobile-nav,
 .mobile-nav-leave-to.mobile-nav {
   transform: translateY(-8px);
+}
+
+/* 响应式新增：6 个导航项在 768~1024px 会挤压品牌与右侧入口，先收窄间距 */
+@media (max-width: 1023.98px) {
+  .topbar-inner {
+    gap: var(--fg-s4);
+  }
+
+  .nav {
+    gap: var(--fg-s3);
+  }
 }
 
 @media (max-width: 767.98px) {

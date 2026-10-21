@@ -30,6 +30,14 @@ export interface LoginResp {
   nickname: string
 }
 
+export interface UserProfile {
+  userId: number
+  username: string
+  nickname?: string
+  /** 常用城市，遛弯天气按它查询；为空时回退浏览器定位 */
+  location?: string
+}
+
 export interface Pet {
   id: number
   name: string
@@ -157,6 +165,20 @@ export interface NutritionRecipe {
   isFallback: boolean
 }
 
+export interface WeatherToday {
+  location: string
+  text: string
+  textNight?: string
+  high: number
+  low: number
+  windDirection?: string
+  windScale?: string
+  humidity?: string
+  precip?: number
+  level: 'GOOD' | 'CAUTION' | 'AVOID'
+  advice: string
+}
+
 export interface Reminder {
   id: number
   petId: number
@@ -164,6 +186,7 @@ export interface Reminder {
   reminderType: ReminderType
   remindTime?: string
   relativeMin?: number
+  remindDate?: string
   repeatRule?: RepeatRule
   repeatDays?: string
   createdAt?: string
@@ -175,6 +198,7 @@ export interface ReminderForm {
   reminderType: ReminderType
   remindTime?: string
   relativeMin?: number
+  remindDate?: string
   repeatRule?: RepeatRule
   repeatDays?: string
 }
@@ -185,6 +209,18 @@ export interface ReminderLog {
   petId: number
   doneDate: string
   note?: string
+  createdAt?: string
+}
+
+export interface FeedingLog {
+  id: number
+  petId: number
+  foodId: number
+  fedDate: string
+  mealIndex: number
+  grams: number
+  /** 按食品标注代谢能折算的这一餐热量，食品未标注时为 null */
+  kcal?: number | null
   createdAt?: string
 }
 
@@ -292,4 +328,27 @@ export interface ChatSession {
   sourceCount: number
   createdAt: string
   updatedAt: string
+}
+
+/** 周边资源分类：medical=宠物医疗（宠物诊所/兽医站），park=公园 */
+export type PlaceCategory = 'medical' | 'park'
+
+export interface NearbyPlace {
+  id: string
+  name: string
+  /** 高德类型串，如 "医疗保健服务;动物医疗保健;宠物诊所"，末段为最具体分类 */
+  type: string
+  address?: string | null
+  tel?: string | null
+  /** GCJ-02 火星坐标 */
+  lat: number
+  lng: number
+  distanceMeters: number
+}
+
+export interface WalkRoute {
+  distanceMeters: number
+  durationSeconds: number
+  /** 折线点串 [[lng, lat], ...] */
+  polyline: [number, number][]
 }

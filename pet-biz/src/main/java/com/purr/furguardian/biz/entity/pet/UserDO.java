@@ -15,6 +15,7 @@ public class UserDO {
     private String password;
     private String nickname;
     private String avatar;
+    private String location;
     private Integer status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -29,6 +30,8 @@ public class UserDO {
     public void setNickname(String nickname) { this.nickname = nickname; }
     public String getAvatar() { return avatar; }
     public void setAvatar(String avatar) { this.avatar = avatar; }
+    public String getLocation() { return location; }
+    public void setLocation(String location) { this.location = location; }
     public Integer getStatus() { return status; }
     public void setStatus(Integer status) { this.status = status; }
     public LocalDateTime getCreatedAt() { return createdAt; }

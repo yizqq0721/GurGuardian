@@ -19,6 +19,16 @@
           <span class="row-value">{{ userStore.nickname || '未设置' }}</span>
         </div>
         <div class="fg-kv">
+          <span class="row-text">
+            <span class="row-label">常用城市</span>
+            <span class="row-desc">遛弯提醒的当日天气按该城市查询</span>
+          </span>
+          <span class="row-control">
+            <span class="row-value">{{ userStore.location || '未设置' }}</span>
+            <el-button size="small" @click="router.push('/profile')">修改</el-button>
+          </span>
+        </div>
+        <div class="fg-kv">
           <span class="row-label">用户 ID</span>
           <span class="row-value fg-num">{{ userStore.userInfo?.userId ?? '-' }}</span>
         </div>

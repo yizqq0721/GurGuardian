@@ -62,6 +62,18 @@ langchain4j:
         - lifeStage
         - severity
 
+# ======================== 高德开放平台 ========================
+# 以下为占位符。真实 Key 写在 application-local.yml（不入库），由 local profile 覆盖。
+# Key 类型必须选「Web 服务」，用于后端周边 POI 与步行路线查询
+fg:
+  amap:
+    web-key: ""
+  # 心知天气 HyperData v3，用于遛弯提醒的当日天气与适宜度
+  # 真实 Key 写在 application-local.yml（不入库）；免费版即可调用逐日预报
+  weather:
+    key: ""
+    base-url: https://api.seniverse.com
+
 # ======================== SpringDoc OpenAPI ========================
 springdoc:
   swagger-ui:
