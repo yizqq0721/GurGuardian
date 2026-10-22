@@ -83,7 +83,7 @@
 
           <el-form-item label="生理状态">
             <el-select v-model="form.physiology" size="large" style="width: 100%">
-              <el-option v-for="o in PHYSIOLOGY_OPTIONS" :key="o.value" :value="o.value" :label="o.label" />
+              <el-option v-for="o in physiologyOptions" :key="o.value" :value="o.value" :label="o.label" />
             </el-select>
           </el-form-item>
         </el-form>
@@ -149,7 +149,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import dayjs from 'dayjs'
@@ -191,6 +191,19 @@ const form = reactive({
 })
 
 const canNextStep0 = computed(() => form.name.trim().length > 0)
+
+const canReproduce = computed(() => form.sex === 'female' && !form.neutered)
+const physiologyOptions = computed(() =>
+  canReproduce.value ? PHYSIOLOGY_OPTIONS : PHYSIOLOGY_OPTIONS.filter((o) => o.value === 'NORMAL'),
+)
+
+watch(
+  [() => form.sex, () => form.neutered],
+  () => {
+    if (!canReproduce.value) form.physiology = 'NORMAL'
+  },
+  { immediate: true },
+)
 
 async function submit() {
   submitting.value = true

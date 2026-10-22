@@ -82,7 +82,7 @@
             <el-col :span="12">
               <el-form-item label="生理状态">
                 <el-select v-model="form.physiology" style="width: 100%">
-                  <el-option v-for="o in PHYSIOLOGY_OPTIONS" :key="o.value" :value="o.value" :label="o.label" />
+                  <el-option v-for="o in physiologyOptions" :key="o.value" :value="o.value" :label="o.label" />
                 </el-select>
               </el-form-item>
             </el-col>
@@ -108,7 +108,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Cat, Dog } from 'lucide-vue-next'
@@ -142,6 +142,19 @@ const form = reactive({
   bcs: 5,
 })
 
+const canReproduce = computed(() => form.sex === 'female' && !form.neutered)
+const physiologyOptions = computed(() =>
+  canReproduce.value ? PHYSIOLOGY_OPTIONS : PHYSIOLOGY_OPTIONS.filter((o) => o.value === 'NORMAL'),
+)
+
+watch(
+  [() => form.sex, () => form.neutered],
+  () => {
+    if (!canReproduce.value) form.physiology = 'NORMAL'
+  },
+  { immediate: true },
+)
+
 onMounted(async () => {
   loading.value = true
   try {
@@ -158,6 +171,7 @@ onMounted(async () => {
       physiology: pet.physiology || 'NORMAL',
       bcs: pet.bcs ?? 5,
     })
+    if (!canReproduce.value) form.physiology = 'NORMAL'
   } finally {
     loading.value = false
   }
