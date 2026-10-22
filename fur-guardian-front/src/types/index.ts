@@ -81,14 +81,6 @@ export interface AdminUserDetail {
   pets: AdminPet[]
 }
 
-export interface UserProfile {
-  userId: number
-  username: string
-  nickname?: string
-  /** 常用城市，遛弯天气按它查询；为空时回退浏览器定位 */
-  location?: string
-}
-
 export interface Pet {
   id: number
   name: string
