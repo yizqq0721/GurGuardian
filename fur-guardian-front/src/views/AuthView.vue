@@ -201,7 +201,7 @@ async function handleRegister() {
 <style scoped>
 .auth-page {
   min-height: 100vh;
-  background: var(--fg-paper);
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;

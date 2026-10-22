@@ -436,13 +436,19 @@ function goAuth() {
 <style scoped>
 .landing {
   min-height: 100vh;
-  background: var(--fg-paper);
+  background: transparent;
 }
 
 /* ---------- 顶栏 ---------- */
 .site-head {
   border-bottom: var(--fg-line-w) solid var(--fg-line);
-  background: var(--fg-surface);
+  background-color: var(--fg-surface);
+  background-image:
+    linear-gradient(90deg, rgba(253, 251, 246, 0.78), rgba(250, 248, 242, 0.68)),
+    url('/backgrounds/topbar-bg.png');
+  background-position: center bottom;
+  background-size: cover;
+  background-repeat: no-repeat;
 }
 
 .head-inner {

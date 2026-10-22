@@ -241,7 +241,7 @@ function goPets() {
 <style scoped>
 .ob-page {
   min-height: 100vh;
-  background: var(--fg-paper);
+  background: transparent;
   display: flex;
   justify-content: center;
   align-items: flex-start;
