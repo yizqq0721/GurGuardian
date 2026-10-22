@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
 
 public class ReminderCreateDTO {
@@ -26,6 +27,9 @@ public class ReminderCreateDTO {
     @Schema(description = "相对时间(分钟)", example = "30")
     private Integer relativeMin;
 
+    @Schema(description = "计划日期，疫苗/驱虫等一次性事件必填", example = "2026-11-05")
+    private LocalDate remindDate;
+
     @Schema(description = "重复规则: DAILY/WEEKLY/MONTHLY/YEARLY/ONCE", example = "DAILY")
     private String repeatRule = "DAILY";
 
@@ -42,6 +46,8 @@ public class ReminderCreateDTO {
     public void setRemindTime(LocalTime remindTime) { this.remindTime = remindTime; }
     public Integer getRelativeMin() { return relativeMin; }
     public void setRelativeMin(Integer relativeMin) { this.relativeMin = relativeMin; }
+    public LocalDate getRemindDate() { return remindDate; }
+    public void setRemindDate(LocalDate remindDate) { this.remindDate = remindDate; }
     public String getRepeatRule() { return repeatRule; }
     public void setRepeatRule(String repeatRule) { this.repeatRule = repeatRule; }
     public String getRepeatDays() { return repeatDays; }

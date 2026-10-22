@@ -18,6 +18,7 @@
         </nav>
 
         <div class="topbar-right">
+          <WeatherWidget />
           <PetSwitcher />
           <el-dropdown trigger="click" @command="handleCommand">
             <button type="button" class="user-entry">
@@ -26,6 +27,7 @@
             </button>
             <template #dropdown>
               <el-dropdown-menu>
+                <el-dropdown-item command="profile">用户信息</el-dropdown-item>
                 <el-dropdown-item command="settings">设置</el-dropdown-item>
                 <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
               </el-dropdown-menu>
@@ -65,6 +67,12 @@
         <div class="mobile-nav-divider"></div>
 
         <router-link
+          to="/profile"
+          class="mobile-nav-item"
+          :class="{ 'is-active': route.path === '/profile' }"
+          @click="closeMobileNav"
+        >用户信息</router-link>
+        <router-link
           to="/settings"
           class="mobile-nav-item"
           :class="{ 'is-active': route.path === '/settings' }"
@@ -83,26 +91,34 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { PawPrint, ChevronDown, Menu, X } from 'lucide-vue-next'
 import { ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { usePetStore } from '@/stores/pet'
 import PetSwitcher from '@/components/PetSwitcher.vue'
+import WeatherWidget from '@/components/WeatherWidget.vue'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 const petStore = usePetStore()
 
-const navItems = [
-  { path: '/pets', label: '我的宠物' },
-  { path: '/foods', label: '食品库' },
-  { path: '/reminders', label: '提醒' },
-  { path: '/reports', label: '周报' },
-  { path: '/knowledge', label: '知识库' },
-]
+const navItems = computed(() => {
+  const items = [
+    { path: '/pets', label: '我的宠物' },
+    { path: '/foods', label: '食品库' },
+    { path: '/reminders', label: '提醒' },
+    { path: '/reports', label: '周报' },
+    { path: '/knowledge', label: '知识库' },
+    { path: '/nearby', label: '周边' },
+  ]
+  if (userStore.isAdmin) {
+    items.push({ path: '/admin/users', label: '用户管理' })
+  }
+  return items
+})
 
 function isActive(path: string) {
   return route.path === path || route.path.startsWith(`${path}/`)
@@ -134,6 +150,9 @@ watch(() => route.path, closeMobileNav)
 
 onMounted(() => {
   petStore.fetchPets()
+  void userStore.fetchProfile(true).catch(() => {
+    // 资料刷新失败不阻塞页面，继续使用本地缓存
+  })
   window.addEventListener('keydown', onKeydown)
   desktopMq = window.matchMedia('(min-width: 768px)')
   desktopMq.addEventListener('change', onDesktopChange)
@@ -155,7 +174,9 @@ async function logoutFromMobile() {
 }
 
 async function handleCommand(cmd: string) {
-  if (cmd === 'settings') {
+  if (cmd === 'profile') {
+    router.push('/profile')
+  } else if (cmd === 'settings') {
     router.push('/settings')
   } else if (cmd === 'logout') {
     await ElMessageBox.confirm('确定退出登录吗？', '提示', { type: 'warning' })
@@ -299,6 +320,17 @@ async function handleCommand(cmd: string) {
   transform: translateY(-8px);
 }
 
+/* 响应式新增：6 个导航项在 768~1024px 会挤压品牌与右侧入口，先收窄间距 */
+@media (max-width: 1023.98px) {
+  .topbar-inner {
+    gap: var(--fg-s4);
+  }
+
+  .nav {
+    gap: var(--fg-s3);
+  }
+}
+
 @media (max-width: 767.98px) {
   /* ---------- 响应式新增：顶栏紧凑化 ---------- */
   .topbar-inner {
@@ -325,7 +357,12 @@ async function handleCommand(cmd: string) {
 
   .topbar-right :deep(.pet-switcher) {
     width: auto;
-    max-width: 104px;
+    max-width: 92px;
+  }
+
+  .topbar-right :deep(.weather-chip) {
+    height: 34px;
+    padding: 0 8px;
   }
 
   .topbar-right :deep(.pet-switcher .el-select__wrapper) {

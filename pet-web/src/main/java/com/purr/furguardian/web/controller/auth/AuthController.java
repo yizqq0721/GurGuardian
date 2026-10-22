@@ -38,6 +38,7 @@ public class AuthController {
         vo.setToken(token);
         vo.setUserId(authService.getUserIdByUsername(dto.getUsername()));
         vo.setNickname(authService.getNicknameByUsername(dto.getUsername()));
+        vo.setIsAdmin(authService.isAdmin(vo.getUserId()));
         return Result.ok(vo);
     }
 

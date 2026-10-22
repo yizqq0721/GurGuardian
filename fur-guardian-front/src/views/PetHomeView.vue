@@ -146,6 +146,7 @@ import TipCard from '@/components/TipCard.vue'
 import WeightChart from '@/components/WeightChart.vue'
 import { ageText } from '@/utils/format'
 import { petAvatarUrl } from '@/utils/petAvatar'
+import { isReminderDueOn } from '@/utils/reminder'
 import { bcsGroup } from '@/utils/constants'
 import type { Pet, Reminder, WeightLog } from '@/types'
 
@@ -167,7 +168,11 @@ const weightForm = reactive({
   recordedAt: dayjs().format('YYYY-MM-DD'),
 })
 
-const todayReminders = computed(() => reminders.value.slice(0, 6))
+const todayReminders = computed(() =>
+  reminders.value
+    .filter((r) => isReminderDueOn(r, dayjs().format('YYYY-MM-DD')))
+    .slice(0, 6),
+)
 const latestWeight = computed(() => weightLogs.value[weightLogs.value.length - 1])
 const avatarUrl = computed(() => petAvatarUrl(pet.value?.avatar))
 
@@ -183,7 +188,8 @@ const petMeta = computed(() => {
 })
 
 function timeText(r: Reminder) {
-  return r.remindTime || `饭后 ${r.relativeMin} 分钟`
+  if (r.remindTime) return r.remindTime.slice(0, 5)
+  return r.relativeMin != null ? `饭后 ${r.relativeMin} 分钟` : '全天'
 }
 
 function bcsChipClass(bcs?: number) {

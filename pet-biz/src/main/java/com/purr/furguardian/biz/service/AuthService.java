@@ -11,4 +11,6 @@ public interface AuthService {
     Long getUserIdByUsername(String username);
 
     String getNicknameByUsername(String username);
+
+    boolean isAdmin(Long userId);
 }

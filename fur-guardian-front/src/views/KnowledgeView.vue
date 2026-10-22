@@ -503,6 +503,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import dayjs from 'dayjs'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
@@ -533,6 +534,7 @@ import { dateText } from '@/utils/format'
 import type { ChatMessage, ChatSession, ChatSource, KnowledgeDoc } from '@/types'
 
 const petStore = usePetStore()
+const route = useRoute()
 
 const LAST_CHAT_KEY = 'fg_last_chat'
 const PAGE_SIZE = 10
@@ -1098,6 +1100,12 @@ onMounted(async () => {
   const last = Number(localStorage.getItem(LAST_CHAT_KEY))
   const restore = sessions.value.find((s) => s.id === last) ?? sessions.value[0]
   if (restore) await openChat(restore.id)
+
+  // 疫苗/驱虫提醒的「问一问」深链：只预填问题，由用户确认后再发送
+  const preset = route.query.q
+  if (typeof preset === 'string' && preset.trim()) {
+    draft.value = preset.trim().slice(0, 500)
+  }
 })
 </script>
 

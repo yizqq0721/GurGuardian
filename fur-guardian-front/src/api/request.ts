@@ -3,6 +3,13 @@ import { ElMessage } from 'element-plus'
 import { setFlashMessage } from '@/utils/flash'
 import type { Result } from '@/types'
 
+declare module 'axios' {
+  export interface AxiosRequestConfig {
+    /** 静默请求：失败时不弹全局错误提示（401 仍会跳登录） */
+    silent?: boolean
+  }
+}
+
 const AUTH_URLS = ['/api/auth/login', '/api/auth/register']
 
 const request = axios.create({
@@ -38,7 +45,9 @@ request.interceptors.response.use(
         }
         return Promise.reject(new Error(message))
       }
-      ElMessage.error(res.message || '请求失败')
+      if (!response.config.silent) {
+        ElMessage.error(res.message || '请求失败')
+      }
       return Promise.reject(new Error(res.message))
     }
     return response.data
@@ -52,7 +61,7 @@ request.interceptors.response.use(
       } else {
         handleUnauthorized(serverMessage)
       }
-    } else {
+    } else if (!error.config?.silent) {
       const msg = serverMessage || (status === 500 ? '服务繁忙，请稍后再试' : '网络异常，请稍后再试')
       ElMessage.error(msg)
     }

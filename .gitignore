@@ -36,3 +36,12 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Qoder ###
+.qoder/
+
+### 本地运行日志 ###
+logs/
+
+### 前端本地环境变量 ###
+.env.local

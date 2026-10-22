@@ -28,6 +28,57 @@ export interface LoginResp {
   token: string
   userId: number
   nickname: string
+  isAdmin: boolean
+}
+
+export interface UserProfile {
+  userId: number
+  username: string
+  nickname?: string
+  /** 当前位置，精确到区/县，用于天气与遛弯建议 */
+  location?: string
+}
+
+/** 反向地理编码结果，label 只到区/县，不含街道门牌 */
+export interface GeoAddress {
+  province?: string
+  city?: string
+  district?: string
+  label: string
+}
+
+export interface AdminUser {
+  id: number
+  username: string
+  nickname?: string
+  avatar?: string
+  status: number
+  isAdmin: boolean
+  petCount: number
+  createdAt?: string
+}
+
+export interface AdminPet {
+  id: number
+  name: string
+  species: Species
+  breed?: string
+  sex?: Sex
+  birthday?: string
+  avatar?: string
+  createdAt?: string
+}
+
+export interface AdminUserDetail {
+  id: number
+  username: string
+  nickname?: string
+  avatar?: string
+  status: number
+  isAdmin: boolean
+  createdAt?: string
+  updatedAt?: string
+  pets: AdminPet[]
 }
 
 export interface Pet {
@@ -157,6 +208,20 @@ export interface NutritionRecipe {
   isFallback: boolean
 }
 
+export interface WeatherToday {
+  location: string
+  text: string
+  textNight?: string
+  high: number
+  low: number
+  windDirection?: string
+  windScale?: string
+  humidity?: string
+  precip?: number
+  level: 'GOOD' | 'CAUTION' | 'AVOID'
+  advice: string
+}
+
 export interface Reminder {
   id: number
   petId: number
@@ -164,6 +229,7 @@ export interface Reminder {
   reminderType: ReminderType
   remindTime?: string
   relativeMin?: number
+  remindDate?: string
   repeatRule?: RepeatRule
   repeatDays?: string
   createdAt?: string
@@ -175,6 +241,7 @@ export interface ReminderForm {
   reminderType: ReminderType
   remindTime?: string
   relativeMin?: number
+  remindDate?: string
   repeatRule?: RepeatRule
   repeatDays?: string
 }
@@ -185,6 +252,18 @@ export interface ReminderLog {
   petId: number
   doneDate: string
   note?: string
+  createdAt?: string
+}
+
+export interface FeedingLog {
+  id: number
+  petId: number
+  foodId: number
+  fedDate: string
+  mealIndex: number
+  grams: number
+  /** 按食品标注代谢能折算的这一餐热量，食品未标注时为 null */
+  kcal?: number | null
   createdAt?: string
 }
 
@@ -292,4 +371,27 @@ export interface ChatSession {
   sourceCount: number
   createdAt: string
   updatedAt: string
+}
+
+/** 周边资源分类：medical=宠物医疗（宠物诊所/兽医站），park=公园 */
+export type PlaceCategory = 'medical' | 'park'
+
+export interface NearbyPlace {
+  id: string
+  name: string
+  /** 高德类型串，如 "医疗保健服务;动物医疗保健;宠物诊所"，末段为最具体分类 */
+  type: string
+  address?: string | null
+  tel?: string | null
+  /** GCJ-02 火星坐标 */
+  lat: number
+  lng: number
+  distanceMeters: number
+}
+
+export interface WalkRoute {
+  distanceMeters: number
+  durationSeconds: number
+  /** 折线点串 [[lng, lat], ...] */
+  polyline: [number, number][]
 }

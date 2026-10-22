@@ -19,6 +19,16 @@
           <span class="row-value">{{ userStore.nickname || '未设置' }}</span>
         </div>
         <div class="fg-kv">
+          <span class="row-text">
+            <span class="row-label">当前位置</span>
+            <span class="row-desc">顶部天气与遛弯建议按该位置查询</span>
+          </span>
+          <span class="row-control">
+            <span class="row-value">{{ userStore.location || '未定位' }}</span>
+            <el-button size="small" @click="router.push('/profile')">定位</el-button>
+          </span>
+        </div>
+        <div class="fg-kv">
           <span class="row-label">用户 ID</span>
           <span class="row-value fg-num">{{ userStore.userInfo?.userId ?? '-' }}</span>
         </div>

@@ -257,7 +257,7 @@
                         </button>
                       </li>
                     </ul>
-                    <p v-else class="panel-note">还没有设置提醒，去提醒页添加。</p>
+                    <p v-else class="panel-note">今天没有需要执行的提醒。</p>
                     <el-button
                       v-if="hiddenReminders(pet.id)"
                       text
@@ -338,6 +338,7 @@ import { usePetStore } from '@/stores/pet'
 import { REPEAT_RULE_LABEL } from '@/utils/constants'
 import { ageText, dateText, fromNow } from '@/utils/format'
 import { petAvatarUrl } from '@/utils/petAvatar'
+import { isReminderDueOn } from '@/utils/reminder'
 import type { Food, NutritionPlan, Pet, Reminder } from '@/types'
 
 const router = useRouter()
@@ -518,13 +519,19 @@ function sortReminders(list: Reminder[]) {
 const REM_LIMIT = 3
 const openReminders = ref(new Set<number>())
 
+/** 卡片只列今天到期的提醒，未来的一次性事件不会提前出现 */
+function dueRemindersOf(id: number) {
+  const today = dayjs().format('YYYY-MM-DD')
+  return (reminderMap.value[id] ?? []).filter((r) => isReminderDueOn(r, today))
+}
+
 function shownReminders(id: number) {
-  const all = sortReminders(reminderMap.value[id] ?? [])
+  const all = sortReminders(dueRemindersOf(id))
   return openReminders.value.has(id) ? all : all.slice(0, REM_LIMIT)
 }
 
 function hiddenReminders(id: number) {
-  return Math.max(0, (reminderMap.value[id] ?? []).length - REM_LIMIT)
+  return Math.max(0, dueRemindersOf(id).length - REM_LIMIT)
 }
 
 function toggleReminders(id: number) {

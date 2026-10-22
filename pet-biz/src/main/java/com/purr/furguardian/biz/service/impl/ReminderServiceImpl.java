@@ -16,9 +16,13 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class ReminderServiceImpl implements ReminderService {
+
+    /** 疫苗、驱虫是「某一天去做」的事件，不按周期重复 */
+    private static final Set<String> DATED_TYPES = Set.of("VACCINE", "DEWORM");
 
     private final ReminderMapper reminderMapper;
     private final ReminderLogMapper logMapper;
@@ -32,6 +36,7 @@ public class ReminderServiceImpl implements ReminderService {
 
     @Override
     public Long createReminder(Long userId, ReminderDO reminder) {
+        applyDateRule(reminder);
         reminder.setId(null);
         reminder.setUserId(userId);
         reminder.setCreatedAt(LocalDateTime.now());
@@ -42,11 +47,26 @@ public class ReminderServiceImpl implements ReminderService {
 
     @Override
     public void updateReminder(Long userId, Long reminderId, ReminderDO reminder) {
-        ReminderDO existing = getReminder(userId, reminderId);
+        applyDateRule(reminder);
+        getReminder(userId, reminderId);
         reminder.setId(reminderId);
         reminder.setUserId(userId);
         reminder.setUpdatedAt(LocalDateTime.now());
         reminderMapper.updateById(reminder);
+    }
+
+    /** 事件类与「仅一次」都必须落在具体日期上，周期规则统一收口为 ONCE */
+    private void applyDateRule(ReminderDO reminder) {
+        boolean dated = DATED_TYPES.contains(reminder.getReminderType())
+                || "ONCE".equalsIgnoreCase(reminder.getRepeatRule());
+        if (!dated) {
+            return;
+        }
+        if (reminder.getRemindDate() == null) {
+            throw new BizException(ErrorCode.BAD_REQUEST, "请先选择提醒日期");
+        }
+        reminder.setRepeatRule("ONCE");
+        reminder.setRepeatDays(null);
     }
 
     @Override

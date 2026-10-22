@@ -154,6 +154,10 @@ function toggleMode() {
 }
 
 function redirectAfterLogin() {
+  if (userStore.isAdmin) {
+    router.push('/admin/users')
+    return
+  }
   const redirect = (route.query.redirect as string) || '/pets'
   router.push(redirect)
 }

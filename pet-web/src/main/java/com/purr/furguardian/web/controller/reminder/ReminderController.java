@@ -79,6 +79,7 @@ public class ReminderController {
         reminder.setReminderType(dto.getReminderType());
         reminder.setRemindTime(dto.getRemindTime());
         reminder.setRelativeMin(dto.getRelativeMin());
+        reminder.setRemindDate(dto.getRemindDate());
         reminder.setRepeatRule(dto.getRepeatRule());
         reminder.setRepeatDays(dto.getRepeatDays());
         reminder.setEnabled(1);
