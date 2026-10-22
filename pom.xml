@@ -34,6 +34,7 @@
         <langchain4j.community.version>1.22.0-beta32</langchain4j.community.version>
         <mybatis-plus.version>3.5.17</mybatis-plus.version>
         <springdoc.version>3.1.1</springdoc.version>
+        <aliyun-oss.version>3.18.1</aliyun-oss.version>
     </properties>
 
     <dependencyManagement>
@@ -95,6 +96,11 @@
                 <groupId>org.springdoc</groupId>
                 <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
                 <version>${springdoc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.aliyun.oss</groupId>
+                <artifactId>aliyun-sdk-oss</artifactId>
+                <version>${aliyun-oss.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

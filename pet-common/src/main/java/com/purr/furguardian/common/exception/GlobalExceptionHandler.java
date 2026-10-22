@@ -10,6 +10,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.stream.Collectors;
@@ -42,6 +43,11 @@ public class GlobalExceptionHandler {
     public Result<Void> handleNotReadable(HttpMessageNotReadableException e) {
         log.error("请求体解析失败: {}", e.getMessage(), e);
         return Result.fail(ErrorCode.BAD_REQUEST.getCode(), "请求体格式错误: " + e.getMessage());
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public Result<Void> handleUploadTooLarge(MaxUploadSizeExceededException e) {
+        return Result.fail(ErrorCode.BAD_REQUEST.getCode(), "图片大小不能超过 5MB");
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
