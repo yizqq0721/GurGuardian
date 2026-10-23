@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PastOrPresent;
+import jakarta.validation.constraints.Pattern;
 
 import java.time.LocalDate;
 
@@ -14,6 +16,7 @@ public class PetCreateDTO {
     private String name;
 
     @NotBlank(message = "物种不能为空")
+    @Pattern(regexp = "dog|cat", message = "物种只能为 dog 或 cat")
     @Schema(description = "物种: dog/cat", example = "dog")
     private String species;
 
@@ -24,15 +27,19 @@ public class PetCreateDTO {
     private String avatar;
 
     @NotBlank(message = "性别不能为空")
+    @Pattern(regexp = "male|female", message = "性别只能为 male 或 female")
     @Schema(description = "性别: male/female", example = "male")
     private String sex;
 
     @Schema(description = "是否绝育", example = "true")
     private Boolean neutered = false;
 
+    @PastOrPresent(message = "出生日期不能晚于今天")
     @Schema(description = "出生日期", example = "2023-10-01")
     private LocalDate birthday;
 
+    @Pattern(regexp = "SEDENTARY|LOW|MODERATE|HIGH|WORKING",
+            message = "活动量只能为 SEDENTARY/LOW/MODERATE/HIGH/WORKING")
     @Schema(description = "活动量: SEDENTARY/LOW/MODERATE/HIGH/WORKING", example = "LOW")
     private String activityLevel = "MODERATE";
 
@@ -40,6 +47,8 @@ public class PetCreateDTO {
     @Schema(description = "体况评分1-9", example = "5")
     private Integer bcs = 5;
 
+    @Pattern(regexp = "NORMAL|PREGNANT|LACTATING",
+            message = "生理状态只能为 NORMAL/PREGNANT/LACTATING")
     @Schema(description = "生理状态: NORMAL/PREGNANT/LACTATING", example = "NORMAL")
     private String physiology = "NORMAL";
 

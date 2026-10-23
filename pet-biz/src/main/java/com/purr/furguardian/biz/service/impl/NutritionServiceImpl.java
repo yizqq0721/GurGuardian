@@ -3,11 +3,8 @@ package com.purr.furguardian.biz.service.impl;
 import com.purr.furguardian.biz.entity.food.FoodDO;
 import com.purr.furguardian.biz.entity.food.FoodNutrientDO;
 import com.purr.furguardian.biz.entity.pet.PetDO;
-import com.purr.furguardian.biz.entity.report.FeedingPlanDO;
 import com.purr.furguardian.biz.mapper.food.FoodMapper;
 import com.purr.furguardian.biz.mapper.food.FoodNutrientMapper;
-import com.purr.furguardian.biz.mapper.pet.PetMapper;
-import com.purr.furguardian.biz.mapper.report.FeedingPlanMapper;
 import com.purr.furguardian.biz.service.FoodService;
 import com.purr.furguardian.biz.service.NutritionService;
 import com.purr.furguardian.biz.service.PetService;
@@ -15,12 +12,11 @@ import com.purr.furguardian.common.exception.BizException;
 import com.purr.furguardian.common.result.ErrorCode;
 import com.purr.furguardian.nutrition.engine.NutritionCalculator;
 import com.purr.furguardian.nutrition.model.*;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.util.Locale;
 
 @Service
 public class NutritionServiceImpl implements NutritionService {
@@ -28,35 +24,17 @@ public class NutritionServiceImpl implements NutritionService {
     private final PetService petService;
     private final FoodService foodService;
     private final NutritionCalculator calculator;
-    private final FeedingPlanMapper planMapper;
 
-    public NutritionServiceImpl(PetService petService, FoodService foodService,
-                                FeedingPlanMapper planMapper) {
+    public NutritionServiceImpl(PetService petService, FoodService foodService) {
         this.petService = petService;
         this.foodService = foodService;
         this.calculator = new NutritionCalculator();
-        this.planMapper = planMapper;
     }
 
     @Override
     public NutritionResult calculatePlan(Long userId, Long petId, Long foodId) {
-        NutritionResult result = previewPlan(userId, petId, foodId);
-
-        FeedingPlanDO plan = new FeedingPlanDO();
-        plan.setPetId(petId);
-        plan.setUserId(userId);
-        plan.setFoodId(foodId);
-        plan.setEffectiveDate(LocalDate.now());
-        plan.setRerKcal(BigDecimal.valueOf(result.getRerKcal()));
-        plan.setMerKcal(BigDecimal.valueOf(result.getMerKcal()));
-        plan.setMainFoodGrams(BigDecimal.valueOf(result.getMainFoodGrams()));
-        plan.setSnackBudgetKcal(BigDecimal.valueOf(result.getSnackBudgetKcal()));
-        plan.setMealsPerDay(result.getMealsPerDay());
-        plan.setCalculationLog(result.getCalculationProcess());
-        plan.setCreatedAt(LocalDateTime.now());
-        planMapper.insert(plan);
-
-        return result;
+        // 计算是只读操作：每次切换粮都会调用，落库会产生大量只写不读的 feeding_plans
+        return previewPlan(userId, petId, foodId);
     }
 
     @Override
@@ -100,11 +78,22 @@ public class NutritionServiceImpl implements NutritionService {
             profile.setAgeInMonths(36);
         }
         profile.setWeightKg(latestWeight(petDO.getUserId(), petDO.getId()));
-        profile.setActivityLevel(ActivityLevel.valueOf(petDO.getActivityLevel()));
+        profile.setActivityLevel(parseEnum(ActivityLevel.class, petDO.getActivityLevel(), ActivityLevel.MODERATE));
         profile.setBcs(petDO.getBcs() != null ? petDO.getBcs() : 5);
-        profile.setPhysiologyStatus(PhysiologyStatus.valueOf(
-                petDO.getPhysiology() != null ? petDO.getPhysiology() : "NORMAL"));
+        profile.setPhysiologyStatus(parseEnum(PhysiologyStatus.class, petDO.getPhysiology(), PhysiologyStatus.NORMAL));
         return profile;
+    }
+
+    /** 老数据可能存了小写或已废弃的枚举值，解析失败时退回默认档，不让整个方案计算报 500 */
+    private static <E extends Enum<E>> E parseEnum(Class<E> type, String raw, E fallback) {
+        if (raw == null || raw.isBlank()) {
+            return fallback;
+        }
+        try {
+            return Enum.valueOf(type, raw.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            return fallback;
+        }
     }
 
     private FoodLabel toFoodLabel(FoodDO foodDO, FoodNutrientDO nutrientDO) {

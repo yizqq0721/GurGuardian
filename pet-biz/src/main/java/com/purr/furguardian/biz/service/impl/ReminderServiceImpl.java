@@ -1,16 +1,18 @@
 package com.purr.furguardian.biz.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.purr.furguardian.biz.entity.reminder.ReminderDO;
 import com.purr.furguardian.biz.entity.reminder.ReminderLogDO;
-import com.purr.furguardian.biz.mapper.pet.PetMapper;
 import com.purr.furguardian.biz.mapper.reminder.ReminderLogMapper;
 import com.purr.furguardian.biz.mapper.reminder.ReminderMapper;
+import com.purr.furguardian.biz.service.PetService;
 import com.purr.furguardian.biz.service.ReminderService;
 import com.purr.furguardian.common.exception.BizException;
 import com.purr.furguardian.common.result.ErrorCode;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -26,17 +28,18 @@ public class ReminderServiceImpl implements ReminderService {
 
     private final ReminderMapper reminderMapper;
     private final ReminderLogMapper logMapper;
-    private final PetMapper petMapper;
+    private final PetService petService;
 
-    public ReminderServiceImpl(ReminderMapper reminderMapper, ReminderLogMapper logMapper, PetMapper petMapper) {
+    public ReminderServiceImpl(ReminderMapper reminderMapper, ReminderLogMapper logMapper, PetService petService) {
         this.reminderMapper = reminderMapper;
         this.logMapper = logMapper;
-        this.petMapper = petMapper;
+        this.petService = petService;
     }
 
     @Override
     public Long createReminder(Long userId, ReminderDO reminder) {
         applyDateRule(reminder);
+        requirePetOwnership(userId, reminder.getPetId());
         reminder.setId(null);
         reminder.setUserId(userId);
         reminder.setCreatedAt(LocalDateTime.now());
@@ -49,10 +52,22 @@ public class ReminderServiceImpl implements ReminderService {
     public void updateReminder(Long userId, Long reminderId, ReminderDO reminder) {
         applyDateRule(reminder);
         getReminder(userId, reminderId);
-        reminder.setId(reminderId);
-        reminder.setUserId(userId);
-        reminder.setUpdatedAt(LocalDateTime.now());
-        reminderMapper.updateById(reminder);
+        requirePetOwnership(userId, reminder.getPetId());
+        // 显式 set 所有可编辑字段：updateById 会忽略 null，导致 repeatDays/relativeMin 无法清空
+        LambdaUpdateWrapper<ReminderDO> update = new LambdaUpdateWrapper<>();
+        update.eq(ReminderDO::getId, reminderId)
+                .eq(ReminderDO::getUserId, userId)
+                .set(ReminderDO::getPetId, reminder.getPetId())
+                .set(ReminderDO::getTitle, reminder.getTitle())
+                .set(ReminderDO::getReminderType, reminder.getReminderType())
+                .set(ReminderDO::getRemindTime, reminder.getRemindTime())
+                .set(ReminderDO::getRelativeMin, reminder.getRelativeMin())
+                .set(ReminderDO::getRemindDate, reminder.getRemindDate())
+                .set(ReminderDO::getRepeatRule, reminder.getRepeatRule())
+                .set(ReminderDO::getRepeatDays, reminder.getRepeatDays())
+                .set(ReminderDO::getEnabled, reminder.getEnabled())
+                .set(ReminderDO::getUpdatedAt, LocalDateTime.now());
+        reminderMapper.update(null, update);
     }
 
     /** 事件类与「仅一次」都必须落在具体日期上，周期规则统一收口为 ONCE */
@@ -70,8 +85,12 @@ public class ReminderServiceImpl implements ReminderService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void deleteReminder(Long userId, Long reminderId) {
         getReminder(userId, reminderId);
+        LambdaQueryWrapper<ReminderLogDO> logs = new LambdaQueryWrapper<>();
+        logs.eq(ReminderLogDO::getReminderId, reminderId);
+        logMapper.delete(logs);
         reminderMapper.deleteById(reminderId);
     }
 
@@ -132,5 +151,13 @@ public class ReminderServiceImpl implements ReminderService {
             throw new BizException(ErrorCode.DATA_NOT_FOUND, "提醒不存在");
         }
         return reminder;
+    }
+
+    /** 提醒必须挂在当前用户名下的宠物上，防止用别人的 petId 创建数据 */
+    private void requirePetOwnership(Long userId, Long petId) {
+        if (petId == null) {
+            throw new BizException(ErrorCode.BAD_REQUEST, "请先选择宠物");
+        }
+        petService.getPet(userId, petId);
     }
 }

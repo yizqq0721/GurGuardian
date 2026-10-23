@@ -140,6 +140,8 @@ export interface FoodNutrients {
 export interface Food {
   id: number
   name: string
+  /** 为空表示公共食品，只读 */
+  userId?: number | null
   brand?: string
   foodType?: FoodType
   productType?: ProductType

@@ -1,24 +1,39 @@
 package com.purr.furguardian.web;
 
+import com.baomidou.mybatisplus.core.MybatisConfiguration;
+import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.purr.furguardian.biz.entity.reminder.ReminderDO;
-import com.purr.furguardian.biz.mapper.pet.PetMapper;
 import com.purr.furguardian.biz.mapper.reminder.ReminderLogMapper;
 import com.purr.furguardian.biz.mapper.reminder.ReminderMapper;
+import com.purr.furguardian.biz.service.PetService;
 import com.purr.furguardian.biz.service.impl.ReminderServiceImpl;
 import com.purr.furguardian.common.exception.BizException;
+import org.apache.ibatis.builder.MapperBuilderAssistant;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.*;
 
 class ReminderDateRuleTest {
 
+    @BeforeAll
+    static void initLambdaCache() {
+        // LambdaUpdateWrapper 依赖 MyBatis-Plus 的实体元数据缓存，纯单测不会自动注册
+        if (TableInfoHelper.getTableInfo(ReminderDO.class) == null) {
+            TableInfoHelper.initTableInfo(
+                    new MapperBuilderAssistant(new MybatisConfiguration(), ""), ReminderDO.class);
+        }
+    }
+
     private final ReminderMapper reminderMapper = mock(ReminderMapper.class);
+    private final PetService petService = mock(PetService.class);
     private final ReminderServiceImpl service =
-            new ReminderServiceImpl(reminderMapper, mock(ReminderLogMapper.class), mock(PetMapper.class));
+            new ReminderServiceImpl(reminderMapper, mock(ReminderLogMapper.class), petService);
 
     private ReminderDO reminder(String type, String rule, LocalDate date) {
         ReminderDO reminder = new ReminderDO();
@@ -49,6 +64,7 @@ class ReminderDateRuleTest {
         assertNull(r.getRepeatDays());
         assertEquals(LocalDate.of(2026, 11, 5), r.getRemindDate());
         verify(reminderMapper).insert(r);
+        verify(petService).getPet(9L, 1L);
     }
 
     @Test
@@ -87,6 +103,7 @@ class ReminderDateRuleTest {
         service.updateReminder(9L, 5L, r);
         assertEquals("ONCE", r.getRepeatRule());
         assertNull(r.getRepeatDays());
-        verify(reminderMapper).updateById(r);
+        verify(reminderMapper).update(isNull(), any());
+        verify(petService).getPet(9L, 1L);
     }
 }

@@ -726,7 +726,8 @@ function isDone(id: number) {
 }
 
 function rowTime(r: Reminder) {
-  if (r.remindTime) return r.remindTime
+  /* 后端返回 HH:mm:ss，时间轴列宽只够 HH:mm */
+  if (r.remindTime) return r.remindTime.slice(0, 5)
   return r.relativeMin != null ? '餐后' : '—'
 }
 
@@ -919,7 +920,7 @@ function openEdit(row: Reminder) {
     petId: row.petId,
     title: row.title,
     reminderType: row.reminderType,
-    remindTime: row.remindTime || '08:00',
+    remindTime: row.remindTime?.slice(0, 5) || '08:00',
     relativeMin: row.relativeMin ?? 30,
     remindDate: row.remindDate || dayjs().format('YYYY-MM-DD'),
     repeatRule: row.repeatRule || 'DAILY',

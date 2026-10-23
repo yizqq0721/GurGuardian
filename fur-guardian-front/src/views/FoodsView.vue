@@ -86,7 +86,7 @@
             </div>
           </dl>
 
-          <div class="food-card-actions">
+          <div v-if="row.userId != null" class="food-card-actions">
             <el-button size="small" text type="primary" @click="router.push(`/foods/${row.id}/edit`)">
               编辑
             </el-button>
@@ -151,10 +151,13 @@
 
         <el-table-column label="操作" width="140" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" text type="primary" @click="router.push(`/foods/${row.id}/edit`)">
-              编辑
-            </el-button>
-            <el-button size="small" text type="danger" @click="remove(row)">删除</el-button>
+            <template v-if="row.userId != null">
+              <el-button size="small" text type="primary" @click="router.push(`/foods/${row.id}/edit`)">
+                编辑
+              </el-button>
+              <el-button size="small" text type="danger" @click="remove(row)">删除</el-button>
+            </template>
+            <span v-else class="fg-muted">公共食品</span>
           </template>
         </el-table-column>
 

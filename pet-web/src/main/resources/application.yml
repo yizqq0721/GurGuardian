@@ -9,6 +9,15 @@ spring:
   profiles:
     active: local
 
+  # ======================== 定时任务线程池 ========================
+  # 默认调度器只有 1 个线程，邮件/周报/Tip/向量入库会互相排队；
+  # 单个任务卡住（如 SMTP 超时）会连带拖住其它任务。
+  task:
+    scheduling:
+      pool:
+        size: 4
+      thread-name-prefix: fg-sched-
+
   # ======================== 文件上传 ========================
   # 头像上传限制：与 OssStorageService 中的校验保持一致
   servlet:

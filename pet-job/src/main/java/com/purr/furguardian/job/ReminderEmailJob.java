@@ -7,6 +7,7 @@ import com.purr.furguardian.biz.entity.reminder.ReminderLogDO;
 import com.purr.furguardian.biz.mapper.pet.PetMapper;
 import com.purr.furguardian.biz.mapper.reminder.ReminderLogMapper;
 import com.purr.furguardian.biz.mapper.reminder.ReminderMapper;
+import com.purr.furguardian.biz.schedule.ReminderSchedule;
 import com.purr.furguardian.biz.service.MailSettingsService;
 import com.purr.furguardian.biz.service.MailSettingsService.MailSettings;
 import jakarta.mail.internet.MimeMessage;
@@ -100,7 +101,7 @@ public class ReminderEmailJob {
 
         Map<Long, List<ReminderDO>> pendingByUser = reminders.stream()
                 .filter(r -> r.getUserId() != null)
-                .filter(r -> isDueToday(r, today))
+                .filter(r -> ReminderSchedule.isDueOn(r, today))
                 .filter(r -> isTimeReached(r, now))
                 .filter(r -> !doneIds.contains(r.getId()))
                 .filter(r -> sentIds == null || !sentIds.contains(String.valueOf(r.getId())))
@@ -170,28 +171,6 @@ public class ReminderEmailJob {
         }
         return petMapper.selectBatchIds(petIds).stream()
                 .collect(Collectors.toMap(PetDO::getId, PetDO::getName, (a, b) -> a));
-    }
-
-    private static boolean isDueToday(ReminderDO reminder, LocalDate today) {
-        if ("ONCE".equals(reminder.getRepeatRule()) && reminder.getRemindDate() != null) {
-            return reminder.getRemindDate().equals(today);
-        }
-        if ("WEEKLY".equals(reminder.getRepeatRule())
-                && reminder.getRepeatDays() != null
-                && !reminder.getRepeatDays().isBlank()) {
-            int weekday = today.getDayOfWeek().getValue();
-            for (String day : reminder.getRepeatDays().split(",")) {
-                try {
-                    if (Integer.parseInt(day.trim()) == weekday) {
-                        return true;
-                    }
-                } catch (NumberFormatException ignored) {
-                    // 忽略格式错误的重复日配置
-                }
-            }
-            return false;
-        }
-        return true;
     }
 
     private static boolean isTimeReached(ReminderDO reminder, LocalTime now) {

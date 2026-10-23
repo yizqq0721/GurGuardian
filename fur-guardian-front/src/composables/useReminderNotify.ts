@@ -4,6 +4,7 @@ import { ElNotification } from 'element-plus'
 import dayjs from 'dayjs'
 import { reminderApi } from '@/api/reminder'
 import type { Reminder } from '@/types'
+import { isReminderDueOn } from '@/utils/reminder'
 
 const CHECK_INTERVAL = 60_000
 const FIRST_CHECK_DELAY = 4_000
@@ -46,22 +47,6 @@ function markNotified(date: string, ids: number[]) {
     const name = localStorage.key(i)
     if (name?.startsWith(NOTIFIED_PREFIX) && name !== key) localStorage.removeItem(name)
   }
-}
-
-/** 周期提醒若勾选了星期，只在勾选日提醒；一次性事件只看指定日期 */
-function isDueToday(reminder: Reminder, today: string) {
-  if (reminder.repeatRule === 'ONCE' && reminder.remindDate) {
-    return reminder.remindDate === today
-  }
-  if (reminder.repeatRule === 'WEEKLY' && reminder.repeatDays) {
-    const days = reminder.repeatDays
-      .split(',')
-      .map((d) => Number(d))
-      .filter((d) => Number.isInteger(d) && d >= 1 && d <= 7)
-    // dayjs().day() 周日为 0，项目内 repeatDays 用 1-7 表示周一到周日
-    return days.includes(dayjs().day() || 7)
-  }
-  return true
 }
 
 function isTimeReached(reminder: Reminder) {
@@ -107,7 +92,7 @@ export function useReminderNotify() {
     try {
       const today = dayjs().format('YYYY-MM-DD')
       const reminders = await reminderApi.list(undefined, true)
-      const due = reminders.filter((r) => isDueToday(r, today) && isTimeReached(r))
+      const due = reminders.filter((r) => isReminderDueOn(r, today) && isTimeReached(r))
       if (!due.length) return
 
       const petIds = [...new Set(due.map((r) => r.petId))]

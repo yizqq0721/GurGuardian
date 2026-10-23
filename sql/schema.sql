@@ -226,7 +226,8 @@ CREATE TABLE tips (
     is_mock         TINYINT(1)   NOT NULL DEFAULT 0 COMMENT '是否降级兜底数据',
     created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    KEY idx_pet_date (pet_id, tip_date),
+    -- 一个宠物每天只留一条 Tip，重复生成由唯一键兜底
+    UNIQUE KEY uk_pet_tip_date (pet_id, tip_date),
     KEY idx_user_id (user_id)
 ) ENGINE=InnoDB COMMENT='每日Tip';
 
@@ -252,7 +253,8 @@ CREATE TABLE weekly_reports (
     created_at          DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at          DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    KEY idx_pet_week (pet_id, week_start),
+    -- 同一宠物同一周只保留一份周报，重复生成时覆盖而非新增
+    UNIQUE KEY uk_pet_week (pet_id, week_start),
     KEY idx_user_id (user_id)
 ) ENGINE=InnoDB COMMENT='周报';
 
