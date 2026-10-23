@@ -99,11 +99,14 @@ import { useUserStore } from '@/stores/user'
 import { usePetStore } from '@/stores/pet'
 import PetSwitcher from '@/components/PetSwitcher.vue'
 import WeatherWidget from '@/components/WeatherWidget.vue'
+import { useReminderNotify } from '@/composables/useReminderNotify'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 const petStore = usePetStore()
+
+useReminderNotify()
 
 const navItems = computed(() => {
   const items = [

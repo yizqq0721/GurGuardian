@@ -55,9 +55,72 @@
           </span>
           <span class="row-control">
             <SeverityDot :level="notificationGranted ? 'success' : 'info'" />
-            <el-button size="small" :disabled="notificationGranted" @click="requestNotification">
+            <el-button
+              size="small"
+              :type="notificationGranted ? 'default' : 'primary'"
+              :disabled="notificationGranted"
+              @click="requestNotification"
+            >
               {{ notificationGranted ? '已授权' : '开启通知' }}
             </el-button>
+          </span>
+        </div>
+
+        <div class="fg-kv">
+          <span class="row-text">
+            <span class="row-label">站内提醒</span>
+            <span class="row-desc">打开页面时，到点的待办会在右下角弹出通知</span>
+          </span>
+          <span class="row-control">
+            <el-switch v-model="inAppNotify" @change="onInAppNotifyChange" />
+          </span>
+        </div>
+
+        <div class="fg-kv">
+          <span class="row-text">
+            <span class="row-label">测试通知</span>
+            <span class="row-desc">确认当前浏览器能否正常收到提醒</span>
+          </span>
+          <span class="row-control">
+            <el-button size="small" @click="sendTest">发送测试</el-button>
+          </span>
+        </div>
+
+        <h3 class="sub-title">邮件提醒</h3>
+        <p class="sub-lead">
+          到点后把待办发到邮箱，适合不常打开网页的日子。需要服务端配置 SMTP 后才会真正发信。
+        </p>
+
+        <div class="fg-kv">
+          <span class="row-text">
+            <span class="row-label">接收邮箱</span>
+            <span class="row-desc">留空保存会清除邮箱并关闭邮件提醒</span>
+          </span>
+          <span class="row-control email-control">
+            <el-input
+              v-model="email"
+              type="email"
+              size="small"
+              placeholder="you@example.com"
+              class="email-input"
+            />
+            <el-button size="small" type="primary" :loading="savingMail" @click="saveEmail">
+              保存
+            </el-button>
+          </span>
+        </div>
+
+        <div class="fg-kv">
+          <span class="row-text">
+            <span class="row-label">邮件提醒</span>
+            <span class="row-desc">按提醒时间发送，已打卡的待办不会重复发送</span>
+          </span>
+          <span class="row-control">
+            <el-switch
+              v-model="emailEnabled"
+              :disabled="!email || savingMail"
+              @change="toggleEmail"
+            />
           </span>
         </div>
       </section>
@@ -100,19 +163,89 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Bell, Info as InfoIcon, LogOut, User as UserIcon } from 'lucide-vue-next'
 import { useUserStore } from '@/stores/user'
 import { usePetStore } from '@/stores/pet'
+import { userApi } from '@/api/user'
 import PageHeader from '@/components/PageHeader.vue'
 import SeverityDot from '@/components/SeverityDot.vue'
+import {
+  isInAppNotifyEnabled,
+  sendTestNotification,
+  setInAppNotifyEnabled,
+} from '@/composables/useReminderNotify'
 
 const router = useRouter()
 const userStore = useUserStore()
 const petStore = usePetStore()
 
 const notificationGranted = ref(false)
+const inAppNotify = ref(isInAppNotifyEnabled())
+const email = ref('')
+const emailEnabled = ref(false)
+const savingMail = ref(false)
 
 onMounted(() => {
   petStore.fetchPets()
   notificationGranted.value = 'Notification' in window && Notification.permission === 'granted'
+  void loadMailSettings()
 })
+
+function onInAppNotifyChange(value: boolean) {
+  setInAppNotifyEnabled(value)
+  ElMessage.success(value ? '站内提醒已开启' : '站内提醒已关闭')
+}
+
+function sendTest() {
+  sendTestNotification()
+  ElMessage.success('测试通知已发送')
+}
+
+async function loadMailSettings() {
+  try {
+    const settings = await userApi.mailSettings()
+    email.value = settings.email
+    emailEnabled.value = settings.enabled
+  } catch {
+    // 加载失败时保留空设置，用户仍可重新填写保存
+  }
+}
+
+async function saveEmail() {
+  savingMail.value = true
+  try {
+    const value = email.value.trim()
+    const settings = await userApi.updateMailSettings({
+      email: value,
+      enabled: value ? emailEnabled.value : false,
+    })
+    email.value = settings.email
+    emailEnabled.value = settings.enabled
+    ElMessage.success(value ? '邮箱已保存' : '邮箱已清除，邮件提醒已关闭')
+  } catch {
+    // 错误提示由请求拦截器统一处理
+  } finally {
+    savingMail.value = false
+  }
+}
+
+async function toggleEmail(value: boolean) {
+  if (value && !email.value.trim()) {
+    emailEnabled.value = false
+    ElMessage.warning('请先填写邮箱并保存')
+    return
+  }
+  savingMail.value = true
+  try {
+    const settings = await userApi.updateMailSettings({
+      email: email.value.trim(),
+      enabled: value,
+    })
+    emailEnabled.value = settings.enabled
+    ElMessage.success(value ? '邮件提醒已开启' : '邮件提醒已关闭')
+  } catch {
+    emailEnabled.value = !value
+  } finally {
+    savingMail.value = false
+  }
+}
 
 async function requestNotification() {
   if (!('Notification' in window)) {
@@ -193,6 +326,28 @@ async function logout() {
   flex: none;
 }
 
+.sub-title {
+  margin: var(--fg-s5) 0 var(--fg-s1);
+  font-family: var(--fg-font-serif);
+  font-size: var(--fg-text-lead);
+  font-weight: 600;
+}
+
+.sub-lead {
+  margin: 0 0 var(--fg-s2);
+  font-size: var(--fg-text-label);
+  line-height: 1.7;
+  color: var(--fg-ink-muted);
+}
+
+.email-control {
+  min-width: 0;
+}
+
+.email-input {
+  width: 220px;
+}
+
 .about-text {
   margin: 0;
   max-width: 68ch;
@@ -233,6 +388,11 @@ async function logout() {
     width: 100%;
     flex-wrap: wrap;
     justify-content: flex-start;
+  }
+
+  .email-control,
+  .email-input {
+    width: 100%;
   }
 
   .about-text {

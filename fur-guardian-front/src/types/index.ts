@@ -39,6 +39,12 @@ export interface UserProfile {
   location?: string
 }
 
+/** 邮件提醒设置：邮箱留空即关闭 */
+export interface MailSettings {
+  email: string
+  enabled: boolean
+}
+
 /** 反向地理编码结果，label 只到区/县，不含街道门牌 */
 export interface GeoAddress {
   province?: string
