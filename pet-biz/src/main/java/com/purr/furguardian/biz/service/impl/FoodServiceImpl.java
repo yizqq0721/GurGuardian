@@ -10,6 +10,7 @@ import com.purr.furguardian.biz.service.FoodService;
 import com.purr.furguardian.common.exception.BizException;
 import com.purr.furguardian.common.result.ErrorCode;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
@@ -26,6 +27,7 @@ public class FoodServiceImpl implements FoodService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Long createFood(Long userId, FoodDO food, FoodNutrientDO nutrients) {
         food.setId(null);
         food.setUserId(userId);
@@ -43,11 +45,9 @@ public class FoodServiceImpl implements FoodService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void updateFood(Long userId, Long foodId, FoodDO food, FoodNutrientDO nutrients) {
-        FoodDO existing = getFood(foodId);
-        if (existing.getUserId() != null && !existing.getUserId().equals(userId)) {
-            throw new BizException(ErrorCode.FORBIDDEN, "无权修改公共食品");
-        }
+        requireOwnedFood(userId, foodId, "修改");
         food.setId(foodId);
         food.setUpdatedAt(LocalDateTime.now());
         foodMapper.updateById(food);
@@ -69,15 +69,21 @@ public class FoodServiceImpl implements FoodService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void deleteFood(Long userId, Long foodId) {
-        FoodDO existing = getFood(foodId);
-        if (existing.getUserId() != null && !existing.getUserId().equals(userId)) {
-            throw new BizException(ErrorCode.FORBIDDEN, "无权删除公共食品");
-        }
+        requireOwnedFood(userId, foodId, "删除");
         foodMapper.deleteById(foodId);
         LambdaQueryWrapper<FoodNutrientDO> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(FoodNutrientDO::getFoodId, foodId);
         nutrientMapper.delete(wrapper);
+    }
+
+    /** 公共食品（userId 为空）与他人食品都只读，只有创建者本人可改可删 */
+    private void requireOwnedFood(Long userId, Long foodId, String action) {
+        FoodDO existing = getFood(foodId);
+        if (existing.getUserId() == null || !existing.getUserId().equals(userId)) {
+            throw new BizException(ErrorCode.FORBIDDEN, "只能" + action + "自己添加的食品");
+        }
     }
 
     @Override

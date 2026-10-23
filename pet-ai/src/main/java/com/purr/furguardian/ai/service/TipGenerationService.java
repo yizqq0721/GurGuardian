@@ -8,8 +8,8 @@ import com.purr.furguardian.biz.service.TipService;
 import com.purr.furguardian.knowledge.service.KnowledgeRetrievalService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,6 +36,7 @@ public class TipGenerationService {
     private final PromptTemplates promptTemplates;
     private final RedLineMatcher redLineMatcher;
     private final StringRedisTemplate redisTemplate;
+    private final Executor streamExecutor;
 
     public TipGenerationService(PetService petService,
                                 TipService tipService,
@@ -42,7 +44,8 @@ public class TipGenerationService {
                                 LlmService llmService,
                                 PromptTemplates promptTemplates,
                                 RedLineMatcher redLineMatcher,
-                                StringRedisTemplate redisTemplate) {
+                                StringRedisTemplate redisTemplate,
+                                @Qualifier("tipStreamExecutor") Executor streamExecutor) {
         this.petService = petService;
         this.tipService = tipService;
         this.retrievalService = retrievalService;
@@ -50,6 +53,7 @@ public class TipGenerationService {
         this.promptTemplates = promptTemplates;
         this.redLineMatcher = redLineMatcher;
         this.redisTemplate = redisTemplate;
+        this.streamExecutor = streamExecutor;
     }
 
     public SseEmitter generateTipStream(Long userId, Long petId, boolean mockMode, boolean refresh) {
@@ -169,7 +173,7 @@ public class TipGenerationService {
                 }
                 emitter.completeWithError(e);
             }
-        }, CompletableFuture.completedFuture(null).defaultExecutor());
+        }, streamExecutor);
 
         return emitter;
     }

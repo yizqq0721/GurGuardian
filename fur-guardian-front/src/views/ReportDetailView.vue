@@ -9,17 +9,23 @@
             <h1 class="fg-h1 letter-title">{{ petName }}的本周小结</h1>
             <p class="meta">{{ metaLine }}</p>
           </div>
-          <el-button type="primary" plain :loading="polishing" class="polish-btn" @click="polish">
-            <PenLine :size="20" class="fg-icon btn-icon" />
-            {{ report.llmSummary ? '重新润色' : 'AI 润色总结' }}
+          <el-button type="primary" :loading="polishing" class="polish-btn" @click="regenerate">
+            <RefreshCw :size="20" class="fg-icon btn-icon" :class="{ 'is-spinning': polishing }" />
+            重新生成
           </el-button>
         </header>
 
-        <!-- AI 润色总结：正文开场段 -->
+        <!-- AI 小结：进入页面自动生成，正文按 Markdown 渲染 -->
         <section class="summary-block">
-          <h2 class="fg-label block-label">本周小结</h2>
-          <p v-if="llmSummary" class="fg-lead summary-text">{{ llmSummary }}</p>
-          <p v-else class="fg-muted">本周报尚未进行 AI 润色，点击上方「AI 润色总结」生成措辞；规则结论不受影响。</p>
+          <h2 class="fg-label block-label">AI 本周小结</h2>
+          <div v-if="polishing && !llmSummary" class="summary-loading" role="status" aria-live="polite">
+            <span class="fg-dot summary-dot"></span>
+            <span>AI 正在根据本周数据生成小结…</span>
+          </div>
+          <MarkdownContent v-else-if="llmSummary" :content="llmSummary" class="summary-markdown" />
+          <p v-else class="fg-muted">
+            暂时没能生成 AI 小结，可点击右上角「重新生成」再试；规则结论不受影响。
+          </p>
         </section>
 
         <!-- 四项指标：发丝分隔 -->
@@ -118,10 +124,11 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import dayjs from 'dayjs'
-import { Activity, ListChecks, PenLine } from 'lucide-vue-next'
+import { Activity, ListChecks, RefreshCw } from 'lucide-vue-next'
 import { reportApi } from '@/api/report'
 import { usePetStore } from '@/stores/pet'
 import DisclaimerBar from '@/components/DisclaimerBar.vue'
+import MarkdownContent from '@/components/MarkdownContent.vue'
 import SeverityDot from '@/components/SeverityDot.vue'
 import StatTile from '@/components/StatTile.vue'
 import WeightChart from '@/components/WeightChart.vue'
@@ -157,22 +164,33 @@ onMounted(async () => {
       }
     }
     llmSummary.value = r.llmSummary || ''
+    // 进入详情直接展示 AI 小结：尚未生成时自动补一次，不再需要手动点按钮
+    if (!llmSummary.value) {
+      void generateSummary(false)
+    }
   } finally {
     loading.value = false
   }
 })
 
-async function polish() {
+async function generateSummary(force: boolean) {
   polishing.value = true
   try {
-    await reportApi.polish(reportId)
-    llmSummary.value = await reportApi.summary(reportId)
-    ElMessage.success('润色完成')
-  } catch {
-    ElMessage.warning('润色服务暂不可用，规则结论不受影响')
+    const updated = await reportApi.polish(reportId, force)
+    llmSummary.value = updated?.llmSummary || (await reportApi.summary(reportId)) || ''
+    if (force) ElMessage.success('AI 小结已重新生成')
+  } catch (e) {
+    // 首次自动生成失败时页面会显示引导文案；手动重生成失败给出明确提示
+    if (force) {
+      ElMessage.warning((e as Error).message || '重新生成失败，请稍后重试')
+    }
   } finally {
     polishing.value = false
   }
+}
+
+function regenerate() {
+  void generateSummary(true)
 }
 
 const petName = computed(() => petStore.currentPet?.name ?? `宠物 #${report.value?.petId ?? ''}`)
@@ -287,6 +305,16 @@ const hasWarn = computed(() => triggeredRules.value.some((x) => x.severity === '
   margin-right: var(--fg-s1);
 }
 
+.is-spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* 小结段 */
 .summary-block {
   padding: var(--fg-s5) 0;
@@ -297,9 +325,36 @@ const hasWarn = computed(() => triggeredRules.value.some((x) => x.severity === '
   margin: 0 0 var(--fg-s3);
 }
 
-.summary-text {
-  margin: 0;
+.summary-markdown :deep(.markdown-body) {
+  font-size: var(--fg-text-body);
   line-height: 1.8;
+}
+
+.summary-markdown :deep(.markdown-body ul) {
+  padding-left: 1.2em;
+}
+
+.summary-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--fg-s2);
+  color: var(--fg-ink-muted);
+  font-size: var(--fg-text-body);
+}
+
+.summary-dot {
+  background: var(--fg-accent);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 /* 指标 */
@@ -418,6 +473,62 @@ const hasWarn = computed(() => triggeredRules.value.some((x) => x.severity === '
   }
   .letter-title {
     font-size: 28px;
+  }
+}
+
+/* ===== 响应式新增：移动端（<768px）===== */
+@media (max-width: 767.98px) {
+  .letter-head {
+    gap: var(--fg-s3);
+    padding-bottom: var(--fg-s4);
+  }
+
+  .letter-title {
+    font-size: 26px;
+    line-height: 1.3;
+  }
+
+  .polish-btn {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .summary-block {
+    padding: var(--fg-s4) 0;
+  }
+
+  .metrics-card {
+    margin-top: var(--fg-s4);
+    padding: var(--fg-s3);
+  }
+
+  .report-metrics :deep(.fg-value) {
+    font-size: 22px;
+  }
+
+  .section-block {
+    margin-top: var(--fg-s5);
+  }
+
+  .chart-card {
+    padding: var(--fg-s3);
+  }
+
+  .rule-item {
+    padding: var(--fg-s3) 0;
+  }
+
+  .rule-suggestion {
+    line-height: 1.75;
+    overflow-wrap: anywhere;
+  }
+
+  .rule-detail {
+    overflow-wrap: anywhere;
+  }
+
+  .disclosure {
+    margin-top: var(--fg-s5);
   }
 }
 </style>

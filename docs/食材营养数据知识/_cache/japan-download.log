@@ -1,0 +1,3 @@
+XLSX done HTTP:206 size:1354536
+PDF done HTTP:200 size:5267334
+curl: (28) Operation timed out after 900008 milliseconds with 3152180 out of 5267334 bytes received

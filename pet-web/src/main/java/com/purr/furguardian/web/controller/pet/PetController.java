@@ -62,7 +62,7 @@ public class PetController {
 
     @PostMapping("/{id}/weight")
     @Operation(summary = "记录体重")
-    public Result<Void> addWeight(@PathVariable Long id, @RequestBody WeightLogDTO dto) {
+    public Result<Void> addWeight(@PathVariable Long id, @RequestBody @Valid WeightLogDTO dto) {
         petService.addWeightLog(UserContext.getUserId(), id, dto.getWeightKg(), dto.getBcs(), dto.getRecordedAt());
         return Result.ok();
     }

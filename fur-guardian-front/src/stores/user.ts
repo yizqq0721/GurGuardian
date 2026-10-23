@@ -1,19 +1,29 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { authApi } from '@/api/auth'
-import type { LoginResp } from '@/types'
+import { userApi } from '@/api/user'
+import type { LoginResp, UserProfile } from '@/types'
 
 const TOKEN_KEY = 'fg_token'
 const USER_KEY = 'fg_user'
 
+interface StoredUser {
+  userId: number
+  nickname: string
+  location?: string
+  isAdmin?: boolean
+}
+
 export const useUserStore = defineStore('user', () => {
   const token = ref(localStorage.getItem(TOKEN_KEY) || '')
-  const userInfo = ref<{ userId: number; nickname: string } | null>(
+  const userInfo = ref<StoredUser | null>(
     JSON.parse(localStorage.getItem(USER_KEY) || 'null'),
   )
 
   const isLoggedIn = computed(() => !!token.value)
   const nickname = computed(() => userInfo.value?.nickname || '')
+  const location = computed(() => userInfo.value?.location || '')
+  const isAdmin = computed(() => !!userInfo.value?.isAdmin)
 
   async function login(username: string, password: string) {
     const res = await authApi.login({ username, password })
@@ -22,8 +32,28 @@ export const useUserStore = defineStore('user', () => {
 
   function applyLogin(res: LoginResp) {
     token.value = res.token
-    userInfo.value = { userId: res.userId, nickname: res.nickname }
+    userInfo.value = { userId: res.userId, nickname: res.nickname, isAdmin: !!res.isAdmin }
     localStorage.setItem(TOKEN_KEY, res.token)
+    persistUser()
+  }
+
+  function applyProfile(profile: UserProfile) {
+    userInfo.value = {
+      userId: profile.userId,
+      nickname: profile.nickname || '',
+      location: profile.location || '',
+      isAdmin: userInfo.value?.isAdmin ?? false,
+    }
+    persistUser()
+  }
+
+  /** 刷新资料（昵称、当前位置）；失败时保留本地缓存 */
+  async function fetchProfile(silent = false) {
+    const profile = await userApi.profile(silent)
+    applyProfile(profile)
+  }
+
+  function persistUser() {
     localStorage.setItem(USER_KEY, JSON.stringify(userInfo.value))
   }
 
@@ -38,5 +68,17 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  return { token, userInfo, isLoggedIn, nickname, login, applyLogin, logout }
+  return {
+    token,
+    userInfo,
+    isLoggedIn,
+    nickname,
+    location,
+    isAdmin,
+    login,
+    applyLogin,
+    applyProfile,
+    fetchProfile,
+    logout,
+  }
 })

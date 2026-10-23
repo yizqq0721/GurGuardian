@@ -136,4 +136,27 @@ defineProps<{ steps: TimelineStep[] }>()
   color: var(--fg-ink-muted);
   max-width: 60ch;
 }
+
+/* 响应式新增：<768px 收紧间距，结果允许折行 */
+@media (max-width: 767.98px) {
+  .step {
+    gap: var(--fg-s3);
+    padding: var(--fg-s2) 0;
+  }
+
+  .row {
+    flex-wrap: wrap;
+    row-gap: 2px;
+    min-height: 0;
+  }
+
+  .result {
+    margin-left: auto;
+    font-size: var(--fg-text-lead);
+  }
+
+  .why p {
+    max-width: none;
+  }
+}
 </style>

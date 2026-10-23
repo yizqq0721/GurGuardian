@@ -1,15 +1,13 @@
 package com.purr.furguardian.biz.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.purr.furguardian.biz.dto.report.ReportConclusion;
 import com.purr.furguardian.biz.dto.report.ReportConclusion.RuleResult;
 import com.purr.furguardian.biz.entity.pet.PetDO;
 import com.purr.furguardian.biz.entity.pet.PetWeightLogDO;
-import com.purr.furguardian.biz.entity.report.FeedingPlanDO;
 import com.purr.furguardian.biz.entity.report.WeeklyReportDO;
-import com.purr.furguardian.biz.mapper.pet.PetMapper;
 import com.purr.furguardian.biz.mapper.pet.PetWeightLogMapper;
-import com.purr.furguardian.biz.mapper.report.FeedingPlanMapper;
 import com.purr.furguardian.biz.mapper.report.WeeklyReportMapper;
 import com.purr.furguardian.biz.service.PetService;
 import com.purr.furguardian.biz.service.ReportService;
@@ -31,16 +29,13 @@ public class ReportServiceImpl implements ReportService {
 
     private final PetService petService;
     private final PetWeightLogMapper weightLogMapper;
-    private final FeedingPlanMapper planMapper;
     private final WeeklyReportMapper reportMapper;
     private final ObjectMapper objectMapper;
 
     public ReportServiceImpl(PetService petService, PetWeightLogMapper weightLogMapper,
-                             FeedingPlanMapper planMapper, WeeklyReportMapper reportMapper,
-                             ObjectMapper objectMapper) {
+                             WeeklyReportMapper reportMapper, ObjectMapper objectMapper) {
         this.petService = petService;
         this.weightLogMapper = weightLogMapper;
-        this.planMapper = planMapper;
         this.reportMapper = reportMapper;
         this.objectMapper = objectMapper;
     }
@@ -92,9 +87,48 @@ public class ReportServiceImpl implements ReportService {
         report.setStatus("generated");
         report.setCreatedAt(LocalDateTime.now());
         report.setUpdatedAt(LocalDateTime.now());
-        reportMapper.insert(report);
+
+        WeeklyReportDO existing = findExisting(userId, petId, weekStart);
+        if (existing == null) {
+            reportMapper.insert(report);
+        } else {
+            // 同一宠物同一周只保留一份周报：重复生成时覆盖指标，避免列表里出现重复项
+            report.setId(existing.getId());
+            report.setCreatedAt(existing.getCreatedAt());
+            updateGeneratedFields(report);
+        }
 
         return report;
+    }
+
+    private WeeklyReportDO findExisting(Long userId, Long petId, LocalDate weekStart) {
+        LambdaQueryWrapper<WeeklyReportDO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(WeeklyReportDO::getUserId, userId)
+                .eq(WeeklyReportDO::getPetId, petId)
+                .eq(WeeklyReportDO::getWeekStart, weekStart)
+                .orderByDesc(WeeklyReportDO::getId)
+                .last("LIMIT 1");
+        return reportMapper.selectOne(wrapper);
+    }
+
+    /** 指标可能变为 null（例如本周没有称重），必须显式 set，不能依赖 updateById 的 null 忽略策略 */
+    private void updateGeneratedFields(WeeklyReportDO report) {
+        LambdaUpdateWrapper<WeeklyReportDO> update = new LambdaUpdateWrapper<>();
+        update.eq(WeeklyReportDO::getId, report.getId())
+                .eq(WeeklyReportDO::getUserId, report.getUserId())
+                .set(WeeklyReportDO::getWeekEnd, report.getWeekEnd())
+                .set(WeeklyReportDO::getWeightStartKg, report.getWeightStartKg())
+                .set(WeeklyReportDO::getWeightEndKg, report.getWeightEndKg())
+                .set(WeeklyReportDO::getWeightChangePct, report.getWeightChangePct())
+                .set(WeeklyReportDO::getBcsStart, report.getBcsStart())
+                .set(WeeklyReportDO::getBcsEnd, report.getBcsEnd())
+                .set(WeeklyReportDO::getSnackOverLimit, report.getSnackOverLimit())
+                .set(WeeklyReportDO::getRuleConclusions, report.getRuleConclusions())
+                .set(WeeklyReportDO::getStatus, report.getStatus())
+                // 指标重新生成后旧的小结已失效，置空让详情页按需重新生成
+                .set(WeeklyReportDO::getLlmSummary, null)
+                .set(WeeklyReportDO::getUpdatedAt, report.getUpdatedAt());
+        reportMapper.update(null, update);
     }
 
     @Override

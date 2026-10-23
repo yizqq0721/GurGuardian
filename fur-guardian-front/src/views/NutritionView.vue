@@ -578,4 +578,58 @@ async function loadRecipe() {
     display: none;
   }
 }
+
+/* ============================================================
+   响应式新增：<768px 手机端（桌面端不受影响）
+   ============================================================ */
+@media (max-width: 767.98px) {
+  .context-bar {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--fg-s3);
+    padding: var(--fg-s3) var(--fg-s4);
+    margin-bottom: var(--fg-s4);
+  }
+
+  .pet-avatar {
+    width: 36px;
+    height: 36px;
+  }
+
+  .ctx-name {
+    font-size: 18px;
+  }
+
+  /* 主粮选择独占一行 */
+  .ctx-food {
+    flex: 1 1 100%;
+  }
+
+  .food-select {
+    max-width: none;
+  }
+
+  .add-food {
+    margin-left: auto;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .aside-col {
+    position: static;
+  }
+
+  .hero {
+    margin-bottom: var(--fg-s4);
+  }
+
+  .aside-col .fg-card + .fg-card {
+    margin-top: var(--fg-s4);
+  }
+
+  .density .fg-num {
+    font-size: 28px;
+  }
+}
 </style>

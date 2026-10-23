@@ -1,6 +1,7 @@
 package com.purr.furguardian.biz.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.purr.furguardian.biz.entity.knowledge.KnowledgeChatMessageDO;
 import com.purr.furguardian.biz.entity.knowledge.KnowledgeChatSessionDO;
 import com.purr.furguardian.biz.entity.knowledge.KnowledgeDocDO;
@@ -80,10 +81,13 @@ public class KnowledgeChatServiceImpl implements KnowledgeChatService {
 
     @Override
     public void renameSession(Long userId, Long sessionId, String title) {
-        KnowledgeChatSessionDO session = requireOwned(userId, sessionId);
-        session.setTitle(normalizeTitle(title));
-        // updated_at 按加载时的旧值写回，重命名不会把会话顶到列表最前面
-        sessionMapper.updateById(session);
+        requireOwned(userId, sessionId);
+        // 只更新 title：整行回写会用旧值覆盖并发追加的 messageCount/sourceCount/updatedAt
+        LambdaUpdateWrapper<KnowledgeChatSessionDO> update = new LambdaUpdateWrapper<>();
+        update.eq(KnowledgeChatSessionDO::getId, sessionId)
+                .eq(KnowledgeChatSessionDO::getUserId, userId)
+                .set(KnowledgeChatSessionDO::getTitle, normalizeTitle(title));
+        sessionMapper.update(null, update);
     }
 
     @Override

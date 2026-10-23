@@ -187,10 +187,27 @@ h4 {
   display: none;
 }
 
-/* 按钮：8px 圆角、无阴影、次级按钮用发丝边框 */
+/* 按钮：8px 圆角、无阴影；次级按钮用更深的发丝边框，悬停转为主色 */
 .el-button {
   border-radius: var(--fg-radius);
   font-weight: 500;
+}
+
+.el-button--primary {
+  font-weight: 600;
+}
+
+/* 默认按钮（无 type）加强轮廓与悬停反馈，避免混在正文里看不见可点击 */
+.el-button:not(.el-button--primary):not(.el-button--success):not(.el-button--warning):not(.el-button--danger):not(.el-button--info):not(.is-text):not(.is-link) {
+  border-color: var(--fg-line-strong);
+  color: var(--fg-ink);
+}
+
+.el-button:not(.el-button--primary):not(.el-button--success):not(.el-button--warning):not(.el-button--danger):not(.el-button--info):not(.is-text):not(.is-link):hover,
+.el-button:not(.el-button--primary):not(.el-button--success):not(.el-button--warning):not(.el-button--danger):not(.el-button--info):not(.is-text):not(.is-link):focus-visible {
+  border-color: var(--fg-accent);
+  color: var(--fg-accent);
+  background: var(--fg-accent-soft);
 }
 
 .el-button--small {
@@ -222,10 +239,11 @@ h4 {
   box-shadow: 0 0 0 2px var(--fg-accent-soft) !important;
 }
 
-/* 无障碍焦点环 */
+/* 无障碍焦点环：原生输入框由 .el-input__wrapper.is-focus 的边框负责，这里必须排除，
+   否则内层 input 的 [tabindex] 会再叠一层 outline + 阴影，形成错位的双环 */
 a:focus-visible,
 button:focus-visible,
-[tabindex]:focus-visible {
+[tabindex]:not(input):not(textarea):focus-visible {
   outline: 1px solid var(--fg-accent);
   outline-offset: 2px;
   box-shadow: 0 0 0 3px var(--fg-accent-soft);

@@ -30,6 +30,132 @@
           <p class="hero-note fg-mono">注册后即可建档，4 步生成个体化方案</p>
         </div>
 
+        <!-- 紧凑计算器：左栏，底边与右侧示例卡对齐 -->
+        <section ref="calcSection" class="hero-calc" aria-label="每日热量尝鲜计算器">
+          <div class="fg-card calc-card">
+            <div class="calc-head">
+              <h2 class="fg-section-title calc-title">
+                <Calculator :size="18" class="fg-icon" />
+                每日热量尝鲜计算器
+              </h2>
+              <p class="calc-hint fg-label">纯前端即时计算 · 与后端同公式</p>
+            </div>
+
+            <div class="calc-fields">
+              <div class="field">
+                <span class="fg-label field-label">物种</span>
+                <div class="seg-group" role="radiogroup" aria-label="物种">
+                  <button
+                    v-for="s in SPECIES_BUTTONS"
+                    :key="s.value"
+                    type="button"
+                    role="radio"
+                    :aria-checked="form.species === s.value"
+                    class="seg-btn"
+                    :class="{ 'is-active': form.species === s.value }"
+                    @click="form.species = s.value"
+                  >
+                    <component :is="s.icon" :size="18" class="fg-icon" />
+                    <span>{{ s.label }}</span>
+                  </button>
+                </div>
+              </div>
+
+              <label class="field">
+                <span class="fg-label field-label">体重 (kg)</span>
+                <el-input-number
+                  v-model="form.weight"
+                  class="num"
+                  size="large"
+                  :min="0.5"
+                  :max="80"
+                  :step="0.5"
+                  :precision="1"
+                  :controls="false"
+                />
+              </label>
+
+              <label class="field">
+                <span class="fg-label field-label">年龄（月）</span>
+                <el-input-number
+                  v-model="form.ageMonths"
+                  class="num"
+                  size="large"
+                  :min="1"
+                  :max="240"
+                  :controls="false"
+                />
+              </label>
+
+              <div class="field">
+                <span class="fg-label field-label">已绝育</span>
+                <el-switch v-model="form.neutered" />
+              </div>
+
+              <label class="field">
+                <span class="fg-label field-label">活动量</span>
+                <el-select v-model="form.activityLevel" class="sel" size="large">
+                  <el-option
+                    v-for="opt in ACTIVITY_OPTIONS"
+                    :key="opt.value"
+                    :value="opt.value"
+                    :label="opt.label"
+                  />
+                </el-select>
+              </label>
+
+              <label class="field">
+                <span class="fg-label field-label">主粮能量密度 (kcal/kg)</span>
+                <el-input-number
+                  v-model="density"
+                  class="num"
+                  size="large"
+                  :min="500"
+                  :max="6000"
+                  :step="50"
+                  :controls="false"
+                />
+              </label>
+            </div>
+
+            <div v-if="result" class="calc-result">
+              <div class="fg-divider" />
+              <div class="calc-metrics">
+                <StatTile
+                  label="RER 静息能量需求"
+                  :value="fmt(result.rer)"
+                  unit="kcal/日"
+                  :caption="`70 × ${weightText}^0.75`"
+                />
+                <StatTile
+                  label="MER 每日维持能量"
+                  :value="fmt(result.mer)"
+                  unit="kcal/日"
+                  :caption="`× ${result.factor.toFixed(2)}`"
+                />
+                <StatTile
+                  label="每日主粮"
+                  :value="fmt(grams)"
+                  unit="g/日"
+                  :caption="`${density} kcal/kg`"
+                />
+                <StatTile
+                  label="零食额度"
+                  :value="fmt(snackBudget(result.mer))"
+                  unit="kcal"
+                  caption="占 MER 10% 硬上限"
+                />
+              </div>
+              <div class="calc-formula">
+                <p class="fg-mono">{{ rerFormula }}</p>
+                <p class="fg-mono">{{ merFormula }}</p>
+                <p class="fg-mono">{{ gramsFormula }}</p>
+                <p class="fg-mono">{{ snackFormula }}</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <aside class="hero-panel" aria-label="营养方案示例片段">
           <div class="panel-head">
             <p class="fg-label">营养方案 · 示例数据</p>
@@ -91,21 +217,49 @@
       </p>
     </div>
 
-    <!-- 3. 三个问题 → 解法（行式，不是卡片） -->
+    <!-- 3. 三步引导：从建档到拿到方案 -->
     <section class="fg-page block">
-      <h2 class="fg-h2 block-title">三个常见卡点</h2>
+      <h2 class="fg-h2 block-title">三步做出第一份喂养方案</h2>
+      <p class="block-lead">
+        不用先弄懂营养学。跟着下面三步走，建档、计算、判定都由系统完成，你只需要照着结果喂。
+      </p>
       <ol class="prob-list">
         <li class="prob">
           <span class="prob-idx fg-mono">01</span>
           <div class="prob-body">
-            <h3 class="prob-title">粮袋建议太粗</h3>
+            <h3 class="prob-title">先建一份宠物档案</h3>
             <p class="prob-line">
-              <span class="fg-label prob-tag">问题</span>
-              包装喂食表按体重区间给一个范围，跨 2 kg 就不知道该信哪一端。
+              <span class="fg-label prob-tag">开始</span>
+              告诉系统它多重、几个月大、是否绝育、平时活动多少——这就是计算所需的全部信息。
             </p>
             <p class="prob-line">
-              <span class="fg-label prob-tag">解法</span>
-              按体重、年龄、绝育、活动量计算 RER → MER，反推每日克数，不再看粮袋上那张粗表。
+              <span class="fg-label prob-tag">得到</span>
+              一份随体重更新的每日热量与克数方案，换粮、绝育、体重变化后都可重新生成。
+            </p>
+          </div>
+          <div class="prob-vis">
+            <div class="vis-row">
+              <span class="fg-label">宠物档案</span>
+              <span class="fg-num fg-is-accent">犬 · 5.1 kg</span>
+            </div>
+            <div class="vis-row">
+              <span class="fg-label">活动量</span>
+              <span class="fg-num">低（偶尔散步）</span>
+            </div>
+          </div>
+        </li>
+
+        <li class="prob">
+          <span class="prob-idx fg-mono">02</span>
+          <div class="prob-body">
+            <h3 class="prob-title">按方案喂，不再猜粮袋</h3>
+            <p class="prob-line">
+              <span class="fg-label prob-tag">开始</span>
+              打开营养方案，按每日克数与零食额度分餐；临时加了罐头或冻干，顺手记一笔。
+            </p>
+            <p class="prob-line">
+              <span class="fg-label prob-tag">得到</span>
+              主粮与零食分开计算，零食超过总热量 10% 时当场提示，不必事后回想。
             </p>
           </div>
           <div class="prob-vis">
@@ -121,16 +275,16 @@
         </li>
 
         <li class="prob">
-          <span class="prob-idx fg-mono">02</span>
+          <span class="prob-idx fg-mono">03</span>
           <div class="prob-body">
-            <h3 class="prob-title">营养表看不懂</h3>
+            <h3 class="prob-title">喂之前，对照国标复核一次</h3>
             <p class="prob-line">
-              <span class="fg-label prob-tag">问题</span>
-              干粮与湿粮水分差几十倍，标注值直接比就是拿苹果比橘子。
+              <span class="fg-label prob-tag">开始</span>
+              添加主粮时填入包装上的营养表，系统会自动换算到干物质基准。
             </p>
             <p class="prob-line">
-              <span class="fg-label prob-tag">解法</span>
-              干粮湿粮统一换算到干物质基准再对照国标，营养表终于能看懂了。
+              <span class="fg-label prob-tag">得到</span>
+              每项营养是否达标一眼可见，不达标的项目会给出可执行的换粮或补充方向。
             </p>
           </div>
           <div class="prob-vis">
@@ -145,49 +299,26 @@
             <span class="fg-chip fg-chip--ok">高于国标 22%</span>
           </div>
         </li>
-
-        <li class="prob">
-          <span class="prob-idx fg-mono">03</span>
-          <div class="prob-body">
-            <h3 class="prob-title">零食不算热量</h3>
-            <p class="prob-line">
-              <span class="fg-label prob-tag">问题</span>
-              主粮算得再准，随手几块冻干也能把全天额度顶穿。
-            </p>
-            <p class="prob-line">
-              <span class="fg-label prob-tag">解法</span>
-              零食纳入每日总热量，超出额度自动告警，主粮算得准，零食不再随手给。
-            </p>
-          </div>
-          <div class="prob-vis">
-            <div class="vis-row">
-              <span class="fg-label">零食额度</span>
-              <span class="fg-num vis-cold">34 kcal</span>
-            </div>
-            <div class="vis-row">
-              <span class="fg-label">今日已给</span>
-              <span class="fg-num fg-is-warning">60 kcal</span>
-            </div>
-            <span class="fg-chip fg-chip--warn">超出 76%</span>
-          </div>
-        </li>
       </ol>
     </section>
 
-    <!-- 4. 三条不能省 -->
+    <!-- 4. 把方案用起来：日常功能引导 -->
     <section class="fg-page block">
-      <h2 class="fg-h2 block-title">三条不能省</h2>
+      <h2 class="fg-h2 block-title">建档只是起点，接下来这样用</h2>
+      <p class="block-lead">
+        一份计算方案要变成习惯，靠的是每天记一点、每周看一眼、到点有人提醒。下面三件事都能在站内完成。
+      </p>
       <ol class="promise-list">
         <li class="promise">
           <span class="promise-idx fg-num">1</span>
           <div class="promise-body">
             <h3 class="fg-h3 promise-title">
-              <FlaskConical :size="20" class="fg-icon" />
-              可测试的营养引擎
+              <LineChart :size="20" class="fg-icon" />
+              每天两分钟，记录喂食与体重
             </h3>
             <p class="promise-text">
-              RER = 70 × 体重^0.75、MER 系数、干物质换算、10% 零食上限全部来自公开标准，
-              每一步公式在页面上逐行展开，可复核、可回归测试。
+              喂了多少、体重几斤、今天喝没喝水，随手记下即可。趋势图会替你看方向：
+              体重是在稳、在降，还是该把零食收一收。
             </p>
           </div>
         </li>
@@ -195,12 +326,12 @@
           <span class="promise-idx fg-num">2</span>
           <div class="promise-body">
             <h3 class="fg-h3 promise-title">
-              <BookOpen :size="20" class="fg-icon" />
-              可溯源的知识条目
+              <Sparkles :size="20" class="fg-icon" />
+              每周一，打开就能读到 AI 小结
             </h3>
             <p class="promise-text">
-              每条建议都挂来源与年份，点开是原文条目而不是模型的即兴发挥；
-              来源缺失时直接标注「无数据」，不补一个看起来合理的数字。
+              周报会自动汇总上周的体重、喂食与达标情况，写成一段能读懂的话。
+              进入周报页即可看到结论，不满意还能一键重新生成。
             </p>
           </div>
         </li>
@@ -208,136 +339,23 @@
           <span class="promise-idx fg-num">3</span>
           <div class="promise-body">
             <h3 class="fg-h3 promise-title">
-              <ShieldCheck :size="20" class="fg-icon" />
-              红线症状拦截
+              <BellRing :size="20" class="fg-icon" />
+              该做的事，到点提醒你
             </h3>
             <p class="promise-text">
-              抽搐、呼吸困难、拒食超过 24 小时等红旗症状一律先提示就医，
-              不给「再观察一下」这类可能延误的处理建议。
+              喂食、散步、疫苗、驱虫都可以设成提醒。到期时网页内会弹出通知，
+              也可以在设置里绑定邮箱，让提醒直接发到收件箱。
             </p>
           </div>
         </li>
       </ol>
-    </section>
 
-    <!-- 5. 在线计算器 -->
-    <section ref="calcSection" class="fg-page block">
-      <div class="fg-card calc-card">
-        <h2 class="fg-section-title">
-          <Calculator :size="20" class="fg-icon" />
-          每日热量尝鲜计算器
-        </h2>
-        <p class="fg-muted calc-lead">
-          纯前端即时计算，与后端营养引擎同一套公式（RER = 70 × 体重^0.75，MER = RER × 系数）。
-        </p>
-        <div class="calc-fields">
-          <div class="field">
-            <span class="fg-label field-label">物种</span>
-            <div class="seg-group" role="radiogroup" aria-label="物种">
-              <button
-                v-for="s in SPECIES_BUTTONS"
-                :key="s.value"
-                type="button"
-                role="radio"
-                :aria-checked="form.species === s.value"
-                class="seg-btn"
-                :class="{ 'is-active': form.species === s.value }"
-                @click="form.species = s.value"
-              >
-                <component :is="s.icon" :size="20" class="fg-icon" />
-                <span>{{ s.label }}</span>
-              </button>
-            </div>
-          </div>
-
-          <label class="field">
-            <span class="fg-label field-label">体重 (kg)</span>
-            <el-input-number
-              v-model="form.weight"
-              class="num"
-              size="large"
-              :min="0.5"
-              :max="80"
-              :step="0.5"
-              :precision="1"
-              :controls="false"
-            />
-          </label>
-
-          <label class="field">
-            <span class="fg-label field-label">年龄（月）</span>
-            <el-input-number
-              v-model="form.ageMonths"
-              class="num"
-              size="large"
-              :min="1"
-              :max="240"
-              :controls="false"
-            />
-          </label>
-
-          <div class="field">
-            <span class="fg-label field-label">已绝育</span>
-            <el-switch v-model="form.neutered" />
-          </div>
-
-          <label class="field">
-            <span class="fg-label field-label">活动量</span>
-            <el-select v-model="form.activityLevel" class="sel" size="large">
-              <el-option v-for="opt in ACTIVITY_OPTIONS" :key="opt.value" :value="opt.value" :label="opt.label" />
-            </el-select>
-          </label>
-
-          <label class="field">
-            <span class="fg-label field-label">主粮能量密度 (kcal/kg)</span>
-            <el-input-number
-              v-model="density"
-              class="num"
-              size="large"
-              :min="500"
-              :max="6000"
-              :step="50"
-              :controls="false"
-            />
-          </label>
+      <div class="block-cta">
+        <div class="cta-text">
+          <h3 class="cta-title">从第一份档案开始</h3>
+          <p class="cta-desc">免费注册，4 步生成个体化喂养方案，之后每周自动收到 AI 小结。</p>
         </div>
-
-        <div v-if="result" class="calc-result">
-          <div class="fg-divider" />
-          <div class="fg-metric-row calc-metrics">
-            <StatTile
-              label="RER 静息能量需求"
-              :value="fmt(result.rer)"
-              unit="kcal/日"
-              :caption="`70 × ${weightText}^0.75`"
-            />
-            <StatTile
-              label="MER 每日维持能量"
-              :value="fmt(result.mer)"
-              unit="kcal/日"
-              :caption="`× ${result.factor.toFixed(2)}（${result.factorNote}）`"
-            />
-            <StatTile
-              label="每日主粮"
-              :value="fmt(grams)"
-              unit="g/日"
-              :caption="`按 ${density} kcal/kg 反推`"
-            />
-            <StatTile
-              label="零食额度"
-              :value="fmt(snackBudget(result.mer))"
-              unit="kcal"
-              caption="占 MER 10% 硬上限"
-            />
-          </div>
-          <div class="fg-divider" />
-          <div class="calc-formula">
-            <p class="fg-mono">{{ rerFormula }}</p>
-            <p class="fg-mono">{{ merFormula }}</p>
-            <p class="fg-mono">{{ gramsFormula }}</p>
-            <p class="fg-mono">{{ snackFormula }}</p>
-          </div>
-        </div>
+        <el-button type="primary" size="large" @click="goAuth">免费开始建档</el-button>
       </div>
     </section>
 
@@ -357,7 +375,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { BookOpen, Calculator, Cat, Dog, FlaskConical, PawPrint, ShieldCheck } from 'lucide-vue-next'
+import { BellRing, Calculator, Cat, Dog, LineChart, PawPrint, Sparkles } from 'lucide-vue-next'
 import { calcDailyGrams, calcMer, snackBudget } from '@/utils/calculator'
 import { ACTIVITY_OPTIONS } from '@/utils/constants'
 import DisclaimerBar from '@/components/DisclaimerBar.vue'
@@ -399,10 +417,10 @@ const weightText = computed(() => fx(form.weight))
 
 const rerFormula = computed(() => `RER = 70 × ${weightText.value}^0.75 = ${fx(result.value.rer)} kcal`)
 const merFormula = computed(
-  () => `MER = ${fx(result.value.rer)} × ${fx(result.value.factor, 2)} = ${fx(result.value.mer)} kcal（${result.value.factorNote}）`,
+  () => `MER = ${fx(result.value.rer)} × ${fx(result.value.factor, 2)} = ${fx(result.value.mer)} kcal`,
 )
 const gramsFormula = computed(
-  () => `主粮 = ${fx(result.value.mer)} ÷ (${density.value} ÷ 1000) = ${fx(grams.value)} g/日`,
+  () => `主粮 = ${fx(result.value.mer)} ÷ ${fx(density.value / 1000, 2)} = ${fx(grams.value)} g/日`,
 )
 const snackFormula = computed(
   () => `零食 = ${fx(result.value.mer)} × 10% = ${fx(snackBudget(result.value.mer))} kcal`,
@@ -431,13 +449,19 @@ function goAuth() {
 <style scoped>
 .landing {
   min-height: 100vh;
-  background: var(--fg-paper);
+  background: transparent;
 }
 
 /* ---------- 顶栏 ---------- */
 .site-head {
   border-bottom: var(--fg-line-w) solid var(--fg-line);
-  background: var(--fg-surface);
+  background-color: var(--fg-surface);
+  background-image:
+    linear-gradient(90deg, rgba(253, 251, 246, 0.78), rgba(250, 248, 242, 0.68)),
+    url('/backgrounds/topbar-bg.png');
+  background-position: center bottom;
+  background-size: cover;
+  background-repeat: no-repeat;
 }
 
 .head-inner {
@@ -492,9 +516,25 @@ function goAuth() {
   margin: 0 auto;
   padding: 0 var(--fg-s5);
   display: grid;
+  /* 左栏两行：文案 + 计算器；右栏示例卡跨两行，底边与计算器对齐 */
   grid-template-columns: minmax(0, 1fr) minmax(0, 380px);
-  gap: var(--fg-s8);
-  align-items: start;
+  grid-template-areas:
+    'text panel'
+    'calc panel';
+  column-gap: var(--fg-s8);
+  row-gap: var(--fg-s6);
+  align-items: stretch;
+}
+
+.hero-text {
+  grid-area: text;
+  align-self: start;
+}
+
+.hero-calc {
+  grid-area: calc;
+  align-self: end;
+  min-width: 0;
 }
 
 .kicker {
@@ -524,6 +564,11 @@ function goAuth() {
 
 /* 产品片段面板：白底 + 发丝边框，内部用分隔线而不是嵌套卡片 */
 .hero-panel {
+  grid-area: panel;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--fg-s4);
   background: var(--fg-surface);
   border: var(--fg-line-w) solid var(--fg-line);
   border-radius: var(--fg-radius);
@@ -624,6 +669,46 @@ function goAuth() {
 
 .block-title {
   margin: 0 0 var(--fg-s6);
+}
+
+.block-lead {
+  margin: calc(var(--fg-s5) * -1 + var(--fg-s3)) 0 var(--fg-s5);
+  max-width: 62ch;
+  line-height: 1.8;
+  color: var(--fg-ink-muted);
+}
+
+/* 区块末尾的引导 CTA */
+.block-cta {
+  margin-top: var(--fg-s6);
+  padding: var(--fg-s5);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fg-s5);
+  background: var(--fg-accent-soft);
+  border: var(--fg-line-w) solid var(--fg-accent);
+  border-radius: var(--fg-radius);
+}
+
+.cta-title {
+  margin: 0 0 var(--fg-s2);
+  font-family: var(--fg-font-serif);
+  font-size: var(--fg-text-h3);
+  font-weight: 600;
+}
+
+.cta-desc {
+  margin: 0;
+  max-width: 48ch;
+  font-size: var(--fg-text-label);
+  line-height: 1.7;
+  color: var(--fg-ink-muted);
+}
+
+.block-cta :deep(.el-button) {
+  flex: none;
+  margin-left: 0;
 }
 
 /* 问题 → 解法：整行 + 发丝分隔，不做卡片 */
@@ -739,32 +824,48 @@ function goAuth() {
   color: var(--fg-ink-muted);
 }
 
-/* ---------- 计算器 ---------- */
+/* ---------- 计算器（Hero 左栏紧凑版） ---------- */
 .calc-card {
-  padding: var(--fg-s6);
+  padding: var(--fg-s5);
 }
 
-.calc-card .fg-section-title {
-  margin-bottom: var(--fg-s3);
+.calc-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--fg-s1) var(--fg-s3);
 }
 
-.calc-lead {
-  margin: 0 0 var(--fg-s5);
-  max-width: 72ch;
+.calc-title {
+  display: flex;
+  align-items: center;
+  gap: var(--fg-s2);
+  margin: 0;
+  font-size: 18px;
+}
+
+.calc-hint {
+  margin: 0;
 }
 
 .calc-fields {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: var(--fg-s4);
-  align-items: end;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--fg-s3) var(--fg-s4);
+  margin-top: var(--fg-s4);
 }
 
+/* 标签顶部对齐、控件底部对齐，避免长标签把输入框顶歪 */
 .field {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   gap: var(--fg-s2);
   min-width: 0;
+}
+
+.field > :last-child {
+  align-self: end;
 }
 
 .field-label {
@@ -811,16 +912,51 @@ function goAuth() {
 }
 
 .calc-result {
-  margin-top: var(--fg-s5);
+  margin-top: var(--fg-s4);
 }
 
-.calc-result .fg-divider:first-child {
-  margin-top: 0;
+.calc-result .fg-divider {
+  margin: var(--fg-s4) 0;
+}
+
+/* 指标行内自带发丝分隔，不再依赖全局 .fg-metric-row 的移动端堆叠 */
+.calc-metrics {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+}
+
+.calc-metrics > * {
+  padding-right: var(--fg-s4);
+}
+
+.calc-metrics > * + * {
+  padding-left: var(--fg-s4);
+  border-left: var(--fg-line-w) solid var(--fg-line);
+}
+
+.calc-card :deep(.fg-value) {
+  font-size: 28px;
+}
+
+.calc-card :deep(.fg-unit) {
+  font-size: var(--fg-text-label);
 }
 
 .calc-formula {
   display: grid;
-  gap: var(--fg-s1);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--fg-s1) var(--fg-s5);
+  margin-top: var(--fg-s4);
+  padding-top: var(--fg-s4);
+  border-top: var(--fg-line-w) solid var(--fg-line);
+  font-size: 11px;
+  color: var(--fg-ink-muted);
+}
+
+.calc-formula p {
+  margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .calc-card :deep(.el-input__wrapper),
@@ -831,6 +967,10 @@ function goAuth() {
 .calc-card :deep(.el-input-number .el-input__inner) {
   font-family: var(--fg-font-num);
   font-variant-numeric: tabular-nums;
+}
+
+.calc-card :deep(.el-switch) {
+  align-self: center;
 }
 
 /* ---------- 页脚 ---------- */
@@ -870,7 +1010,11 @@ function goAuth() {
 @media (max-width: 1024px) {
   .hero-inner {
     grid-template-columns: minmax(0, 1fr);
-    gap: var(--fg-s6);
+    grid-template-areas:
+      'text'
+      'calc'
+      'panel';
+    row-gap: var(--fg-s6);
   }
   .hero-title {
     font-size: var(--fg-text-display);
@@ -895,6 +1039,243 @@ function goAuth() {
   }
   .calc-card {
     padding: var(--fg-s5);
+  }
+}
+
+/* ============================================================
+   响应式新增：<768px 手机端
+   桌面端（>=768px）不应用以下任何规则
+   ============================================================ */
+@media (max-width: 767.98px) {
+  /* 顶栏 */
+  .head-inner {
+    padding: 0 var(--fg-s4);
+    gap: var(--fg-s3);
+  }
+
+  .wordmark {
+    font-size: 16px;
+  }
+
+  .head-actions {
+    gap: var(--fg-s3);
+  }
+
+  .head-login {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  /* Hero：单列、按钮铺满 */
+  .hero {
+    padding: 24px 0 40px;
+  }
+
+  .hero-inner {
+    padding: 0 var(--fg-s4);
+    gap: var(--fg-s5);
+  }
+
+  .hero-title {
+    font-size: 30px;
+  }
+
+  .hero-sub {
+    margin: var(--fg-s4) 0 var(--fg-s5);
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--fg-s3);
+  }
+
+  .hero-actions :deep(.el-button) {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .hero-note {
+    margin-top: var(--fg-s4);
+  }
+
+  .hero-panel {
+    padding: var(--fg-s4);
+  }
+
+  .spark-head,
+  .spark-note,
+  .panel-foot {
+    flex-wrap: wrap;
+    row-gap: var(--fg-s2);
+  }
+
+  /* 信任条 */
+  .trust-inner {
+    padding: var(--fg-s3) var(--fg-s4);
+    gap: var(--fg-s2);
+  }
+
+  /* 内容区块 */
+  .block {
+    margin-top: var(--fg-s5);
+  }
+
+  .block-title {
+    margin-bottom: var(--fg-s5);
+  }
+
+  .block-lead {
+    margin: calc(var(--fg-s4) * -1 + var(--fg-s2)) 0 var(--fg-s4);
+    line-height: 1.7;
+  }
+
+  .block-cta {
+    flex-direction: column;
+    align-items: stretch;
+    padding: var(--fg-s4);
+    gap: var(--fg-s4);
+  }
+
+  .block-cta :deep(.el-button) {
+    width: 100%;
+  }
+
+  /* 问题 → 解法：单列，数字保留在左侧 */
+  .prob {
+    grid-template-columns: 24px minmax(0, 1fr);
+    gap: var(--fg-s3);
+    padding: var(--fg-s5) 0;
+  }
+
+  .prob-idx {
+    padding-top: 2px;
+  }
+
+  .prob-title {
+    font-size: var(--fg-text-h3);
+    margin-bottom: var(--fg-s2);
+  }
+
+  .prob-line {
+    line-height: 1.7;
+  }
+
+  .prob-tag {
+    margin-right: var(--fg-s2);
+  }
+
+  .prob-vis {
+    margin-top: var(--fg-s3);
+    padding-left: 0;
+    border-left: none;
+  }
+
+  /* 三条不能省 */
+  .promise {
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: var(--fg-s3);
+    padding: var(--fg-s4) 0;
+  }
+
+  .promise-idx {
+    font-size: var(--fg-text-h3);
+  }
+
+  .promise-title {
+    align-items: flex-start;
+  }
+
+  .promise-text {
+    line-height: 1.7;
+  }
+
+  /* 计算器：两列字段，结果 2×2，公式在手机端收起 */
+  .calc-card {
+    padding: var(--fg-s4);
+  }
+
+  .calc-title {
+    font-size: 16px;
+  }
+
+  .calc-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--fg-s3);
+    margin-top: var(--fg-s3);
+  }
+
+  .seg-group {
+    display: flex;
+    width: 100%;
+  }
+
+  .seg-btn {
+    flex: 1;
+    height: 44px;
+    padding: 0 var(--fg-s2);
+    gap: var(--fg-s1);
+    justify-content: center;
+  }
+
+  .calc-card :deep(.el-input__wrapper),
+  .calc-card :deep(.el-select__wrapper) {
+    height: 44px;
+  }
+
+  /* 半列宽下让「低（偶尔散步）」这类活动量文案完整显示 */
+  .calc-card :deep(.el-select__wrapper) {
+    padding-inline: 10px;
+    font-size: 12px;
+  }
+
+  .calc-card :deep(.fg-value) {
+    font-size: 24px;
+  }
+
+  .calc-result .fg-divider {
+    margin: var(--fg-s3) 0;
+  }
+
+  .calc-metrics {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+  }
+
+  .calc-metrics > * {
+    padding-right: 0;
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .calc-metrics > *:nth-child(even) {
+    padding-left: var(--fg-s4);
+    border-left: var(--fg-line-w) solid var(--fg-line);
+  }
+
+  .calc-metrics > *:nth-child(odd) {
+    padding-right: var(--fg-s4);
+  }
+
+  .calc-metrics > *:nth-child(n + 3) {
+    padding-top: var(--fg-s4);
+    border-top: var(--fg-line-w) solid var(--fg-line);
+  }
+
+  .calc-formula {
+    display: none;
+  }
+
+  /* 页脚 */
+  .foot-inner {
+    padding: var(--fg-s5) var(--fg-s4);
+  }
+
+  .foot-brand {
+    flex-wrap: wrap;
+    row-gap: var(--fg-s1);
   }
 }
 </style>

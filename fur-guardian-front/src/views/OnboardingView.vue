@@ -83,7 +83,7 @@
 
           <el-form-item label="生理状态">
             <el-select v-model="form.physiology" size="large" style="width: 100%">
-              <el-option v-for="o in PHYSIOLOGY_OPTIONS" :key="o.value" :value="o.value" :label="o.label" />
+              <el-option v-for="o in physiologyOptions" :key="o.value" :value="o.value" :label="o.label" />
             </el-select>
           </el-form-item>
         </el-form>
@@ -149,7 +149,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import dayjs from 'dayjs'
@@ -191,6 +191,19 @@ const form = reactive({
 })
 
 const canNextStep0 = computed(() => form.name.trim().length > 0)
+
+const canReproduce = computed(() => form.sex === 'female' && !form.neutered)
+const physiologyOptions = computed(() =>
+  canReproduce.value ? PHYSIOLOGY_OPTIONS : PHYSIOLOGY_OPTIONS.filter((o) => o.value === 'NORMAL'),
+)
+
+watch(
+  [() => form.sex, () => form.neutered],
+  () => {
+    if (!canReproduce.value) form.physiology = 'NORMAL'
+  },
+  { immediate: true },
+)
 
 async function submit() {
   submitting.value = true
@@ -241,7 +254,7 @@ function goPets() {
 <style scoped>
 .ob-page {
   min-height: 100vh;
-  background: var(--fg-paper);
+  background: transparent;
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -501,6 +514,92 @@ function goPets() {
   }
   .species-group {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ============================================================
+   响应式新增：<768px 手机端（桌面端不受影响）
+   ============================================================ */
+@media (max-width: 767.98px) {
+  .ob-page {
+    padding: 24px var(--fg-s4) 32px;
+  }
+
+  .ob-head {
+    padding-bottom: var(--fg-s4);
+  }
+
+  .ob-kicker {
+    margin-bottom: var(--fg-s2);
+  }
+
+  .ob-title {
+    margin: var(--fg-s4) 0 var(--fg-s2);
+  }
+
+  .ob-body {
+    min-height: 0;
+    padding-top: var(--fg-s5);
+  }
+
+  .ob-form :deep(.el-form-item) {
+    margin-bottom: var(--fg-s4);
+  }
+
+  .ob-form :deep(.el-input__wrapper),
+  .ob-form :deep(.el-select__wrapper) {
+    height: 44px;
+    min-height: 44px;
+  }
+
+  /* 物种仍为单列大按钮 */
+  .species-group {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .species-btn {
+    height: 56px;
+  }
+
+  /* 分段按钮等宽铺满 */
+  .seg {
+    display: flex;
+    width: 100%;
+  }
+
+  .seg :deep(.el-radio-button) {
+    flex: 1;
+  }
+
+  .seg :deep(.el-radio-button .el-radio-button__inner) {
+    width: 100%;
+    min-width: 0;
+    height: 44px;
+  }
+
+  .bcs-form {
+    margin-top: var(--fg-s5);
+  }
+
+  .weight-num {
+    width: 140px;
+  }
+
+  .done {
+    padding-top: var(--fg-s6);
+  }
+
+  /* 底部操作条允许折行，按钮保持 44px */
+  .ob-bar {
+    flex-wrap: wrap;
+    row-gap: var(--fg-s3);
+    margin-top: var(--fg-s4);
+  }
+
+  .bar-right {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    row-gap: var(--fg-s2);
   }
 }
 </style>

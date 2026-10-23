@@ -24,6 +24,7 @@ CREATE TABLE users (
     password     VARCHAR(100) NOT NULL COMMENT 'BCrypt密文',
     nickname     VARCHAR(50)  DEFAULT NULL COMMENT '展示名',
     avatar       VARCHAR(255) DEFAULT NULL COMMENT '头像路径',
+    location     VARCHAR(64)  DEFAULT NULL COMMENT '常用城市(天气查询)',
     status       TINYINT      NOT NULL DEFAULT 1 COMMENT '1正常 0禁用',
     created_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -181,6 +182,7 @@ CREATE TABLE reminders (
     reminder_type VARCHAR(30)  NOT NULL COMMENT 'FEED/WALK/WATER/GROOMING/DEWORM/VACCINE/BATH/CUSTOM',
     remind_time   TIME         DEFAULT NULL COMMENT '提醒时间(绝对)',
     relative_min  INT          DEFAULT NULL COMMENT '相对时间(分钟,如饭后30min)',
+    remind_date   DATE         DEFAULT NULL COMMENT '计划日期(疫苗/驱虫等一次性事件)',
     repeat_rule   VARCHAR(50)  DEFAULT 'DAILY' COMMENT 'DAILY/WEEKLY/MONTHLY/YEARLY/ONCE',
     repeat_days   VARCHAR(20)  DEFAULT NULL COMMENT '重复日: 1,3,5 或 MON,WED,FRI',
     enabled       TINYINT(1)   NOT NULL DEFAULT 1 COMMENT '是否启用',
@@ -204,7 +206,8 @@ CREATE TABLE reminder_logs (
     note         VARCHAR(255) DEFAULT NULL COMMENT '备注',
     created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    KEY idx_reminder_date (reminder_id, done_date),
+    -- 一项提醒每天只能有一条打卡记录，接口幂等由此兜底
+    UNIQUE KEY uk_reminder_date (reminder_id, done_date),
     KEY idx_user_id (user_id)
 ) ENGINE=InnoDB COMMENT='打卡记录';
 
@@ -223,7 +226,8 @@ CREATE TABLE tips (
     is_mock         TINYINT(1)   NOT NULL DEFAULT 0 COMMENT '是否降级兜底数据',
     created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    KEY idx_pet_date (pet_id, tip_date),
+    -- 一个宠物每天只留一条 Tip，重复生成由唯一键兜底
+    UNIQUE KEY uk_pet_tip_date (pet_id, tip_date),
     KEY idx_user_id (user_id)
 ) ENGINE=InnoDB COMMENT='每日Tip';
 
@@ -249,7 +253,8 @@ CREATE TABLE weekly_reports (
     created_at          DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at          DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    KEY idx_pet_week (pet_id, week_start),
+    -- 同一宠物同一周只保留一份周报，重复生成时覆盖而非新增
+    UNIQUE KEY uk_pet_week (pet_id, week_start),
     KEY idx_user_id (user_id)
 ) ENGINE=InnoDB COMMENT='周报';
 

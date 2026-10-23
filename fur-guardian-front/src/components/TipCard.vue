@@ -291,4 +291,23 @@ onBeforeUnmount(stop)
 .tip-card :deep(.empty-state) {
   padding: var(--fg-s4) 0;
 }
+
+/* 响应式新增：<768px 反馈按钮保持 44px 触摸高度 */
+@media (max-width: 767.98px) {
+  .tip-foot {
+    row-gap: var(--fg-s2);
+  }
+
+  .tip-actions {
+    width: 100%;
+    justify-content: flex-start;
+    gap: var(--fg-s1);
+  }
+
+  .fb-btn {
+    min-height: 44px;
+    height: auto;
+    padding: 0 var(--fg-s2);
+  }
+}
 </style>

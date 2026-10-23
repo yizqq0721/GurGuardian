@@ -1,0 +1,236 @@
+{
+  "source": "日本食品標準成分表2020年版（八訂）増補2023年",
+  "source_url": "https://www.mext.go.jp/a_menu/syokuhinseibun/mext_00001.html",
+  "file": "日本食品標準成分表2020年版（八訂）増補2023年_第2章.xlsx",
+  "sheet": "11肉類",
+  "food_group": "11",
+  "food_number": "11092",
+  "index_number": "1733",
+  "name_ja": "＜畜肉類＞　うし　［副生物］　肝臓　生",
+  "name_zh": "牛肝（生）",
+  "name_zh_desc": "畜肉类·牛［副产物］肝脏·生",
+  "waste_rate": 0,
+  "queried_at": "2026-10-20",
+  "values": {
+    "energy_kj": {
+      "label": "能量",
+      "unit": "kJ",
+      "value": 502
+    },
+    "energy_kcal": {
+      "label": "能量",
+      "unit": "kcal",
+      "value": 119
+    },
+    "water_g": {
+      "label": "水分",
+      "unit": "g",
+      "value": 71.5
+    },
+    "protein_aa_g": {
+      "label": "蛋白质（氨基酸组成）",
+      "unit": "g",
+      "value": 17.4
+    },
+    "protein_g": {
+      "label": "蛋白质",
+      "unit": "g",
+      "value": 19.6
+    },
+    "fat_fa_g": {
+      "label": "脂肪（脂肪酸甘油三酯当量）",
+      "unit": "g",
+      "value": 2.1
+    },
+    "cholesterol_mg": {
+      "label": "胆固醇",
+      "unit": "mg",
+      "value": 240
+    },
+    "fat_g": {
+      "label": "脂肪",
+      "unit": "g",
+      "value": 3.7
+    },
+    "carb_available_g": {
+      "label": "可利用碳水化合物（单糖当量）",
+      "unit": "g",
+      "value": "(3.7)"
+    },
+    "carb_available_mass_g": {
+      "label": "可利用碳水化合物（质量计）",
+      "unit": "g",
+      "value": "(3.3)"
+    },
+    "carb_diff_g": {
+      "label": "可利用碳水化合物（差减法）",
+      "unit": "g",
+      "value": 7.4
+    },
+    "fiber_g": {
+      "label": "膳食纤维总量",
+      "unit": "g",
+      "value": "(0)"
+    },
+    "carb_g": {
+      "label": "碳水化合物",
+      "unit": "g",
+      "value": 3.7
+    },
+    "ash_g": {
+      "label": "灰分",
+      "unit": "g",
+      "value": 1.5
+    },
+    "sodium_mg": {
+      "label": "钠",
+      "unit": "mg",
+      "value": 55
+    },
+    "potassium_mg": {
+      "label": "钾",
+      "unit": "mg",
+      "value": 300
+    },
+    "calcium_mg": {
+      "label": "钙",
+      "unit": "mg",
+      "value": 5
+    },
+    "magnesium_mg": {
+      "label": "镁",
+      "unit": "mg",
+      "value": 17
+    },
+    "phosphorus_mg": {
+      "label": "磷",
+      "unit": "mg",
+      "value": 330
+    },
+    "iron_mg": {
+      "label": "铁",
+      "unit": "mg",
+      "value": "4.0"
+    },
+    "zinc_mg": {
+      "label": "锌",
+      "unit": "mg",
+      "value": 3.8
+    },
+    "copper_mg": {
+      "label": "铜",
+      "unit": "mg",
+      "value": "5.30"
+    },
+    "manganese_mg": {
+      "label": "锰",
+      "unit": "mg",
+      "value": "-"
+    },
+    "iodine_ug": {
+      "label": "碘",
+      "unit": "µg",
+      "value": 4
+    },
+    "selenium_ug": {
+      "label": "硒",
+      "unit": "µg",
+      "value": 50
+    },
+    "chromium_ug": {
+      "label": "铬",
+      "unit": "µg",
+      "value": "Tr"
+    },
+    "molybdenum_ug": {
+      "label": "钼",
+      "unit": "µg",
+      "value": 94
+    },
+    "retinol_ug": {
+      "label": "视黄醇",
+      "unit": "µg",
+      "value": 1100
+    },
+    "beta_carotene_eq_ug": {
+      "label": "β-胡萝卜素当量",
+      "unit": "µg",
+      "value": 40
+    },
+    "vitamin_a_rae_ug": {
+      "label": "维生素A（视黄醇活性当量）",
+      "unit": "µg",
+      "value": 1100
+    },
+    "vitamin_d_ug": {
+      "label": "维生素D",
+      "unit": "µg",
+      "value": "0"
+    },
+    "vitamin_e_mg": {
+      "label": "维生素E（α-生育酚）",
+      "unit": "mg",
+      "value": 0.3
+    },
+    "vitamin_k_ug": {
+      "label": "维生素K",
+      "unit": "µg",
+      "value": 1
+    },
+    "vitamin_b1_mg": {
+      "label": "维生素B1",
+      "unit": "mg",
+      "value": 0.22
+    },
+    "vitamin_b2_mg": {
+      "label": "维生素B2",
+      "unit": "mg",
+      "value": "3.00"
+    },
+    "niacin_mg": {
+      "label": "烟酸",
+      "unit": "mg",
+      "value": "14.0"
+    },
+    "niacin_eq_mg": {
+      "label": "烟酸当量",
+      "unit": "mg",
+      "value": "18.0"
+    },
+    "vitamin_b6_mg": {
+      "label": "维生素B6",
+      "unit": "mg",
+      "value": 0.89
+    },
+    "vitamin_b12_ug": {
+      "label": "维生素B12",
+      "unit": "µg",
+      "value": "53.0"
+    },
+    "folate_ug": {
+      "label": "叶酸",
+      "unit": "µg",
+      "value": 1000
+    },
+    "pantothenic_acid_mg": {
+      "label": "泛酸",
+      "unit": "mg",
+      "value": "6.40"
+    },
+    "biotin_ug": {
+      "label": "生物素",
+      "unit": "µg",
+      "value": "76.0"
+    },
+    "vitamin_c_mg": {
+      "label": "维生素C",
+      "unit": "mg",
+      "value": 30
+    },
+    "salt_g": {
+      "label": "食盐相当量",
+      "unit": "g",
+      "value": 0.1
+    }
+  }
+}

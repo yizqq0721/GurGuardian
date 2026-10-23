@@ -20,6 +20,8 @@ import '@fontsource/ibm-plex-mono/latin-500.css'
 // tokens.css 必须在 element-plus 之后，才能覆盖 EP 的 CSS 变量
 import '@/styles/tokens.css'
 import '@/styles/index.css'
+// 响应式新增：移动端全局适配（仅 <768px 生效）
+import '@/styles/responsive.css'
 import App from './App.vue'
 import router from './router'
 

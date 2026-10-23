@@ -14,8 +14,8 @@ export const reportApi = {
   conclusions(id: number) {
     return request.get<ReportConclusion>(`/api/report/${id}/conclusions`)
   },
-  polish(id: number) {
-    return request.post<void>(`/api/report/${id}/polish`)
+  polish(id: number, force = false) {
+    return request.post<WeeklyReport>(`/api/report/${id}/polish`, null, { params: { force } })
   },
   summary(id: number) {
     return request.get<string>(`/api/report/${id}/summary`)

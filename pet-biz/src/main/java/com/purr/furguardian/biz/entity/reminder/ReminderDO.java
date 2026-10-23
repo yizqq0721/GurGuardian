@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
@@ -18,6 +19,7 @@ public class ReminderDO {
     private String reminderType;
     private LocalTime remindTime;
     private Integer relativeMin;
+    private LocalDate remindDate;
     private String repeatRule;
     private String repeatDays;
     private Integer enabled;
@@ -38,6 +40,8 @@ public class ReminderDO {
     public void setRemindTime(LocalTime remindTime) { this.remindTime = remindTime; }
     public Integer getRelativeMin() { return relativeMin; }
     public void setRelativeMin(Integer relativeMin) { this.relativeMin = relativeMin; }
+    public LocalDate getRemindDate() { return remindDate; }
+    public void setRemindDate(LocalDate remindDate) { this.remindDate = remindDate; }
     public String getRepeatRule() { return repeatRule; }
     public void setRepeatRule(String repeatRule) { this.repeatRule = repeatRule; }
     public String getRepeatDays() { return repeatDays; }

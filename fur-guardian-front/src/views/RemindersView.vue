@@ -29,6 +29,10 @@
           <span>天</span>
         </p>
 
+        <el-button @click="goCalendar">
+          <CalendarDays :size="20" class="fg-icon" />查看待办日历
+        </el-button>
+
         <el-button type="primary" :disabled="!petStore.currentPet" @click="openCreate">
           <Plus :size="20" class="fg-icon" />新建提醒
         </el-button>
@@ -99,10 +103,65 @@
                     </p>
                     <p class="tl-meta">
                       <span class="fg-muted meta-text">{{ typeLabel(r) }} · {{ petName(r.petId) }}</span>
-                      <span class="fg-chip">
+                      <span v-if="isDatedReminder(r)" class="fg-chip">
+                        计划 {{ dateText(r.remindDate, 'M月D日') }}
+                      </span>
+                      <span v-else class="fg-chip">
                         {{ repeatLabel(r) }}<template v-if="r.repeatDays">（{{ repeatDaysText(r.repeatDays) }}）</template>
                       </span>
                       <span v-if="r.relativeMin != null" class="fg-chip">饭后 {{ r.relativeMin }} 分钟</span>
+                    </p>
+                    <p v-if="hasRowLinks(r)" class="tl-links">
+                      <button
+                        v-if="r.reminderType === 'FEED'"
+                        type="button"
+                        class="tl-link"
+                        @click="openFeedDialog(r)"
+                      >
+                        <UtensilsCrossed :size="14" class="fg-icon" />记录喂食
+                      </button>
+                      <template v-if="r.reminderType === 'WALK'">
+                        <button type="button" class="tl-link" @click="goNearby(r)">
+                          <MapPin :size="14" class="fg-icon" />找遛弯点
+                        </button>
+                        <span
+                          v-if="isToday && weather"
+                          class="tl-weather"
+                          :class="`is-${weather.level.toLowerCase()}`"
+                        >
+                          <component :is="weatherIcon(weather)" :size="14" class="fg-icon" />
+                          <span class="fg-num">{{ weather.low }}~{{ weather.high }}°C</span>
+                          <span>{{ weather.text }}</span>
+                          <span class="tl-weather-advice">{{ weather.advice }}</span>
+                        </span>
+                        <span v-else-if="isToday && weatherState === 'loading'" class="tl-weather is-loading">
+                          正在获取今日天气…
+                        </span>
+                        <button
+                          v-else-if="isToday && userStore.location"
+                          type="button"
+                          class="tl-link"
+                          @click="maybeLoadWeather(true)"
+                        >
+                          <CloudSun :size="14" class="fg-icon" />
+                          {{ weatherActionText }}
+                        </button>
+                        <router-link
+                          v-else-if="isToday"
+                          class="tl-link"
+                          to="/profile"
+                        >
+                          <MapPin :size="14" class="fg-icon" />获取当前位置
+                        </router-link>
+                      </template>
+                      <button
+                        v-if="knowledgePromptFor(r)"
+                        type="button"
+                        class="tl-link"
+                        @click="askKnowledge(r)"
+                      >
+                        <ArrowUpRight :size="14" class="fg-icon" />问一问
+                      </button>
                     </p>
                   </div>
 
@@ -124,8 +183,33 @@
             <EmptyState
               v-if="!loading && !loadError && !shownTotal"
               variant="default"
-              :description="onlyToday ? '今日待办已全部完成' : '还没有提醒，点击「新建提醒」安排第一项'"
+              :description="
+                reminders.length === 0
+                  ? '还没有提醒，点击「新建提醒」安排第一项'
+                  : onlyToday
+                    ? '今日待办已全部完成'
+                    : '这一天没有到期的提醒'
+              "
             />
+          </section>
+
+          <section v-if="upcomingEvents.length" class="fg-card upcoming-card">
+            <header class="tl-head">
+              <h2 class="fg-section-title">接下来的日程</h2>
+              <p class="fg-muted tl-progress">疫苗、驱虫按设定日期提醒一次</p>
+            </header>
+
+            <ul class="upcoming-list">
+              <li v-for="r in upcomingEvents" :key="r.id" class="upcoming-row">
+                <span class="upcoming-date fg-num">{{ dateText(r.remindDate, 'M月D日') }}</span>
+                <span class="upcoming-week fg-muted">周{{ weekName(r.remindDate) }}</span>
+                <span class="upcoming-title">{{ r.title }}</span>
+                <span class="upcoming-meta fg-muted">
+                  {{ typeLabel(r) }} · {{ petName(r.petId) }}<template v-if="r.remindTime"> · {{ r.remindTime.slice(0, 5) }}</template>
+                </span>
+                <span class="fg-chip">{{ daysUntil(r.remindDate) }}</span>
+              </li>
+            </ul>
           </section>
         </div>
 
@@ -138,12 +222,12 @@
               label="今日完成"
               :value="todayRate"
               unit="%"
-              :caption="`已打卡 ${doneToday} 项 / 共 ${reminders.length} 项`"
+              :caption="`已打卡 ${doneToday} 项 / 共 ${dueTodayReminders.length} 项`"
             />
 
             <div class="fg-divider" />
 
-            <div class="bars" role="img" :aria-label="`近 7 天每日打卡次数：${barsAria}`">
+            <div class="bars" role="img" :aria-label="`近 7 天每日完成提醒项数：${barsAria}`">
               <div
                 v-for="d in weekDays"
                 :key="d.date"
@@ -157,7 +241,7 @@
                 <span class="bar-day">{{ d.weekday }}</span>
               </div>
             </div>
-            <p class="bar-note fg-muted">柱高按当日打卡次数，单位：次</p>
+            <p class="bar-note fg-muted">柱高按当日已完成的提醒条目数，单位：项</p>
           </section>
 
           <section class="fg-card">
@@ -165,7 +249,7 @@
             <div class="kv-list">
               <div class="fg-kv">
                 <span class="fg-label">近 7 天累计</span>
-                <span class="fg-num kv-value">{{ weekTotal }} 次</span>
+                <span class="fg-num kv-value">{{ weekTotal }} 项</span>
               </div>
               <div class="fg-kv">
                 <span class="fg-label">有打卡的天数</span>
@@ -197,7 +281,7 @@
             </el-form-item>
 
             <el-form-item label="类型" required>
-              <el-select v-model="form.reminderType" style="width: 100%">
+              <el-select v-model="form.reminderType" style="width: 100%" @change="onTypeChange">
                 <el-option v-for="o in REMINDER_TYPE_OPTIONS" :key="o.value" :value="o.value" :label="o.label" />
               </el-select>
             </el-form-item>
@@ -208,29 +292,29 @@
               </el-select>
             </el-form-item>
 
-            <el-form-item label="提醒方式">
+            <el-form-item v-if="!formIsEvent" label="提醒方式">
               <el-radio-group v-model="timeMode">
                 <el-radio-button value="fixed">固定时间</el-radio-button>
                 <el-radio-button value="relative">相对时间（饭后）</el-radio-button>
               </el-radio-group>
             </el-form-item>
 
-            <el-form-item v-if="timeMode === 'fixed'" label="提醒时间">
+            <el-form-item v-if="formIsEvent || timeMode === 'fixed'" label="提醒时间">
               <el-time-picker v-model="form.remindTime" format="HH:mm" value-format="HH:mm" class="time-pick" />
             </el-form-item>
 
-            <el-form-item v-else label="饭后多少分钟">
+            <el-form-item v-if="!formIsEvent && timeMode === 'relative'" label="饭后多少分钟">
               <el-input-number v-model="form.relativeMin" :min="5" :max="240" :step="5" />
               <span class="fg-muted num-hint">如「饭后 30 分钟」遛狗，防胃扭转</span>
             </el-form-item>
 
-            <el-form-item label="重复规则">
+            <el-form-item v-if="!formIsEvent" label="重复规则">
               <el-select v-model="form.repeatRule" style="width: 100%">
                 <el-option v-for="o in REPEAT_RULE_OPTIONS" :key="o.value" :value="o.value" :label="o.label" />
               </el-select>
             </el-form-item>
 
-            <el-form-item v-if="form.repeatRule === 'WEEKLY'" label="重复日">
+            <el-form-item v-if="!formIsEvent && form.repeatRule === 'WEEKLY'" label="重复日">
               <el-checkbox-group v-model="weekdayChecks">
                 <el-checkbox
                   v-for="(label, i) in ['一','二','三','四','五','六','日']"
@@ -242,6 +326,53 @@
                 </el-checkbox>
               </el-checkbox-group>
             </el-form-item>
+
+            <el-form-item v-if="formIsDated" label="计划日期" required>
+              <el-date-picker
+                v-model="form.remindDate"
+                type="date"
+                value-format="YYYY-MM-DD"
+                placeholder="选择要做这件事的日期"
+                :disabled-date="pastDateDisabled"
+                style="width: 100%"
+              />
+              <span class="fg-muted num-hint">
+                {{ formIsEvent ? '疫苗、驱虫这类事件按日期提醒一次，不会周期重复' : '仅一次的提醒只在这一天出现' }}
+              </span>
+            </el-form-item>
+
+            <div
+              v-if="form.reminderType === 'WALK'"
+              class="wx-panel"
+              :class="weather ? `is-${weather.level.toLowerCase()}` : ''"
+            >
+              <component
+                :is="weather ? weatherIcon(weather) : CloudSun"
+                :size="18"
+                class="fg-icon wx-ico"
+              />
+              <div class="wx-body">
+                <p class="wx-title">今日遛弯天气</p>
+                <p v-if="weather" class="wx-text">
+                  {{ weather.location }} · {{ weather.text
+                  }}<template v-if="weather.textNight && weather.textNight !== weather.text">转{{ weather.textNight }}</template>
+                  <span class="wx-temp fg-num">{{ weather.low }}~{{ weather.high }}°C</span>
+                  <span class="wx-meta">
+                    {{ weather.windDirection }}风{{ weather.windScale }}级<template v-if="weather.humidity"> · 湿度 {{ weather.humidity }}%</template>
+                  </span>
+                  <span class="wx-advice">{{ weather.advice }}</span>
+                </p>
+                <p v-if="weather" class="wx-source">
+                  按当前位置「{{ userStore.location }}」查询 · <router-link to="/profile">重新定位</router-link>
+                </p>
+                <p v-else-if="weatherState === 'loading'" class="wx-text">正在获取今日天气…</p>
+                <p v-else class="wx-text">
+                  {{ weatherEmptyText }}
+                  <button v-if="userStore.location" type="button" class="wx-link" @click="maybeLoadWeather(true)">重新获取天气</button>
+                  <router-link v-else class="wx-link" to="/profile">去获取位置</router-link>
+                </p>
+              </div>
+            </div>
           </el-form>
 
           <template #footer>
@@ -250,47 +381,109 @@
           </template>
         </el-drawer>
       </div>
+
+      <el-dialog v-model="feedOpen" class="feed-dialog" width="480px" title="记录这次喂食">
+        <p class="feed-context">
+          <UtensilsCrossed :size="16" class="fg-icon" />
+          <span>{{ feedRow?.title }} · {{ feedRow ? petName(feedRow.petId) : '' }}</span>
+        </p>
+
+        <el-form label-position="top" class="feed-form">
+          <el-form-item label="从食品库选择">
+            <el-select
+              v-model="feedFoodId"
+              filterable
+              placeholder="搜索或选择食品"
+              style="width: 100%"
+              :loading="feedFoodLoading"
+            >
+              <el-option v-for="f in feedFoodOptions" :key="f.id" :value="f.id" :label="f.name">
+                <span class="feed-option-name">{{ f.name }}</span>
+                <span v-if="f.brand" class="feed-option-brand">{{ f.brand }}</span>
+              </el-option>
+            </el-select>
+            <p v-if="!feedFoodLoading && !feedFoodOptions.length" class="feed-empty fg-muted">
+              食品库还没有适合{{ feedPetLabel }}的食品。
+              <button type="button" class="feed-go" @click="goFoods">先去录入</button>
+            </p>
+          </el-form-item>
+
+          <el-form-item label="实际吃了多少克">
+            <div class="feed-grams">
+              <el-input-number v-model="feedGrams" :min="1" :max="2000" :step="5" controls-position="right" />
+              <span v-if="feedKcal != null" class="fg-muted feed-kcal">
+                按标注值约 <span class="fg-num">{{ feedKcal }}</span> kcal
+              </span>
+            </div>
+          </el-form-item>
+        </el-form>
+
+        <template #footer>
+          <el-button @click="feedOpen = false">取消</el-button>
+          <el-button :loading="feedSaving" @click="checkinOnly">仅打卡</el-button>
+          <el-button type="primary" :loading="feedSaving" :disabled="!feedFoodId" @click="saveFeedAndCheckin">
+            保存并打卡
+          </el-button>
+        </template>
+      </el-dialog>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import type { Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import dayjs from 'dayjs'
 import {
+  ArrowUpRight,
   Bath,
   Bell,
   Brush,
+  CalendarDays,
   ChevronLeft,
   ChevronRight,
+  CloudLightning,
+  CloudRain,
+  CloudSun,
   Droplets,
   Flame,
   Footprints,
+  MapPin,
   MoreHorizontal,
   Pill,
   Plus,
+  Snowflake,
+  Sun,
   Syringe,
   UtensilsCrossed,
+  Wind,
 } from 'lucide-vue-next'
 import { reminderApi } from '@/api/reminder'
+import { foodApi } from '@/api/food'
+import { feedingApi } from '@/api/feeding'
+import { weatherApi } from '@/api/weather'
 import EmptyState from '@/components/EmptyState.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import StatTile from '@/components/StatTile.vue'
 import { usePetStore } from '@/stores/pet'
+import { useUserStore } from '@/stores/user'
+import { dateText } from '@/utils/format'
+import { readSavedGeo } from '@/utils/geo'
+import { isDatedReminder, isDatedType, isReminderDueOn } from '@/utils/reminder'
 import {
   REMINDER_TYPE_LABEL,
   REMINDER_TYPE_OPTIONS,
   REPEAT_RULE_LABEL,
   REPEAT_RULE_OPTIONS,
 } from '@/utils/constants'
-import type { Reminder, ReminderLog, ReminderType, RepeatRule } from '@/types'
+import type { Food, Reminder, ReminderLog, ReminderType, RepeatRule, SpeciesScope, WeatherToday } from '@/types'
 
 const router = useRouter()
 const route = useRoute()
 const petStore = usePetStore()
+const userStore = useUserStore()
 
 const loading = ref(false)
 const loadError = ref(false)
@@ -305,10 +498,51 @@ const filterPetId = ref<number | undefined>(
 )
 const onlyToday = ref(false)
 
+/** 遛弯天气只对今天有意义；有关联定位坐标时按坐标查询，否则按已保存的位置查询 */
+const weather = ref<WeatherToday | null>(null)
+const weatherState = ref<'idle' | 'loading' | 'ready' | 'unavailable'>('idle')
+
 const drawerVisible = ref(false)
 const editingId = ref<number | null>(null)
 const timeMode = ref<'fixed' | 'relative'>('fixed')
 const weekdayChecks = ref<string[]>([])
+
+const feedOpen = ref(false)
+const feedRow = ref<Reminder | null>(null)
+const feedFoods = ref<Food[]>([])
+const feedFoodId = ref<number>()
+const feedGrams = ref(60)
+const feedFoodLoading = ref(false)
+const feedSaving = ref(false)
+
+/** 打卡的是哪只宠物，就只给它能吃的粮：未标注的按通用处理，DOG/CAT 互斥 */
+const feedPetScope = computed<SpeciesScope | null>(() => {
+  const pet = petStore.pets.find((p) => p.id === feedRow.value?.petId)
+  if (!pet) return null
+  return pet.species === 'dog' ? 'DOG' : 'CAT'
+})
+
+const feedPetLabel = computed(() => {
+  if (feedPetScope.value === 'CAT') return '猫咪'
+  if (feedPetScope.value === 'DOG') return '狗狗'
+  return '宠物'
+})
+
+const feedFoodOptions = computed(() => {
+  const scope = feedPetScope.value
+  if (!scope) return feedFoods.value
+  return feedFoods.value.filter(
+    (f) => !f.speciesScope || f.speciesScope === 'BOTH' || f.speciesScope === scope,
+  )
+})
+
+const feedSelectedFood = computed(() => feedFoodOptions.value.find((f) => f.id === feedFoodId.value))
+
+const feedKcal = computed(() => {
+  const food = feedSelectedFood.value
+  if (!food?.labeledMeKcal) return null
+  return Math.round((food.labeledMeKcal * feedGrams.value) / 100) / 10
+})
 
 /** 时间轴可回顾的窗口 = 打卡日志已拉取的近 7 天，不额外请求接口 */
 const WEEKDAY_CN = ['日', '一', '二', '三', '四', '五', '六']
@@ -321,8 +555,27 @@ const form = reactive({
   reminderType: 'FEED' as ReminderType,
   remindTime: '08:00',
   relativeMin: 30,
+  remindDate: dayjs().format('YYYY-MM-DD'),
   repeatRule: 'DAILY' as RepeatRule,
 })
+
+/** 疫苗、驱虫不再提供周期选项，只选一个执行日期 */
+const formIsEvent = computed(() => isDatedType(form.reminderType))
+const formIsDated = computed(() => formIsEvent.value || form.repeatRule === 'ONCE')
+
+function onTypeChange(type: ReminderType) {
+  if (isDatedType(type)) {
+    form.repeatRule = 'ONCE'
+    timeMode.value = 'fixed'
+  } else if (form.repeatRule === 'ONCE') {
+    form.repeatRule = 'DAILY'
+  }
+  if (type === 'WALK') void maybeLoadWeather(true)
+}
+
+function pastDateDisabled(date: Date) {
+  return !editingId.value && dayjs(date).isBefore(dayjs().startOf('day'))
+}
 
 const checkedIds = computed(() => {
   const today = dayjs().format('YYYY-MM-DD')
@@ -340,9 +593,14 @@ const viewDoneIds = computed(() => {
   return set
 })
 
+/** 一次性事件只在计划日期出现，周期提醒沿用每天可见 */
+const viewDueReminders = computed(() =>
+  reminders.value.filter((r) => isReminderDueOn(r, viewDate.value)),
+)
+
 const filteredReminders = computed(() => {
-  if (!onlyToday.value) return reminders.value
-  return reminders.value.filter((r) => !checkedIds.value.has(r.id))
+  if (!onlyToday.value) return viewDueReminders.value
+  return viewDueReminders.value.filter((r) => !checkedIds.value.has(r.id))
 })
 
 /** 定时提醒按真实时间排序；餐后与未设置时间的提醒各成一段，时间轴不伪造钟点 */
@@ -365,11 +623,48 @@ const shownRows = computed(() => timelineGroups.value.flatMap((g) => g.rows))
 const shownTotal = computed(() => shownRows.value.length)
 const shownDone = computed(() => shownRows.value.filter((r) => viewDoneIds.value.has(r.id)).length)
 
-const doneToday = computed(() => reminders.value.filter((r) => checkedIds.value.has(r.id)).length)
+/** 今日口径只算今天到期的提醒，未来的一次性事件不占今日待办 */
+const dueTodayReminders = computed(() =>
+  reminders.value.filter((r) => isReminderDueOn(r, dayjs().format('YYYY-MM-DD'))),
+)
+
+const doneToday = computed(() =>
+  dueTodayReminders.value.filter((r) => checkedIds.value.has(r.id)).length,
+)
 
 const todayRate = computed(() =>
-  reminders.value.length ? Math.round((doneToday.value / reminders.value.length) * 100) : 0,
+  dueTodayReminders.value.length
+    ? Math.round((doneToday.value / dueTodayReminders.value.length) * 100)
+    : 0,
 )
+
+const upcomingEvents = computed(() =>
+  reminders.value
+    .filter((r) => isDatedReminder(r) && (r.remindDate ?? '') > dayjs().format('YYYY-MM-DD'))
+    .sort((a, b) => (a.remindDate ?? '').localeCompare(b.remindDate ?? ''))
+    .slice(0, 5),
+)
+
+function weekName(date?: string) {
+  return date ? WEEKDAY_CN[dayjs(date).day()] : ''
+}
+
+function daysUntil(date?: string) {
+  if (!date) return ''
+  const days = dayjs(date).startOf('day').diff(dayjs().startOf('day'), 'day')
+  return days === 1 ? '明天' : `${days} 天后`
+}
+
+/** 按提醒条目去重后统计，避免同一提醒的多条日志把柱高与累计次数抬高 */
+const doneIdsByDate = computed(() => {
+  const map = new Map<string, Set<number>>()
+  logs.value.forEach((l) => {
+    const set = map.get(l.doneDate) ?? new Set<number>()
+    set.add(l.reminderId)
+    map.set(l.doneDate, set)
+  })
+  return map
+})
 
 const weekDays = computed(() => {
   return Array.from({ length: 7 }, (_, i) => {
@@ -379,7 +674,7 @@ const weekDays = computed(() => {
       date,
       label: i === 6 ? '今天' : d.format('MM-DD'),
       weekday: WEEKDAY_CN[d.day()],
-      count: logs.value.filter((l) => l.doneDate === date).length,
+      count: doneIdsByDate.value.get(date)?.size ?? 0,
     }
   })
 })
@@ -393,7 +688,7 @@ const streak = computed(() => {
   let n = 0
   for (let i = 0; i < 7; i += 1) {
     const date = dayjs().subtract(i, 'day').format('YYYY-MM-DD')
-    const count = logs.value.filter((l) => l.doneDate === date).length
+    const count = doneIdsByDate.value.get(date)?.size ?? 0
     if (count > 0) n += 1
     else if (i === 0) continue
     else break
@@ -402,7 +697,7 @@ const streak = computed(() => {
 })
 
 const barsAria = computed(() =>
-  weekDays.value.map((d) => `${d.label} ${d.count} 次`).join('，'),
+  weekDays.value.map((d) => `${d.label} ${d.count} 项`).join('，'),
 )
 
 const scopeLabel = computed(() =>
@@ -423,6 +718,7 @@ function shiftDate(delta: number) {
   const next = dayjs(viewDate.value).add(delta, 'day')
   if (next.isBefore(windowStart) || next.isAfter(dayjs(), 'day')) return
   viewDate.value = next.format('YYYY-MM-DD')
+  void maybeLoadWeather(false)
 }
 
 function isDone(id: number) {
@@ -430,7 +726,8 @@ function isDone(id: number) {
 }
 
 function rowTime(r: Reminder) {
-  if (r.remindTime) return r.remindTime
+  /* 后端返回 HH:mm:ss，时间轴列宽只够 HH:mm */
+  if (r.remindTime) return r.remindTime.slice(0, 5)
   return r.relativeMin != null ? '餐后' : '—'
 }
 
@@ -462,10 +759,81 @@ function iconFor(type: ReminderType): Component {
   return REMINDER_TYPE_ICONS[type] ?? Bell
 }
 
+/** 疫苗/驱虫的提醒类型直接落到知识库预设问题上 */
+const KNOWLEDGE_PROMPTS: Partial<Record<ReminderType, string>> = {
+  VACCINE: '犬猫疫苗接种前后需要注意什么？',
+  DEWORM: '犬猫应该多久驱虫一次？驱虫前后要注意什么？',
+}
+
+function knowledgePromptFor(row: Reminder) {
+  return KNOWLEDGE_PROMPTS[row.reminderType]
+}
+
+function hasRowLinks(row: Reminder) {
+  if (row.reminderType === 'WALK') return true
+  if (knowledgePromptFor(row)) return true
+  return row.reminderType === 'FEED' && isToday.value && !isDone(row.id)
+}
+
+function weatherIcon(w: WeatherToday) {
+  const text = `${w.text}${w.textNight ?? ''}`
+  if (text.includes('雷')) return CloudLightning
+  if (text.includes('雪')) return Snowflake
+  if (text.includes('雨')) return CloudRain
+  if (text.includes('晴')) return Sun
+  if (text.includes('风') || Number(w.windScale) >= 5) return Wind
+  return CloudSun
+}
+
+const weatherActionText = computed(() =>
+  weatherState.value === 'unavailable' ? '重新获取天气' : '查看今日天气',
+)
+
+const weatherEmptyText = computed(() => {
+  if (!userStore.location) return '还没获取当前位置，获取后就能查看当日遛弯天气。'
+  if (weatherState.value === 'unavailable') return '按当前位置暂时取不到天气，请稍后重试或重新定位。'
+  return '正在等待今日天气。'
+})
+
+/**
+ * 未获取位置时不请求天气、也不主动申请定位，界面直接引导去用户信息获取；
+ * interactive=true 允许用户在已有位置时手动重试。
+ */
+async function maybeLoadWeather(interactive = false) {
+  if (!isToday.value || weather.value || weatherState.value === 'loading') return
+  const hasWalkToday = reminders.value.some(
+    (r) => r.reminderType === 'WALK' && isReminderDueOn(r, viewDate.value),
+  )
+  if (!hasWalkToday && !interactive) return
+  if (!userStore.location) {
+    weatherState.value = 'idle'
+    return
+  }
+
+  weatherState.value = 'loading'
+  try {
+    const point = readSavedGeo(24 * 60 * 60 * 1000)
+    const data = await weatherApi.today(point ? { lat: point.lat, lng: point.lng } : undefined)
+    weather.value = data
+    weatherState.value = data ? 'ready' : 'unavailable'
+  } catch {
+    weatherState.value = 'unavailable'
+  }
+}
+
+// 首次登录时本地缓存还没有城市，等 AppLayout 拉回资料后再补一次天气
+watch(
+  () => userStore.location,
+  (location) => {
+    if (location) void maybeLoadWeather(false)
+  },
+)
+
 onMounted(async () => {
   await petStore.fetchPets()
   if (petStore.currentPet) form.petId = petStore.currentPet.id
   await Promise.all([fetchReminders(), fetchLogs()])
+  void maybeLoadWeather(false)
 })
 
 async function fetchReminders() {
@@ -499,6 +867,14 @@ async function fetchLogs() {
 function onFilterChange() {
   fetchReminders()
   fetchLogs()
+  void maybeLoadWeather(false)
+}
+
+function goCalendar() {
+  router.push({
+    name: 'reminder-calendar',
+    query: filterPetId.value != null ? { pet: String(filterPetId.value) } : {},
+  })
 }
 
 function petName(id: number) {
@@ -523,6 +899,7 @@ function openCreate() {
     reminderType: 'FEED',
     remindTime: '08:00',
     relativeMin: 30,
+    remindDate: dayjs().format('YYYY-MM-DD'),
     repeatRule: 'DAILY',
   })
   drawerVisible.value = true
@@ -536,14 +913,16 @@ function onRowCommand(command: unknown, row: Reminder) {
 
 function openEdit(row: Reminder) {
   editingId.value = row.id
+  if (row.reminderType === 'WALK') void maybeLoadWeather(false)
   timeMode.value = row.relativeMin != null ? 'relative' : 'fixed'
   weekdayChecks.value = row.repeatDays ? row.repeatDays.split(',') : []
   Object.assign(form, {
     petId: row.petId,
     title: row.title,
     reminderType: row.reminderType,
-    remindTime: row.remindTime || '08:00',
+    remindTime: row.remindTime?.slice(0, 5) || '08:00',
     relativeMin: row.relativeMin ?? 30,
+    remindDate: row.remindDate || dayjs().format('YYYY-MM-DD'),
     repeatRule: row.repeatRule || 'DAILY',
   })
   drawerVisible.value = true
@@ -554,16 +933,21 @@ async function save() {
     ElMessage.warning('请填写提醒标题')
     return
   }
+  if (formIsDated.value && !form.remindDate) {
+    ElMessage.warning('请选择提醒日期')
+    return
+  }
   saving.value = true
   try {
     const payload = {
       petId: form.petId,
       title: form.title.trim(),
       reminderType: form.reminderType,
-      remindTime: timeMode.value === 'fixed' ? form.remindTime : undefined,
-      relativeMin: timeMode.value === 'relative' ? form.relativeMin : undefined,
-      repeatRule: form.repeatRule,
-      repeatDays: form.repeatRule === 'WEEKLY' && weekdayChecks.value.length
+      remindTime: timeMode.value === 'fixed' || formIsEvent.value ? form.remindTime : undefined,
+      relativeMin: !formIsEvent.value && timeMode.value === 'relative' ? form.relativeMin : undefined,
+      remindDate: formIsDated.value ? form.remindDate : undefined,
+      repeatRule: formIsEvent.value ? 'ONCE' : form.repeatRule,
+      repeatDays: !formIsEvent.value && form.repeatRule === 'WEEKLY' && weekdayChecks.value.length
         ? weekdayChecks.value.join(',')
         : undefined,
     }
@@ -583,6 +967,10 @@ async function save() {
 /** 接口只支持打卡、不支持撤销，已完成的行保持只读 */
 function onCheck(row: Reminder) {
   if (!isToday.value || checkedIds.value.has(row.id)) return
+  if (row.reminderType === 'FEED') {
+    openFeedDialog(row)
+    return
+  }
   checkin(row)
 }
 
@@ -591,6 +979,94 @@ async function checkin(row: Reminder) {
   optimisticChecked.value = new Set(optimisticChecked.value).add(row.id)
   ElMessage.success(`已完成「${row.title}」`)
   fetchLogs()
+}
+
+function goNearby(row: Reminder) {
+  router.push({
+    path: '/nearby',
+    query: {
+      category: 'park',
+      reminderId: String(row.id),
+      reminderTitle: row.title,
+      petId: String(row.petId),
+    },
+  })
+}
+
+function askKnowledge(row: Reminder) {
+  const q = knowledgePromptFor(row)
+  if (q) router.push({ path: '/knowledge', query: { q } })
+}
+
+function openFeedDialog(row: Reminder) {
+  if (!isToday.value || isDone(row.id)) return
+  feedRow.value = row
+  feedFoodId.value = undefined
+  feedGrams.value = 60
+  feedOpen.value = true
+  feedFoods.value = []
+  loadFeedFoods()
+}
+
+async function loadFeedFoods() {
+  feedFoodLoading.value = true
+  try {
+    const page = await foodApi.list({ page: 1, size: 100 })
+    feedFoods.value = page.records
+  } catch {
+    feedFoods.value = []
+  } finally {
+    feedFoodLoading.value = false
+  }
+}
+
+function goFoods() {
+  feedOpen.value = false
+  router.push('/foods')
+}
+
+async function saveFeedAndCheckin() {
+  const row = feedRow.value
+  const food = feedSelectedFood.value
+  if (!row || !food) return
+  feedSaving.value = true
+  try {
+    await feedingApi.create({
+      petId: row.petId,
+      foodId: food.id,
+      grams: feedGrams.value,
+      fedDate: dayjs().format('YYYY-MM-DD'),
+    })
+  } catch {
+    feedSaving.value = false
+    return
+  }
+  try {
+    await reminderApi.checkin(row.id, {
+      doneDate: dayjs().format('YYYY-MM-DD'),
+      note: `${food.name} ${feedGrams.value}g`.slice(0, 255),
+    })
+    optimisticChecked.value = new Set(optimisticChecked.value).add(row.id)
+    ElMessage.success(`已记录 ${food.name} ${feedGrams.value}g，并完成「${row.title}」打卡`)
+    feedOpen.value = false
+    fetchLogs()
+  } catch {
+    ElMessage.warning('喂食已记录，但打卡没有完成，请直接点这一行的圆圈补打卡')
+  } finally {
+    feedSaving.value = false
+  }
+}
+
+async function checkinOnly() {
+  const row = feedRow.value
+  if (!row) return
+  feedSaving.value = true
+  try {
+    await checkin(row)
+    feedOpen.value = false
+  } finally {
+    feedSaving.value = false
+  }
 }
 
 async function remove(row: Reminder) {
@@ -1029,6 +1505,106 @@ async function remove(row: Reminder) {
   margin-right: var(--fg-s4);
 }
 
+/* ---------- 遛弯天气：抽屉提示 ---------- */
+.wx-panel {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--fg-s3);
+  margin-top: var(--fg-s2);
+  padding: var(--fg-s4);
+  border: var(--fg-line-w) solid var(--fg-line);
+  border-left-width: 2px;
+  border-radius: var(--fg-radius);
+  background: var(--fg-paper);
+}
+
+.wx-panel.is-good {
+  border-left-color: var(--fg-success);
+  background: var(--fg-accent-soft);
+}
+
+.wx-panel.is-caution {
+  border-left-color: var(--fg-warning);
+  background: var(--fg-warning-soft);
+}
+
+.wx-panel.is-avoid {
+  border-left-color: var(--fg-danger);
+  background: var(--fg-danger-soft);
+}
+
+.wx-ico {
+  flex: none;
+  margin-top: 2px;
+  color: var(--fg-ink-muted);
+}
+
+.wx-panel.is-good .wx-ico { color: var(--fg-success); }
+.wx-panel.is-caution .wx-ico { color: var(--fg-warning); }
+.wx-panel.is-avoid .wx-ico { color: var(--fg-danger); }
+
+.wx-body {
+  min-width: 0;
+}
+
+.wx-title {
+  margin: 0 0 var(--fg-s1);
+  font-size: var(--fg-text-label);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-ink-muted);
+  font-weight: 500;
+}
+
+.wx-text {
+  margin: 0;
+  font-size: var(--fg-text-body);
+  line-height: 1.7;
+}
+
+.wx-temp {
+  margin: 0 var(--fg-s2);
+  font-weight: 600;
+}
+
+.wx-meta {
+  display: block;
+  color: var(--fg-ink-muted);
+  font-size: var(--fg-text-label);
+}
+
+.wx-advice {
+  display: block;
+  margin-top: var(--fg-s1);
+  font-weight: 600;
+}
+
+.wx-panel.is-good .wx-advice { color: var(--fg-success); }
+.wx-panel.is-caution .wx-advice { color: var(--fg-warning); }
+.wx-panel.is-avoid .wx-advice { color: var(--fg-danger); }
+
+.wx-source {
+  margin: var(--fg-s2) 0 0;
+  font-size: var(--fg-text-label);
+  color: var(--fg-ink-muted);
+}
+
+.wx-source a {
+  color: var(--fg-accent);
+  text-decoration: underline;
+}
+
+.wx-link {
+  margin-left: var(--fg-s2);
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--fg-accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 /* el-drawer 默认不 append-to-body，节点仍在本页作用域内，可用 :deep 命中 */
 .drawer-host :deep(.el-drawer) {
   --el-drawer-padding-primary: var(--fg-s5);
@@ -1070,10 +1646,329 @@ async function remove(row: Reminder) {
   padding-bottom: var(--fg-s2);
 }
 
+/* ---------- 接下来的日程 ---------- */
+.upcoming-card {
+  margin-top: var(--fg-s5);
+}
+
+.upcoming-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--fg-s2);
+}
+
+.upcoming-row {
+  display: flex;
+  align-items: center;
+  gap: var(--fg-s3);
+  padding: var(--fg-s3) var(--fg-s4);
+  border: var(--fg-line-w) solid var(--fg-line);
+  border-radius: var(--fg-radius);
+  background: var(--fg-paper);
+}
+
+.upcoming-date {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.upcoming-week {
+  font-size: var(--fg-text-label);
+  white-space: nowrap;
+}
+
+.upcoming-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.upcoming-meta {
+  margin-left: auto;
+  font-size: var(--fg-text-label);
+  white-space: nowrap;
+}
+
 @media (max-width: 768px) {
   .tl-row {
     grid-template-columns: 52px 12px 24px minmax(0, 1fr) 32px;
     gap: var(--fg-s2);
   }
+}
+
+/* ===== 响应式新增：移动端（<768px）===== */
+@media (max-width: 767.98px) {
+  .day-nav {
+    width: 100%;
+  }
+
+  .day-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .day-label {
+    flex: 1;
+    min-width: 0;
+    justify-content: flex-start;
+    text-align: left;
+  }
+
+  .head-divider {
+    display: none;
+  }
+
+  .toolbar {
+    gap: var(--fg-s2);
+    padding: var(--fg-s3) 0;
+    margin-bottom: var(--fg-s4);
+  }
+
+  .toolbar :deep(.el-radio-group) {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--fg-s1);
+  }
+
+  .toolbar :deep(.el-radio-button) {
+    flex: 1 1 auto;
+  }
+
+  .toolbar :deep(.el-radio-button__inner) {
+    width: 100%;
+    padding: 0 var(--fg-s3);
+  }
+
+  .todo-check {
+    margin-left: 0;
+  }
+
+  .tl-card {
+    min-height: 0;
+  }
+
+  .tl-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--fg-s1);
+    margin-bottom: var(--fg-s3);
+  }
+
+  .tl-row {
+    grid-template-columns: 48px 44px minmax(0, 1fr) 44px;
+    gap: var(--fg-s2);
+    padding: var(--fg-s3) 0;
+  }
+
+  .tl-marker {
+    display: none;
+  }
+
+  .tl-time {
+    height: auto;
+    align-items: flex-start;
+    padding-top: var(--fg-s2);
+  }
+
+  .tl-check {
+    width: 44px;
+    height: auto;
+    min-height: 44px;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: var(--fg-s1);
+  }
+
+  .tl-title {
+    height: auto;
+    align-items: flex-start;
+  }
+
+  .tl-name {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+
+  .tl-more {
+    height: auto;
+  }
+
+  .more-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .aside-col {
+    position: static;
+  }
+
+  .drawer-host :deep(.el-drawer__header),
+  .drawer-host :deep(.el-drawer__footer) {
+    padding: var(--fg-s3) var(--fg-s4);
+  }
+
+  .drawer-host :deep(.el-drawer__body) {
+    padding: var(--fg-s4);
+  }
+
+  .time-pick {
+    width: 100%;
+  }
+
+  .num-hint {
+    display: block;
+    margin-left: 0;
+    margin-top: var(--fg-s2);
+  }
+
+  .weekday-check {
+    margin-right: var(--fg-s3);
+  }
+
+  .upcoming-row {
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--fg-s2) var(--fg-s3);
+  }
+
+  .upcoming-title {
+    order: -1;
+    flex: 1 1 100%;
+    white-space: normal;
+  }
+
+  .upcoming-meta {
+    margin-left: 0;
+    white-space: normal;
+  }
+
+  .tl-weather {
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .wx-panel {
+    padding: var(--fg-s3);
+  }
+}
+
+/* ---------- 行内联动入口 ---------- */
+.tl-links {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--fg-s2) var(--fg-s4);
+  margin: var(--fg-s2) 0 0;
+}
+
+.tl-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: var(--fg-text-label);
+  color: var(--fg-accent);
+  cursor: pointer;
+}
+
+.tl-link:hover {
+  text-decoration: underline;
+}
+
+/* ---------- 遛弯天气：时间轴行内徽标 ---------- */
+.tl-weather {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--fg-s1) var(--fg-s2);
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--fg-paper);
+  color: var(--fg-ink-muted);
+  font-size: var(--fg-text-label);
+  line-height: 1.7;
+}
+
+.tl-weather.is-good {
+  background: var(--fg-accent-soft);
+  color: var(--fg-success);
+}
+
+.tl-weather.is-caution {
+  background: var(--fg-warning-soft);
+  color: var(--fg-warning);
+}
+
+.tl-weather.is-avoid {
+  background: var(--fg-danger-soft);
+  color: var(--fg-danger);
+}
+
+.tl-weather.is-loading {
+  background: var(--fg-paper);
+}
+
+.tl-weather-advice {
+  opacity: 0.9;
+}
+
+/* ---------- 喂食打卡弹窗（dialog 会 teleport 到 body，容器样式走 :global） ---------- */
+.feed-context {
+  display: flex;
+  align-items: center;
+  gap: var(--fg-s2);
+  margin: 0 0 var(--fg-s4);
+  font-weight: 600;
+}
+
+.feed-form :deep(.el-form-item:last-child) {
+  margin-bottom: 0;
+}
+
+.feed-option-brand {
+  float: right;
+  margin-left: var(--fg-s4);
+  color: var(--fg-ink-muted);
+  font-size: var(--fg-text-label);
+}
+
+.feed-empty {
+  margin: var(--fg-s2) 0 0;
+  font-size: var(--fg-text-label);
+}
+
+.feed-go {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--fg-accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.feed-grams {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--fg-s3);
+}
+
+.feed-kcal {
+  font-size: var(--fg-text-label);
+}
+
+:global(.feed-dialog) {
+  max-width: 92vw;
 }
 </style>

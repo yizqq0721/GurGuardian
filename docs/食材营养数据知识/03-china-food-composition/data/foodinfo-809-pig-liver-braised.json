@@ -1,0 +1,198 @@
+{
+  "source": "中国食物成分表（第6版，在线查询平台）",
+  "source_url": "https://nlc.chinanutri.cn/fq/foodinfo/809.html",
+  "queried_at": "2026-10-20",
+  "id": 809,
+  "name": "猪肝(卤煮)",
+  "rows": [
+    {
+      "category": "能量与相关成分",
+      "item": "食部(Edible)",
+      "value": "100%",
+      "rank": "1",
+      "mean": "93%"
+    },
+    {
+      "category": "能量与相关成分",
+      "item": "水分(Water)",
+      "value": "56.4g",
+      "rank": "23",
+      "mean": "55.1g"
+    },
+    {
+      "category": "能量与相关成分",
+      "item": "能量(Energy)",
+      "value": "851kJ",
+      "rank": "30",
+      "mean": "1164kJ"
+    },
+    {
+      "category": "能量与相关成分",
+      "item": "蛋白质(Protein)",
+      "value": "26.4g",
+      "rank": "1",
+      "mean": "15.7g"
+    },
+    {
+      "category": "能量与相关成分",
+      "item": "脂肪(Fat)",
+      "value": "8.3g",
+      "rank": "35",
+      "mean": "21.8g"
+    },
+    {
+      "category": "能量与相关成分",
+      "item": "胆固醇(Cholesterol)",
+      "value": "469mg",
+      "rank": "2",
+      "mean": "172mg"
+    },
+    {
+      "category": "能量与相关成分",
+      "item": "灰分(Ash)",
+      "value": "3.3g",
+      "rank": "11",
+      "mean": "2.2g"
+    },
+    {
+      "category": "能量与相关成分",
+      "item": "碳水化合物(CHO)",
+      "value": "5.6g",
+      "rank": "13",
+      "mean": "5.2g"
+    },
+    {
+      "category": "能量与相关成分",
+      "item": "总膳食纤维(Dietary fiber)",
+      "value": "",
+      "rank": "",
+      "mean": ""
+    },
+    {
+      "category": "维生素",
+      "item": "维生素A(Vitamin)",
+      "value": "4200.0μg",
+      "rank": "2",
+      "mean": "218.5μg"
+    },
+    {
+      "category": "维生素",
+      "item": "硫胺素(Thiamin)",
+      "value": "0.36mg",
+      "rank": "13",
+      "mean": "0.27mg"
+    },
+    {
+      "category": "维生素",
+      "item": "核黄素(Riboflavin)",
+      "value": "0.42mg",
+      "rank": "5",
+      "mean": "0.21mg"
+    },
+    {
+      "category": "维生素",
+      "item": "烟酸(Niacin)",
+      "value": "",
+      "rank": "",
+      "mean": ""
+    },
+    {
+      "category": "维生素",
+      "item": "维生素C(Vitamin C)",
+      "value": "",
+      "rank": "",
+      "mean": ""
+    },
+    {
+      "category": "矿物质",
+      "item": "磷(P)",
+      "value": "153mg",
+      "rank": "20",
+      "mean": "135mg"
+    },
+    {
+      "category": "矿物质",
+      "item": "钾(K)",
+      "value": "188mg",
+      "rank": "25",
+      "mean": "206mg"
+    },
+    {
+      "category": "矿物质",
+      "item": "钠(Na)",
+      "value": "674.7mg",
+      "rank": "11",
+      "mean": "392.7mg"
+    },
+    {
+      "category": "矿物质",
+      "item": "镁(Mg)",
+      "value": "12mg",
+      "rank": "28",
+      "mean": "17mg"
+    },
+    {
+      "category": "矿物质",
+      "item": "铁(Fe)",
+      "value": "2.0mg",
+      "rank": "26",
+      "mean": "3.1mg"
+    },
+    {
+      "category": "矿物质",
+      "item": "锌(Zn)",
+      "value": "0.35mg",
+      "rank": "43",
+      "mean": "2.12mg"
+    },
+    {
+      "category": "矿物质",
+      "item": "硒(Se)",
+      "value": "28.70μg",
+      "rank": "3",
+      "mean": "11.94μg"
+    },
+    {
+      "category": "矿物质",
+      "item": "铜(Cu)",
+      "value": "0.39mg",
+      "rank": "4",
+      "mean": "0.16mg"
+    },
+    {
+      "category": "矿物质",
+      "item": "锰(Mn)",
+      "value": "0.27mg",
+      "rank": "3",
+      "mean": "0.08mg"
+    },
+    {
+      "category": "矿物质",
+      "item": "碘(I)",
+      "value": "",
+      "rank": "",
+      "mean": ""
+    },
+    {
+      "category": "脂肪酸",
+      "item": "单不饱和脂肪酸(MUFA)",
+      "value": "40.7%",
+      "rank": "31",
+      "mean": "39.6%"
+    },
+    {
+      "category": "脂肪酸",
+      "item": "多不饱和脂肪酸(PUFA)",
+      "value": "11.1%",
+      "rank": "21",
+      "mean": "11.3%"
+    },
+    {
+      "category": "脂肪酸",
+      "item": "合计(Total)",
+      "value": "100.0%",
+      "rank": "4",
+      "mean": "83.0%"
+    }
+  ]
+}

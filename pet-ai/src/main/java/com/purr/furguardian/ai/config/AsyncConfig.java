@@ -24,4 +24,20 @@ public class AsyncConfig {
         executor.initialize();
         return executor;
     }
+
+    /**
+     * SSE 任务与 LLM 调用分池：流式任务在等 LLM 返回时占着线程，
+     * 同池嵌套会在线程耗尽时互相等待，触发死锁。
+     */
+    @Bean("tipStreamExecutor")
+    public Executor tipStreamExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(2);
+        executor.setMaxPoolSize(8);
+        executor.setQueueCapacity(50);
+        executor.setThreadNamePrefix("tip-stream-");
+        executor.setRejectedExecutionHandler(new java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy());
+        executor.initialize();
+        return executor;
+    }
 }

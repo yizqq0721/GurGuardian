@@ -105,12 +105,13 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { PawPrint } from 'lucide-vue-next'
 import { authApi } from '@/api/auth'
 import { useUserStore } from '@/stores/user'
+import { consumeFlashMessage } from '@/utils/flash'
 import SourceChip from '@/components/SourceChip.vue'
 import StatTile from '@/components/StatTile.vue'
 
@@ -120,6 +121,13 @@ const userStore = useUserStore()
 
 const mode = ref<'login' | 'register'>('login')
 const loading = ref(false)
+
+onMounted(() => {
+  const flash = consumeFlashMessage()
+  if (flash) {
+    ElMessage.warning(flash)
+  }
+})
 
 const loginFormRef = ref<FormInstance>()
 const loginForm = reactive({ username: '', password: '' })
@@ -146,24 +154,32 @@ function toggleMode() {
 }
 
 function redirectAfterLogin() {
+  if (userStore.isAdmin) {
+    router.push('/admin/users')
+    return
+  }
   const redirect = (route.query.redirect as string) || '/pets'
   router.push(redirect)
 }
 
 async function handleLogin() {
-  await loginFormRef.value?.validate()
+  const valid = await loginFormRef.value?.validate().catch(() => false)
+  if (!valid) return
   loading.value = true
   try {
     await userStore.login(loginForm.username, loginForm.password)
     ElMessage.success('登录成功')
     redirectAfterLogin()
+  } catch {
+    // 账号或密码错误等提示由请求拦截器统一弹出
   } finally {
     loading.value = false
   }
 }
 
 async function handleRegister() {
-  await regFormRef.value?.validate()
+  const valid = await regFormRef.value?.validate().catch(() => false)
+  if (!valid) return
   loading.value = true
   try {
     await authApi.register({
@@ -174,6 +190,8 @@ async function handleRegister() {
     await userStore.login(regForm.username, regForm.password)
     ElMessage.success('注册成功，已自动登录')
     router.push('/onboarding')
+  } catch {
+    // 用户名已存在等提示由请求拦截器统一弹出
   } finally {
     loading.value = false
   }
@@ -183,7 +201,7 @@ async function handleRegister() {
 <style scoped>
 .auth-page {
   min-height: 100vh;
-  background: var(--fg-paper);
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -349,6 +367,78 @@ async function handleRegister() {
   .preview-panel {
     margin-left: 0;
     max-width: none;
+  }
+}
+
+/* ============================================================
+   响应式新增：<768px 手机端（桌面端不受影响）
+   ============================================================ */
+@media (max-width: 767.98px) {
+  .auth-page {
+    align-items: flex-start;
+    padding: 24px var(--fg-s4) 40px;
+  }
+
+  .auth-inner {
+    gap: var(--fg-s6);
+    max-width: none;
+  }
+
+  .form-col {
+    max-width: none;
+  }
+
+  .brand {
+    font-size: 17px;
+  }
+
+  .form-title {
+    margin: var(--fg-s5) 0 var(--fg-s2);
+    font-size: 28px;
+  }
+
+  .form-sub {
+    margin-bottom: var(--fg-s5);
+  }
+
+  /* 输入框与主按钮 44px 触摸高度 */
+  .auth-form :deep(.el-input__wrapper) {
+    height: 44px;
+  }
+
+  .auth-form :deep(.el-form-item) {
+    margin-bottom: var(--fg-s4);
+  }
+
+  .demo-hint {
+    font-size: var(--fg-text-label);
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+  }
+
+  .full-btn {
+    height: 44px;
+  }
+
+  .toggle-line {
+    margin-top: var(--fg-s3);
+  }
+
+  .toggle-btn {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 var(--fg-s1);
+  }
+
+  /* 预览面板 */
+  .preview-panel {
+    padding: var(--fg-s4);
+  }
+
+  .preview-foot {
+    flex-wrap: wrap;
+    row-gap: var(--fg-s2);
   }
 }
 </style>

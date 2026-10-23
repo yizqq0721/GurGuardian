@@ -82,7 +82,7 @@
             <el-col :span="12">
               <el-form-item label="生理状态">
                 <el-select v-model="form.physiology" style="width: 100%">
-                  <el-option v-for="o in PHYSIOLOGY_OPTIONS" :key="o.value" :value="o.value" :label="o.label" />
+                  <el-option v-for="o in physiologyOptions" :key="o.value" :value="o.value" :label="o.label" />
                 </el-select>
               </el-form-item>
             </el-col>
@@ -108,7 +108,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Cat, Dog } from 'lucide-vue-next'
@@ -142,6 +142,19 @@ const form = reactive({
   bcs: 5,
 })
 
+const canReproduce = computed(() => form.sex === 'female' && !form.neutered)
+const physiologyOptions = computed(() =>
+  canReproduce.value ? PHYSIOLOGY_OPTIONS : PHYSIOLOGY_OPTIONS.filter((o) => o.value === 'NORMAL'),
+)
+
+watch(
+  [() => form.sex, () => form.neutered],
+  () => {
+    if (!canReproduce.value) form.physiology = 'NORMAL'
+  },
+  { immediate: true },
+)
+
 onMounted(async () => {
   loading.value = true
   try {
@@ -158,6 +171,7 @@ onMounted(async () => {
       physiology: pet.physiology || 'NORMAL',
       bcs: pet.bcs ?? 5,
     })
+    if (!canReproduce.value) form.physiology = 'NORMAL'
   } finally {
     loading.value = false
   }
@@ -286,6 +300,66 @@ async function removePet() {
   .seg :deep(.el-radio-button__inner) {
     padding-left: var(--fg-s3);
     padding-right: var(--fg-s3);
+  }
+}
+
+/* ============================================================
+   响应式新增：<768px 手机端（桌面端不受影响）
+   ============================================================ */
+@media (max-width: 767.98px) {
+  .profile-card {
+    max-width: none;
+  }
+
+  .block {
+    margin-bottom: var(--fg-s4);
+  }
+
+  .block-hint {
+    margin-top: 0;
+  }
+
+  /* el-col span=12 在手机上改为整行 */
+  .profile-form :deep(.el-row) {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .profile-form :deep(.el-col-12) {
+    max-width: 100%;
+    flex: 0 0 100%;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .profile-form :deep(.el-input__wrapper),
+  .profile-form :deep(.el-select__wrapper) {
+    min-height: 44px;
+  }
+
+  .profile-form :deep(.el-form-item) {
+    margin-bottom: var(--fg-s3);
+  }
+
+  /* 分段按钮等宽铺满 */
+  .seg {
+    display: flex;
+    width: 100%;
+  }
+
+  .seg :deep(.el-radio-button) {
+    flex: 1;
+  }
+
+  .seg :deep(.el-radio-button__inner) {
+    width: 100%;
+    height: 44px;
+  }
+
+  .form-actions {
+    flex-wrap: wrap;
+    margin-top: var(--fg-s4);
+    padding-top: var(--fg-s4);
   }
 }
 </style>

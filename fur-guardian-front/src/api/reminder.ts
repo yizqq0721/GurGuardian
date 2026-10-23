@@ -5,8 +5,11 @@ export const reminderApi = {
   create(data: ReminderForm) {
     return request.post<number>('/api/reminder', data)
   },
-  list(petId?: number) {
-    return request.get<Reminder[]>('/api/reminder/list', { params: petId ? { petId } : {} })
+  list(petId?: number, silent = false) {
+    return request.get<Reminder[]>('/api/reminder/list', {
+      params: petId ? { petId } : {},
+      silent,
+    })
   },
   update(id: number, data: ReminderForm) {
     return request.put<void>(`/api/reminder/${id}`, data)
@@ -17,7 +20,7 @@ export const reminderApi = {
   checkin(id: number, data: { doneDate?: string; note?: string }) {
     return request.post<void>(`/api/reminder/${id}/checkin`, data)
   },
-  logs(params: { petId: number; startDate?: string; endDate?: string }) {
-    return request.get<ReminderLog[]>('/api/reminder/logs', { params })
+  logs(params: { petId: number; startDate?: string; endDate?: string }, silent = false) {
+    return request.get<ReminderLog[]>('/api/reminder/logs', { params, silent })
   },
 }

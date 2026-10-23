@@ -7,6 +7,7 @@ import com.purr.furguardian.biz.service.AuthService;
 import com.purr.furguardian.common.exception.BizException;
 import com.purr.furguardian.common.result.ErrorCode;
 import com.purr.furguardian.common.util.PasswordUtil;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -22,14 +23,20 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserMapper userMapper;
     private final StringRedisTemplate redisTemplate;
+    private final String adminUsername;
 
-    public AuthServiceImpl(UserMapper userMapper, StringRedisTemplate redisTemplate) {
+    public AuthServiceImpl(UserMapper userMapper, StringRedisTemplate redisTemplate,
+                           @Value("${fg.admin.username:admin}") String adminUsername) {
         this.userMapper = userMapper;
         this.redisTemplate = redisTemplate;
+        this.adminUsername = adminUsername;
     }
 
     @Override
     public Long register(String username, String password, String nickname) {
+        if (adminUsername.equalsIgnoreCase(username)) {
+            throw new BizException(ErrorCode.FORBIDDEN, "该用户名是系统保留账号，不能注册");
+        }
         LambdaQueryWrapper<UserDO> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(UserDO::getUsername, username);
         if (userMapper.selectCount(wrapper) > 0) {
@@ -88,5 +95,16 @@ public class AuthServiceImpl implements AuthService {
         wrapper.eq(UserDO::getUsername, username);
         UserDO user = userMapper.selectOne(wrapper);
         return user != null ? user.getNickname() : null;
+    }
+
+    @Override
+    public boolean isAdmin(Long userId) {
+        if (userId == null) {
+            return false;
+        }
+        UserDO user = userMapper.selectById(userId);
+        return user != null
+                && Integer.valueOf(1).equals(user.getStatus())
+                && adminUsername.equalsIgnoreCase(user.getUsername());
     }
 }

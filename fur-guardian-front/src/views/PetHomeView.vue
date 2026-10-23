@@ -79,7 +79,7 @@
                 unit="kg"
                 :caption="latestWeight ? `记录于 ${latestWeight.recordedAt}` : '尚无体重记录'"
               />
-              <el-button class="record-btn" @click="weightDialog = true">
+              <el-button type="primary" class="record-btn" @click="weightDialog = true">
                 <Plus :size="20" class="fg-icon" />
                 记录体重
               </el-button>
@@ -146,6 +146,7 @@ import TipCard from '@/components/TipCard.vue'
 import WeightChart from '@/components/WeightChart.vue'
 import { ageText } from '@/utils/format'
 import { petAvatarUrl } from '@/utils/petAvatar'
+import { isReminderDueOn } from '@/utils/reminder'
 import { bcsGroup } from '@/utils/constants'
 import type { Pet, Reminder, WeightLog } from '@/types'
 
@@ -167,7 +168,11 @@ const weightForm = reactive({
   recordedAt: dayjs().format('YYYY-MM-DD'),
 })
 
-const todayReminders = computed(() => reminders.value.slice(0, 6))
+const todayReminders = computed(() =>
+  reminders.value
+    .filter((r) => isReminderDueOn(r, dayjs().format('YYYY-MM-DD')))
+    .slice(0, 6),
+)
 const latestWeight = computed(() => weightLogs.value[weightLogs.value.length - 1])
 const avatarUrl = computed(() => petAvatarUrl(pet.value?.avatar))
 
@@ -183,7 +188,8 @@ const petMeta = computed(() => {
 })
 
 function timeText(r: Reminder) {
-  return r.remindTime || `饭后 ${r.relativeMin} 分钟`
+  if (r.remindTime) return r.remindTime.slice(0, 5)
+  return r.relativeMin != null ? `饭后 ${r.relativeMin} 分钟` : '全天'
 }
 
 function bcsChipClass(bcs?: number) {
@@ -410,6 +416,77 @@ async function saveWeight() {
   }
   .head-actions {
     margin-left: auto;
+  }
+}
+
+/* ============================================================
+   响应式新增：<768px 手机端（桌面端不受影响）
+   ============================================================ */
+@media (max-width: 767.98px) {
+  .pet-head {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--fg-s3);
+    padding-bottom: var(--fg-s4);
+    margin-bottom: var(--fg-s5);
+  }
+
+  .avatar {
+    width: 48px;
+    height: 48px;
+  }
+
+  .pet-name {
+    font-size: 24px;
+  }
+
+  .head-meta {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .bcs-badge {
+    height: 22px;
+  }
+
+  /* 操作按钮独占一行并等宽 */
+  .head-actions {
+    width: 100%;
+    margin-left: 0;
+    gap: var(--fg-s2);
+  }
+
+  .head-actions :deep(.el-button) {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .head-actions :deep(.el-button + .el-button) {
+    margin-left: 0;
+  }
+
+  .task-row {
+    min-height: 52px;
+    gap: var(--fg-s3);
+  }
+
+  .weight-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--fg-s3);
+  }
+
+  .record-btn {
+    width: 100%;
+  }
+
+  .divider {
+    margin: var(--fg-s4) 0;
+  }
+
+  /* 单列后取消侧栏吸顶 */
+  .aside-col {
+    position: static;
   }
 }
 </style>

@@ -4,7 +4,8 @@
 # 用法：
 #   1) 复制成同目录的 application-local.yml
 #        cp application-local.yml.example application-local.yml
-#   2) 只改 4 个 CHANGE_ME（MySQL 密码 / Redis 密码 / 两个 DashScope Key）
+#   2) 只改 8 个 CHANGE_ME（MySQL 密码 / Redis 密码 / 两个 DashScope Key /
+#      两个 OSS AccessKey / 高德 Web 服务 Key / 心知天气 Key）
 #   3) application-local.yml 已被 .gitignore 排除，不会进仓库
 #
 # 本模板按「SSH 隧道」写：MySQL 127.0.0.1:3307，Redis 127.0.0.1:6380
@@ -40,3 +41,20 @@ langchain4j:
         api-key: "sk-CHANGE_ME"
       embedding-model:
         api-key: "sk-CHANGE_ME"
+
+# ======================== 阿里云 OSS ========================
+# 宠物头像上传使用；建议用仅授权该 Bucket PutObject 的 RAM 子账号。
+# 也可以改用环境变量 ALIYUN_OSS_ACCESS_KEY_ID / ALIYUN_OSS_ACCESS_KEY_SECRET。
+aliyun:
+  oss:
+    access-key-id: "CHANGE_ME_OSS_ACCESS_KEY_ID"
+    access-key-secret: "CHANGE_ME_OSS_ACCESS_KEY_SECRET"
+
+# ======================== 高德 / 心知天气 ========================
+# 高德：申请「Web 服务」类型 Key，用于定位反查区县、周边 POI 与步行路线。
+# 心知天气：使用私钥，用于顶部天气与遛弯建议。
+fg:
+  amap:
+    web-key: "CHANGE_ME_AMAP_WEB_KEY"
+  weather:
+    key: "CHANGE_ME_WEATHER_KEY"
