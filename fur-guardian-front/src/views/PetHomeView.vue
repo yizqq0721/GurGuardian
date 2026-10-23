@@ -79,7 +79,7 @@
                 unit="kg"
                 :caption="latestWeight ? `记录于 ${latestWeight.recordedAt}` : '尚无体重记录'"
               />
-              <el-button class="record-btn" @click="weightDialog = true">
+              <el-button type="primary" class="record-btn" @click="weightDialog = true">
                 <Plus :size="20" class="fg-icon" />
                 记录体重
               </el-button>

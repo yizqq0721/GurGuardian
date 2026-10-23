@@ -135,7 +135,7 @@
 
         <el-table-column label="查看" min-width="72" align="right">
           <template #default="{ row }">
-            <el-button text class="view-btn" @click.stop="router.push(`/reports/${row.id}`)">查看</el-button>
+            <el-button size="small" type="primary" plain class="view-btn" @click.stop="router.push(`/reports/${row.id}`)">查看</el-button>
           </template>
         </el-table-column>
       </el-table>

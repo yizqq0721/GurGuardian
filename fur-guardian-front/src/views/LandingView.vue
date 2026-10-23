@@ -217,21 +217,49 @@
       </p>
     </div>
 
-    <!-- 3. 三个问题 → 解法（行式，不是卡片） -->
+    <!-- 3. 三步引导：从建档到拿到方案 -->
     <section class="fg-page block">
-      <h2 class="fg-h2 block-title">三个常见卡点</h2>
+      <h2 class="fg-h2 block-title">三步做出第一份喂养方案</h2>
+      <p class="block-lead">
+        不用先弄懂营养学。跟着下面三步走，建档、计算、判定都由系统完成，你只需要照着结果喂。
+      </p>
       <ol class="prob-list">
         <li class="prob">
           <span class="prob-idx fg-mono">01</span>
           <div class="prob-body">
-            <h3 class="prob-title">粮袋建议太粗</h3>
+            <h3 class="prob-title">先建一份宠物档案</h3>
             <p class="prob-line">
-              <span class="fg-label prob-tag">问题</span>
-              包装喂食表按体重区间给一个范围，跨 2 kg 就不知道该信哪一端。
+              <span class="fg-label prob-tag">开始</span>
+              告诉系统它多重、几个月大、是否绝育、平时活动多少——这就是计算所需的全部信息。
             </p>
             <p class="prob-line">
-              <span class="fg-label prob-tag">解法</span>
-              按体重、年龄、绝育、活动量计算 RER → MER，反推每日克数，不再看粮袋上那张粗表。
+              <span class="fg-label prob-tag">得到</span>
+              一份随体重更新的每日热量与克数方案，换粮、绝育、体重变化后都可重新生成。
+            </p>
+          </div>
+          <div class="prob-vis">
+            <div class="vis-row">
+              <span class="fg-label">宠物档案</span>
+              <span class="fg-num fg-is-accent">犬 · 5.1 kg</span>
+            </div>
+            <div class="vis-row">
+              <span class="fg-label">活动量</span>
+              <span class="fg-num">低（偶尔散步）</span>
+            </div>
+          </div>
+        </li>
+
+        <li class="prob">
+          <span class="prob-idx fg-mono">02</span>
+          <div class="prob-body">
+            <h3 class="prob-title">按方案喂，不再猜粮袋</h3>
+            <p class="prob-line">
+              <span class="fg-label prob-tag">开始</span>
+              打开营养方案，按每日克数与零食额度分餐；临时加了罐头或冻干，顺手记一笔。
+            </p>
+            <p class="prob-line">
+              <span class="fg-label prob-tag">得到</span>
+              主粮与零食分开计算，零食超过总热量 10% 时当场提示，不必事后回想。
             </p>
           </div>
           <div class="prob-vis">
@@ -247,16 +275,16 @@
         </li>
 
         <li class="prob">
-          <span class="prob-idx fg-mono">02</span>
+          <span class="prob-idx fg-mono">03</span>
           <div class="prob-body">
-            <h3 class="prob-title">营养表看不懂</h3>
+            <h3 class="prob-title">喂之前，对照国标复核一次</h3>
             <p class="prob-line">
-              <span class="fg-label prob-tag">问题</span>
-              干粮与湿粮水分差几十倍，标注值直接比就是拿苹果比橘子。
+              <span class="fg-label prob-tag">开始</span>
+              添加主粮时填入包装上的营养表，系统会自动换算到干物质基准。
             </p>
             <p class="prob-line">
-              <span class="fg-label prob-tag">解法</span>
-              干粮湿粮统一换算到干物质基准再对照国标，营养表终于能看懂了。
+              <span class="fg-label prob-tag">得到</span>
+              每项营养是否达标一眼可见，不达标的项目会给出可执行的换粮或补充方向。
             </p>
           </div>
           <div class="prob-vis">
@@ -271,49 +299,26 @@
             <span class="fg-chip fg-chip--ok">高于国标 22%</span>
           </div>
         </li>
-
-        <li class="prob">
-          <span class="prob-idx fg-mono">03</span>
-          <div class="prob-body">
-            <h3 class="prob-title">零食不算热量</h3>
-            <p class="prob-line">
-              <span class="fg-label prob-tag">问题</span>
-              主粮算得再准，随手几块冻干也能把全天额度顶穿。
-            </p>
-            <p class="prob-line">
-              <span class="fg-label prob-tag">解法</span>
-              零食纳入每日总热量，超出额度自动告警，主粮算得准，零食不再随手给。
-            </p>
-          </div>
-          <div class="prob-vis">
-            <div class="vis-row">
-              <span class="fg-label">零食额度</span>
-              <span class="fg-num vis-cold">34 kcal</span>
-            </div>
-            <div class="vis-row">
-              <span class="fg-label">今日已给</span>
-              <span class="fg-num fg-is-warning">60 kcal</span>
-            </div>
-            <span class="fg-chip fg-chip--warn">超出 76%</span>
-          </div>
-        </li>
       </ol>
     </section>
 
-    <!-- 4. 三条不能省 -->
+    <!-- 4. 把方案用起来：日常功能引导 -->
     <section class="fg-page block">
-      <h2 class="fg-h2 block-title">三条不能省</h2>
+      <h2 class="fg-h2 block-title">建档只是起点，接下来这样用</h2>
+      <p class="block-lead">
+        一份计算方案要变成习惯，靠的是每天记一点、每周看一眼、到点有人提醒。下面三件事都能在站内完成。
+      </p>
       <ol class="promise-list">
         <li class="promise">
           <span class="promise-idx fg-num">1</span>
           <div class="promise-body">
             <h3 class="fg-h3 promise-title">
-              <FlaskConical :size="20" class="fg-icon" />
-              可测试的营养引擎
+              <LineChart :size="20" class="fg-icon" />
+              每天两分钟，记录喂食与体重
             </h3>
             <p class="promise-text">
-              RER = 70 × 体重^0.75、MER 系数、干物质换算、10% 零食上限全部来自公开标准，
-              每一步公式在页面上逐行展开，可复核、可回归测试。
+              喂了多少、体重几斤、今天喝没喝水，随手记下即可。趋势图会替你看方向：
+              体重是在稳、在降，还是该把零食收一收。
             </p>
           </div>
         </li>
@@ -321,12 +326,12 @@
           <span class="promise-idx fg-num">2</span>
           <div class="promise-body">
             <h3 class="fg-h3 promise-title">
-              <BookOpen :size="20" class="fg-icon" />
-              可溯源的知识条目
+              <Sparkles :size="20" class="fg-icon" />
+              每周一，打开就能读到 AI 小结
             </h3>
             <p class="promise-text">
-              每条建议都挂来源与年份，点开是原文条目而不是模型的即兴发挥；
-              来源缺失时直接标注「无数据」，不补一个看起来合理的数字。
+              周报会自动汇总上周的体重、喂食与达标情况，写成一段能读懂的话。
+              进入周报页即可看到结论，不满意还能一键重新生成。
             </p>
           </div>
         </li>
@@ -334,16 +339,24 @@
           <span class="promise-idx fg-num">3</span>
           <div class="promise-body">
             <h3 class="fg-h3 promise-title">
-              <ShieldCheck :size="20" class="fg-icon" />
-              红线症状拦截
+              <BellRing :size="20" class="fg-icon" />
+              该做的事，到点提醒你
             </h3>
             <p class="promise-text">
-              抽搐、呼吸困难、拒食超过 24 小时等红旗症状一律先提示就医，
-              不给「再观察一下」这类可能延误的处理建议。
+              喂食、散步、疫苗、驱虫都可以设成提醒。到期时网页内会弹出通知，
+              也可以在设置里绑定邮箱，让提醒直接发到收件箱。
             </p>
           </div>
         </li>
       </ol>
+
+      <div class="block-cta">
+        <div class="cta-text">
+          <h3 class="cta-title">从第一份档案开始</h3>
+          <p class="cta-desc">免费注册，4 步生成个体化喂养方案，之后每周自动收到 AI 小结。</p>
+        </div>
+        <el-button type="primary" size="large" @click="goAuth">免费开始建档</el-button>
+      </div>
     </section>
 
     <footer class="site-foot">
@@ -362,7 +375,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { BookOpen, Calculator, Cat, Dog, FlaskConical, PawPrint, ShieldCheck } from 'lucide-vue-next'
+import { BellRing, Calculator, Cat, Dog, LineChart, PawPrint, Sparkles } from 'lucide-vue-next'
 import { calcDailyGrams, calcMer, snackBudget } from '@/utils/calculator'
 import { ACTIVITY_OPTIONS } from '@/utils/constants'
 import DisclaimerBar from '@/components/DisclaimerBar.vue'
@@ -656,6 +669,46 @@ function goAuth() {
 
 .block-title {
   margin: 0 0 var(--fg-s6);
+}
+
+.block-lead {
+  margin: calc(var(--fg-s5) * -1 + var(--fg-s3)) 0 var(--fg-s5);
+  max-width: 62ch;
+  line-height: 1.8;
+  color: var(--fg-ink-muted);
+}
+
+/* 区块末尾的引导 CTA */
+.block-cta {
+  margin-top: var(--fg-s6);
+  padding: var(--fg-s5);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fg-s5);
+  background: var(--fg-accent-soft);
+  border: var(--fg-line-w) solid var(--fg-accent);
+  border-radius: var(--fg-radius);
+}
+
+.cta-title {
+  margin: 0 0 var(--fg-s2);
+  font-family: var(--fg-font-serif);
+  font-size: var(--fg-text-h3);
+  font-weight: 600;
+}
+
+.cta-desc {
+  margin: 0;
+  max-width: 48ch;
+  font-size: var(--fg-text-label);
+  line-height: 1.7;
+  color: var(--fg-ink-muted);
+}
+
+.block-cta :deep(.el-button) {
+  flex: none;
+  margin-left: 0;
 }
 
 /* 问题 → 解法：整行 + 发丝分隔，不做卡片 */
@@ -1071,6 +1124,22 @@ function goAuth() {
 
   .block-title {
     margin-bottom: var(--fg-s5);
+  }
+
+  .block-lead {
+    margin: calc(var(--fg-s4) * -1 + var(--fg-s2)) 0 var(--fg-s4);
+    line-height: 1.7;
+  }
+
+  .block-cta {
+    flex-direction: column;
+    align-items: stretch;
+    padding: var(--fg-s4);
+    gap: var(--fg-s4);
+  }
+
+  .block-cta :deep(.el-button) {
+    width: 100%;
   }
 
   /* 问题 → 解法：单列，数字保留在左侧 */

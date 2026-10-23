@@ -109,7 +109,10 @@
                 <div class="facts">
                   <div class="facts-hd">
                     <h2 class="name">{{ pet.name }}</h2>
-                    <el-button text class="flat-btn" @click.stop="goPet(pet.id)">进入主页</el-button>
+                    <el-button type="primary" class="go-home-btn" @click.stop="goPet(pet.id)">
+                      进入主页
+                      <ArrowRight :size="16" class="fg-icon go-icon" />
+                    </el-button>
                   </div>
                   <p class="meta">{{ metaText(pet) }}</p>
 
@@ -142,7 +145,14 @@
                 <section class="panel">
                   <header class="panel-hd">
                     <h3 class="panel-tt">营养方案</h3>
-                    <el-button text class="flat-btn" @click.stop="goNutrition(pet.id)">
+                    <el-button
+                      type="primary"
+                      plain
+                      size="small"
+                      class="panel-btn"
+                      @click.stop="goNutrition(pet.id)"
+                    >
+                      <UtensilsCrossed :size="14" class="fg-icon btn-icon" />
                       查看方案
                     </el-button>
                   </header>
@@ -225,7 +235,14 @@
                 <section class="panel">
                   <header class="panel-hd">
                     <h3 class="panel-tt">每日提醒</h3>
-                    <el-button text class="flat-btn" @click.stop="goReminders(pet.id)">
+                    <el-button
+                      type="primary"
+                      plain
+                      size="small"
+                      class="panel-btn"
+                      @click.stop="goReminders(pet.id)"
+                    >
+                      <Bell :size="14" class="fg-icon btn-icon" />
                       提醒管理
                     </el-button>
                   </header>
@@ -320,6 +337,8 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import dayjs from 'dayjs'
 import {
+  ArrowRight,
+  Bell,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -898,10 +917,27 @@ function onPointerLeave() {
 
 .facts-hd {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: var(--fg-s3);
   min-width: 0;
+}
+
+.go-home-btn {
+  flex: 0 0 auto;
+  height: 32px;
+  padding: 0 var(--fg-s4);
+  border-radius: var(--fg-radius);
+  font-size: 13px;
+}
+
+.go-icon {
+  margin-left: var(--fg-s1);
+  transition: transform var(--fg-motion);
+}
+
+.go-home-btn:hover .go-icon {
+  transform: translateX(2px);
 }
 
 .name {
@@ -999,9 +1035,23 @@ function onPointerLeave() {
 .panel-hd {
   flex: 0 0 auto;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: var(--fg-s3);
+}
+
+/* 面板内操作：浅底 + 主色描边，比裸文字按钮更易识别又不抢「进入主页」 */
+.panel-btn {
+  flex: 0 0 auto;
+  height: 28px;
+  padding: 0 var(--fg-s3);
+  border-radius: var(--fg-radius);
+  font-size: var(--fg-text-label);
+  font-weight: 600;
+}
+
+.btn-icon {
+  margin-right: var(--fg-s1);
 }
 
 /* 标题钉在栏顶，内容在剩余高度里垂直居中，两栏标题因此始终齐平 */

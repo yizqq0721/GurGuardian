@@ -46,7 +46,7 @@
         <div class="locate-info">
           <span class="fg-dot fg-dot--success"></span>
           <span class="locate-text">已定位{{ accuracyText }}</span>
-          <el-button text size="small" @click="locate">
+          <el-button size="small" @click="locate">
             <LocateFixed :size="14" class="fg-icon" />
             重新定位
           </el-button>
@@ -105,7 +105,7 @@
 
         <div v-else-if="placesStatus === 'error'" class="fg-callout fg-callout--danger error-line">
           <span>{{ placesError }}</span>
-          <el-button text size="small" @click="loadPlaces">重试</el-button>
+          <el-button type="primary" plain size="small" @click="loadPlaces">重试</el-button>
         </div>
 
         <EmptyState
@@ -126,6 +126,14 @@
             @click="selectPlace(p)"
           >
             <div class="place-head">
+              <span
+                class="place-kind"
+                :class="category === 'medical' ? 'place-kind--medical' : 'place-kind--park'"
+              >
+                <Stethoscope v-if="category === 'medical'" :size="13" class="fg-icon" />
+                <Trees v-else :size="13" class="fg-icon" />
+                {{ category === 'medical' ? '医院' : '公园' }}
+              </span>
               <h3 class="place-name">{{ p.name }}</h3>
               <span class="fg-chip">{{ typeLabel(p.type) }}</span>
               <span class="place-distance fg-num">{{ formatDistance(p.distanceMeters) }}</span>
@@ -137,9 +145,14 @@
             <div class="place-actions">
               <el-button
                 size="small"
+                type="primary"
+                plain
                 :loading="walkingId === p.id"
                 @click.stop="walkTo(p)"
-              >步行路线</el-button>
+              >
+                <Footprints :size="14" class="fg-icon" />
+                步行路线
+              </el-button>
               <el-button
                 v-if="linkedReminderId && category === 'park'"
                 type="primary"
@@ -179,7 +192,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import dayjs from 'dayjs'
-import { ExternalLink, ChevronDown, Footprints, LocateFixed, MapPin } from 'lucide-vue-next'
+import { ExternalLink, ChevronDown, Footprints, LocateFixed, MapPin, Stethoscope, Trees } from 'lucide-vue-next'
 import PageHeader from '@/components/PageHeader.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import { placesApi } from '@/api/places'
@@ -399,10 +412,11 @@ function renderMarkers() {
   markerList = []
   if (!map || !AMapRef) return
   for (const p of places.value) {
+    const isMedical = category.value === 'medical'
     const marker = new AMapRef.Marker({
       position: [p.lng, p.lat],
       content: pinHtml(p.id === activeId.value),
-      offset: new AMapRef.Pixel(-15, -15),
+      offset: new AMapRef.Pixel(isMedical ? -19 : -16, isMedical ? -19 : -16),
       zIndex: p.id === activeId.value ? 120 : 100,
     })
     marker.on('click', () => selectMarker(p))
@@ -412,10 +426,12 @@ function renderMarkers() {
 }
 
 function pinHtml(active: boolean) {
-  const glyph = category.value === 'medical'
-    ? '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>'
-    : '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l5 7h-3l4 6H6l4-6H7l5-7Z"/><path d="M12 16v5"/></svg>'
-  return `<div class="nby-pin${active ? ' is-active' : ''}">${glyph}</div>`
+  const isMedical = category.value === 'medical'
+  const glyph = isMedical
+    ? '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>'
+    : '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l5 7h-3l4 6H6l4-6H7l5-7Z"/><path d="M12 16v5"/></svg>'
+  const kind = isMedical ? ' nby-pin--medical' : ' nby-pin--park'
+  return `<div class="nby-pin${kind}${active ? ' is-active' : ''}">${glyph}</div>`
 }
 
 function selectPlace(p: NearbyPlace) {
@@ -653,22 +669,62 @@ onBeforeUnmount(() => {
 
 /* 地图标记注入的是原生 DOM，样式必须穿过 scoped 作用域 */
 .map :deep(.nby-pin) {
-  width: 30px;
-  height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: var(--fg-surface);
-  border: 2px solid var(--fg-accent);
-  color: var(--fg-accent);
   cursor: pointer;
-  transition: background var(--fg-motion), color var(--fg-motion);
+  transition: transform var(--fg-motion), background var(--fg-motion), color var(--fg-motion);
 }
 
-.map :deep(.nby-pin.is-active) {
-  background: var(--fg-accent);
-  color: var(--fg-surface);
+/* 医院：红底白十字 + 白色描边与光晕，远看也能一眼认出 */
+.map :deep(.nby-pin--medical) {
+  width: 38px;
+  height: 38px;
+  color: #fff;
+  background: #d93a3a;
+  border: 3px solid #fff;
+  box-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.35),
+    0 0 0 5px rgba(217, 58, 58, 0.22);
+  animation: nby-pulse 2.4s ease-in-out infinite;
+}
+
+.map :deep(.nby-pin--medical.is-active) {
+  background: #b42318;
+  transform: scale(1.12);
+  box-shadow:
+    0 3px 14px rgba(0, 0, 0, 0.4),
+    0 0 0 7px rgba(217, 58, 58, 0.3);
+}
+
+/* 公园：绿底白标，与医院明显区分 */
+.map :deep(.nby-pin--park) {
+  width: 32px;
+  height: 32px;
+  color: #fff;
+  background: #1f7a4d;
+  border: 2px solid var(--fg-surface);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+}
+
+.map :deep(.nby-pin--park.is-active) {
+  background: #145c39;
+  transform: scale(1.12);
+}
+
+@keyframes nby-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 2px 10px rgba(0, 0, 0, 0.35),
+      0 0 0 5px rgba(217, 58, 58, 0.22);
+  }
+  50% {
+    box-shadow:
+      0 2px 10px rgba(0, 0, 0, 0.35),
+      0 0 0 9px rgba(217, 58, 58, 0.08);
+  }
 }
 
 .map :deep(.nby-me) {
@@ -790,6 +846,31 @@ onBeforeUnmount(() => {
 
 .place-head .fg-chip {
   flex-shrink: 0;
+}
+
+.place-kind {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 var(--fg-s2);
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.place-kind--medical {
+  color: #b42318;
+  background: #fdeceb;
+  border: 1px solid #f2b8b5;
+}
+
+.place-kind--park {
+  color: #1f7a4d;
+  background: #e9f6ee;
+  border: 1px solid #b6ddc6;
 }
 
 .place-name {

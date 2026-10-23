@@ -187,10 +187,27 @@ h4 {
   display: none;
 }
 
-/* 按钮：8px 圆角、无阴影、次级按钮用发丝边框 */
+/* 按钮：8px 圆角、无阴影；次级按钮用更深的发丝边框，悬停转为主色 */
 .el-button {
   border-radius: var(--fg-radius);
   font-weight: 500;
+}
+
+.el-button--primary {
+  font-weight: 600;
+}
+
+/* 默认按钮（无 type）加强轮廓与悬停反馈，避免混在正文里看不见可点击 */
+.el-button:not(.el-button--primary):not(.el-button--success):not(.el-button--warning):not(.el-button--danger):not(.el-button--info):not(.is-text):not(.is-link) {
+  border-color: var(--fg-line-strong);
+  color: var(--fg-ink);
+}
+
+.el-button:not(.el-button--primary):not(.el-button--success):not(.el-button--warning):not(.el-button--danger):not(.el-button--info):not(.is-text):not(.is-link):hover,
+.el-button:not(.el-button--primary):not(.el-button--success):not(.el-button--warning):not(.el-button--danger):not(.el-button--info):not(.is-text):not(.is-link):focus-visible {
+  border-color: var(--fg-accent);
+  color: var(--fg-accent);
+  background: var(--fg-accent-soft);
 }
 
 .el-button--small {
