@@ -24,11 +24,13 @@ public class ReportPolishController {
     }
 
     @PostMapping("/{id}/polish")
-    @Operation(summary = "LLM润色周报",
-               description = "将规则引擎的结构化结论润色为自然语言")
-    public Result<WeeklyReportDO> polish(@PathVariable Long id) {
+    @Operation(summary = "生成/重新生成周报 AI 小结",
+               description = "将规则引擎的结构化结论转写为 Markdown 小结；force=true 时强制重新生成")
+    public Result<WeeklyReportDO> polish(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "false") boolean force) {
         WeeklyReportDO report = reportPolishService.polishReport(
-                UserContext.getUserId(), id);
+                UserContext.getUserId(), id, force);
         return Result.ok(report);
     }
 

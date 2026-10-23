@@ -5,6 +5,8 @@ import com.purr.furguardian.biz.entity.pet.PetDO;
 import com.purr.furguardian.biz.entity.report.WeeklyReportDO;
 import com.purr.furguardian.biz.service.PetService;
 import com.purr.furguardian.biz.service.ReportService;
+import com.purr.furguardian.common.exception.BizException;
+import com.purr.furguardian.common.result.ErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -34,9 +36,16 @@ public class ReportPolishService {
     }
 
     public WeeklyReportDO polishReport(Long userId, Long reportId) {
+        return polishReport(userId, reportId, false);
+    }
+
+    /**
+     * @param force true 时无视已生成状态重新调用 LLM；失败则保留原有小结并抛出业务异常
+     */
+    public WeeklyReportDO polishReport(Long userId, Long reportId, boolean force) {
         WeeklyReportDO report = reportService.getReport(userId, reportId);
 
-        if ("polished".equals(report.getStatus())) {
+        if (!force && "polished".equals(report.getStatus())) {
             return report;
         }
 
@@ -56,6 +65,10 @@ public class ReportPolishService {
                 promptTemplates.buildReportPolishUserPrompt(petInfo, conclusionsJson));
 
         if (llmSummary == null) {
+            // 重新生成失败时不覆盖已有内容，让用户保留上一次的 AI 小结
+            if (force && report.getLlmSummary() != null && !report.getLlmSummary().isBlank()) {
+                throw new BizException(ErrorCode.INTERNAL_ERROR, "AI 服务暂时不可用，已保留原有小结");
+            }
             llmSummary = buildFallbackSummary(conclusions);
         }
 
@@ -91,25 +104,29 @@ public class ReportPolishService {
 
     private String buildFallbackSummary(ReportConclusion conclusions) {
         StringBuilder sb = new StringBuilder();
-        sb.append("本周周报摘要：\n\n");
 
         long triggeredCount = conclusions.getRules().stream()
                 .filter(ReportConclusion.RuleResult::isTriggered)
                 .count();
 
         if (triggeredCount == 0) {
-            sb.append("本周各项指标正常，请继续保持当前的喂养和护理方式。\n");
+            sb.append("本周各项指标平稳，继续保持当前的喂养与护理节奏即可。\n\n");
+            sb.append("**下周可以关注**\n\n");
+            sb.append("- 保持固定喂食时间，并记录每次体重变化\n");
+            sb.append("- 零食控制在每日热量额度的 10% 以内\n");
         } else {
-            sb.append(String.format("本周共触发%d条规则建议：\n\n", triggeredCount));
+            sb.append(String.format("本周共有 **%d 条规则** 触发了关注提示：\n\n", triggeredCount));
             for (ReportConclusion.RuleResult rule : conclusions.getRules()) {
                 if (rule.isTriggered()) {
-                    sb.append("• ").append(rule.getRuleName()).append("：");
+                    sb.append("- **").append(rule.getRuleName()).append("**：");
                     sb.append(rule.getSuggestion()).append("\n");
                 }
             }
+            sb.append("\n**下周建议**\n\n");
+            sb.append("按上面的提示逐项调整，并在下周同期复评体重与体况。\n");
         }
 
-        sb.append("\n本周报由系统自动生成，仅供参考，不构成医疗建议。如有异常请及时咨询兽医。");
+        sb.append("\n> 本周报由系统自动生成，仅供参考，不构成医疗建议。如有异常请及时咨询兽医。");
         return sb.toString();
     }
 }
