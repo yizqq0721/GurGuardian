@@ -1,0 +1,100 @@
+/* ============================================================
+   App 壳（仅 APK / HAP 带 ?app=1 进入，见 utils/appMode.ts）
+   手机浏览器与桌面完全不受影响：所有规则都挂在 html.app-shell 下。
+   ============================================================ */
+
+html.app-shell {
+  --fg-appbar-h: 52px;
+  --fg-tabbar-h: 58px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html.app-shell ::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* ---------- 内容区：让出固定顶栏与底栏 ---------- */
+html.app-shell .app-body {
+  min-height: 100vh;
+  padding-top: calc(var(--fg-appbar-h) + env(safe-area-inset-top));
+  padding-bottom: calc(var(--fg-tabbar-h) + env(safe-area-inset-bottom));
+}
+
+/* 页面标题交给 App 顶栏，视图内的标题/面包屑/返回链接收起，只保留右侧操作 */
+html.app-shell .page-header {
+  padding: 0;
+  margin: 0 0 12px;
+  border-bottom: 0;
+  min-height: 0;
+  align-items: center;
+}
+
+html.app-shell .page-header .head-text {
+  display: none;
+}
+
+html.app-shell .page-header .head-actions {
+  width: 100%;
+  padding: 0;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* 顶栏已带返回按钮，视图内的返回链接不再重复 */
+html.app-shell .fg-back {
+  display: none;
+}
+
+html.app-shell .fg-page {
+  padding: 14px 14px 20px;
+}
+
+/* ---------- 知识问答：整页聊天要按 App 可视高度重算 ---------- */
+html.app-shell .chat-page {
+  height: calc(100vh - var(--fg-appbar-h) - var(--fg-tabbar-h) - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  height: calc(100dvh - var(--fg-appbar-h) - var(--fg-tabbar-h) - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  min-height: 0;
+  padding: 0;
+}
+
+html.app-shell .composer {
+  padding-bottom: var(--fg-s2);
+}
+
+@media (max-width: 1024px) {
+  html.app-shell .sess-pane {
+    top: calc(var(--fg-appbar-h) + env(safe-area-inset-top)) !important;
+    bottom: calc(var(--fg-tabbar-h) + env(safe-area-inset-bottom)) !important;
+  }
+
+  html.app-shell .drawer-mask {
+    inset: calc(var(--fg-appbar-h) + env(safe-area-inset-top)) 0 calc(var(--fg-tabbar-h) + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* ---------- 登录页：App 里只留表单列 ---------- */
+html.app-shell .auth-page {
+  min-height: 100dvh;
+  padding: 24px 20px calc(24px + env(safe-area-inset-bottom));
+}
+
+html.app-shell .auth-inner {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 440px;
+  gap: 0;
+}
+
+html.app-shell .auth-page .preview-col {
+  display: none;
+}
+
+html.app-shell .auth-page .form-title {
+  margin-top: var(--fg-s6);
+  font-size: 28px;
+}
+
+/* ---------- 建档流程：同样按动态视口兜底 ---------- */
+html.app-shell .ob-page {
+  min-height: 100dvh;
+}

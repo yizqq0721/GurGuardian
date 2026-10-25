@@ -41,6 +41,8 @@ services:
       - ./sql/knowledge_seed.sql:/docker-entrypoint-initdb.d/03-knowledge_seed.sql:ro
       # WSAVA 语料扩充（765 条），由 sql/build-wsava-seed.mjs 生成；按 title 幂等 DELETE，可反复执行
       - ./sql/knowledge_seed_wsava.sql:/docker-entrypoint-initdb.d/04-knowledge_seed_wsava.sql:ro
+      # MSD 兽医手册语料扩充（495 条），由 sql/build-msd-seed.mjs 生成；同样按 title 幂等
+      - ./sql/knowledge_seed_msd.sql:/docker-entrypoint-initdb.d/05-knowledge_seed_msd.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
       interval: 10s

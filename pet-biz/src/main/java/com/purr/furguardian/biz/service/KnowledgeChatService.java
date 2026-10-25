@@ -12,7 +12,15 @@ public interface KnowledgeChatService {
     record ChatSource(Long docId, String title, String sourceName, String sourceType, String severity) {}
 
     record ChatMessage(Long id, String role, String content, List<ChatSource> sources,
-                       Boolean isRedLine, Boolean isFallback, LocalDateTime createdAt) {}
+                       Boolean isRedLine, Boolean isFallback, Integer feedback,
+                       LocalDateTime createdAt) {}
+
+    /** 被标为「没用」的回答，只留摘要给统计面板展示。 */
+    record FeedbackSample(Long messageId, Long sessionId, String snippet, LocalDateTime createdAt) {}
+
+    /** 反馈读数：total 只算可评价的 AI 回答（红线回答没有评分入口）。 */
+    record FeedbackStats(long total, long useful, long useless, long unrated,
+                         int usefulRate, List<FeedbackSample> recentUseless) {}
 
     /**
      * 一轮问答。回答由 /api/ai/query 生成，这里只负责把它和问题一起存进会话；
@@ -32,4 +40,10 @@ public interface KnowledgeChatService {
     CursorPage<ChatMessage> listMessages(Long userId, Long sessionId, LocalDateTime cursor, int limit);
 
     void appendExchange(Long userId, Long sessionId, Exchange exchange);
+
+    /** 对一条 AI 回答打分：1=有用，0=没用；只能改自己的回答。 */
+    void rateMessage(Long userId, Long messageId, boolean useful);
+
+    /** 当前用户的回答反馈读数，用于展示有用率和最近差评。 */
+    FeedbackStats feedbackStats(Long userId);
 }

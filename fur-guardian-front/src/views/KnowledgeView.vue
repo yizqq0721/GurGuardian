@@ -71,6 +71,42 @@
           </button>
         </div>
 
+        <el-popover
+          v-if="stats && stats.total > 0"
+          placement="top-end"
+          :width="260"
+          trigger="hover"
+        >
+          <template #reference>
+            <button type="button" class="feedback-stat">
+              <span class="fs-head">
+                <span class="fg-label">回答反馈</span>
+                <Info :size="14" class="fg-icon" />
+              </span>
+              <span v-if="stats.useful + stats.useless > 0" class="fs-body">
+                <span class="fs-rate fg-num">{{ stats.usefulRate }}%</span>
+                <span class="fg-muted fs-note">
+                  {{ stats.useful }}/{{ stats.useful + stats.useless }} 条评价有用
+                </span>
+              </span>
+              <span v-else class="fs-empty fg-muted">还没有评价</span>
+            </button>
+          </template>
+          <template v-if="stats.useful + stats.useless > 0">
+            <p class="fs-pop-head">最近被标为「没用」的回答</p>
+            <ul v-if="stats.recentUseless.length" class="fs-pop-list">
+              <li v-for="s in stats.recentUseless" :key="s.messageId">
+                <p class="fs-pop-text">{{ s.snippet }}</p>
+                <span class="fg-muted fg-num">{{ dayjs(s.createdAt).format('MM-DD HH:mm') }}</span>
+              </li>
+            </ul>
+            <p v-else class="fg-muted fs-pop-empty">还没有差评。</p>
+          </template>
+          <p v-else class="fg-muted fs-pop-empty">
+            回答下方的「有用/没用」会汇总到这里，有用率只统计已评价的回答。
+          </p>
+        </el-popover>
+
         <button type="button" class="pane-foot" @click="mode = 'browse'">
           <BookOpen :size="16" class="fg-icon" />
           <span>浏览知识库</span>
@@ -111,6 +147,136 @@
             <span>导出</span>
           </button>
         </header>
+
+        <section v-if="reviewBusy || review || reviewError" class="review-panel" aria-live="polite">
+          <div class="review-head">
+            <div class="review-heading">
+              <p class="review-title">本周照护复盘</p>
+              <p class="review-sub fg-muted">照护分析先查真实记录，行动计划只基于这份结论提建议</p>
+            </div>
+            <button type="button" class="icon-btn" aria-label="关闭复盘" @click="closeReview">
+              <X :size="16" class="fg-icon" />
+            </button>
+          </div>
+
+          <div v-if="reviewBusy" class="review-loading">
+            <span class="sk-line" style="width: 64%" />
+            <span class="sk-line" style="width: 42%" />
+            <p class="fg-muted">照护分析 Agent 正在查本周记录，完成后交给行动计划 Agent。</p>
+          </div>
+
+          <div v-else-if="reviewError" class="review-error">
+            <p>{{ reviewError }}</p>
+            <button type="button" class="retry-btn" @click="runWeeklyReview">重试</button>
+          </div>
+
+          <div v-else-if="review" class="review-steps">
+            <article class="review-card" :class="`is-${review.analysis.status.toLowerCase()}`">
+              <div class="card-head">
+                <span class="card-index fg-num">01</span>
+                <p class="card-kicker">{{ review.analysis.label }}</p>
+                <span class="fg-chip card-status">{{ stepStatusText(review.analysis.status) }}</span>
+                <span class="card-ms fg-muted fg-num">{{ review.analysis.ms }}ms</span>
+              </div>
+              <p class="card-text">{{ review.analysis.content }}</p>
+              <div v-if="review.analysis.facts.length" class="card-block">
+                <span class="fg-label">事实</span>
+                <ul class="fact-list">
+                  <li v-for="fact in review.analysis.facts" :key="fact">{{ fact }}</li>
+                </ul>
+              </div>
+              <p v-if="review.analysis.missing.length" class="card-missing">
+                未取到：{{ review.analysis.missing.join('、') }}
+              </p>
+              <div v-if="review.analysis.toolCalls.length" class="tool-trace">
+                <span class="fg-muted trace-title">已查询</span>
+                <span
+                  v-for="call in review.analysis.toolCalls"
+                  :key="`a-${call.name}-${call.summary}`"
+                  class="fg-chip trace-chip"
+                >
+                  {{ call.label }}<template v-if="call.summary"> · {{ call.summary }}</template>
+                </span>
+              </div>
+            </article>
+
+            <article v-if="review.plan" class="review-card" :class="`is-${review.plan.status.toLowerCase()}`">
+              <div class="card-head">
+                <span class="card-index fg-num">02</span>
+                <p class="card-kicker">{{ review.plan.label }}</p>
+                <span class="fg-chip card-status">{{ stepStatusText(review.plan.status) }}</span>
+                <span class="card-ms fg-muted fg-num">{{ review.plan.ms }}ms</span>
+              </div>
+              <p class="card-text">{{ review.plan.content }}</p>
+              <p v-if="review.plan.missing.length" class="card-missing">
+                未取到：{{ review.plan.missing.join('、') }}
+              </p>
+
+              <div v-if="review.sources.length" class="card-block">
+                <span class="fg-label">参考来源</span>
+                <div class="source-grid">
+                  <button
+                    v-for="src in review.sources"
+                    :key="src.docId"
+                    type="button"
+                    class="source-card"
+                    @click="openReviewSource(src)"
+                  >
+                    <span class="source-title">{{ src.title }}</span>
+                    <span class="fg-muted source-name">{{ src.sourceName }}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div v-if="review.plan.toolCalls.length" class="tool-trace">
+                <span class="fg-muted trace-title">已调用</span>
+                <span
+                  v-for="call in review.plan.toolCalls"
+                  :key="`p-${call.name}-${call.summary}`"
+                  class="fg-chip trace-chip"
+                >
+                  {{ call.label }}<template v-if="call.summary"> · {{ call.summary }}</template>
+                </span>
+              </div>
+
+              <div v-if="reviewPending" class="pending-card">
+                <p class="pending-head">
+                  <CalendarPlus :size="16" class="fg-icon" />
+                  待确认的提醒
+                </p>
+                <p class="pending-summary">{{ reviewPending.summary }}</p>
+                <p class="fg-muted pending-tip">
+                  计划 10 分钟内有效，确认后才会写入你的提醒。
+                </p>
+                <div class="pending-actions">
+                  <el-button
+                    type="primary"
+                    :loading="reviewPendingBusy"
+                    :disabled="reviewPendingCreated"
+                    @click="confirmReviewPending"
+                  >
+                    {{ reviewPendingCreated ? '已创建' : '确认创建' }}
+                  </el-button>
+                  <el-button v-if="!reviewPendingCreated" :disabled="reviewPendingBusy" @click="reviewPending = null">
+                    取消
+                  </el-button>
+                  <router-link v-if="reviewPendingCreated" to="/reminders" class="pending-link">
+                    去提醒页看看
+                  </router-link>
+                </div>
+              </div>
+            </article>
+
+            <article v-else class="review-card is-failed">
+              <div class="card-head">
+                <span class="card-index fg-num">02</span>
+                <p class="card-kicker">行动计划</p>
+                <span class="fg-chip card-status">未完成</span>
+              </div>
+              <p class="card-text">行动计划这次没能生成，上面的照护分析仍然有效。</p>
+            </article>
+          </div>
+        </section>
 
         <div ref="threadEl" class="thread" role="log" aria-live="polite">
           <button v-if="messagesMore" type="button" class="load-older" @click="loadMoreMessages">
@@ -177,9 +343,20 @@
                         class="cite"
                         :title="row.message.sources[seg.cite - 1]?.title"
                       >{{ seg.cite }}</sup>
-                      <template v-else>{{ seg.text }}</template>
+                      <span v-else v-html="inlineBold(seg.text)" />
                     </template>
                   </p>
+
+                  <div v-if="row.message.id === lastTraceId && lastTrace.length" class="tool-trace">
+                    <span class="fg-muted trace-title">已查询</span>
+                    <span v-for="call in lastTrace" :key="call.name" class="fg-chip trace-chip">
+                      {{ call.label }}<template v-if="call.summary"> · {{ call.summary }}</template>
+                    </span>
+                    <span v-if="lastFailed.length" class="fg-chip trace-chip is-warn">
+                      <TriangleAlert :size="12" />
+                      {{ lastFailed.join('、') }}未取到
+                    </span>
+                  </div>
 
                   <div v-if="row.message.sources.length" class="sources">
                     <p class="fg-label">参考来源</p>
@@ -206,6 +383,56 @@
                   </div>
 
                   <p class="ai-disclaimer fg-muted">以上建议仅供参考，不构成医疗建议。</p>
+
+                  <div class="answer-actions">
+                    <button
+                      type="button"
+                      class="vote-btn"
+                      :class="{ on: row.message.feedback === 1 }"
+                      :disabled="feedbackBusy === row.message.id"
+                      @click="rate(row.message, true)"
+                    >
+                      <ThumbsUp :size="14" /> 有用
+                    </button>
+                    <button
+                      type="button"
+                      class="vote-btn"
+                      :class="{ on: row.message.feedback === 0 }"
+                      :disabled="feedbackBusy === row.message.id"
+                      @click="rate(row.message, false)"
+                    >
+                      <ThumbsDown :size="14" /> 没用
+                    </button>
+                    <span v-if="row.message.feedback != null" class="fg-muted vote-thanks">感谢反馈</span>
+                  </div>
+
+                  <div v-if="pendingAction && pendingForId === row.message.id" class="pending-card">
+                    <p class="pending-head">
+                      <CalendarPlus :size="16" class="fg-icon" />
+                      待确认的提醒
+                    </p>
+                    <p class="pending-summary">{{ pendingAction.summary }}</p>
+                    <p class="fg-muted pending-tip">
+                      Agent 只生成了计划，确认后才会写入你的提醒（计划 10 分钟内有效）。
+                      想调整就直接发消息，例如「改成晚上八点，只在工作日提醒」。
+                    </p>
+                    <div class="pending-actions">
+                      <el-button
+                        type="primary"
+                        :loading="pendingBusy"
+                        :disabled="pendingCreated"
+                        @click="confirmPending"
+                      >
+                        {{ pendingCreated ? '已创建' : '确认创建' }}
+                      </el-button>
+                      <el-button v-if="!pendingCreated" :disabled="pendingBusy" @click="dismissPending">
+                        取消
+                      </el-button>
+                      <router-link v-if="pendingCreated" to="/reminders" class="pending-link">
+                        去提醒页看看
+                      </router-link>
+                    </div>
+                  </div>
                 </template>
               </div>
             </template>
@@ -249,6 +476,15 @@
 
         <footer class="composer">
           <div class="chips">
+            <button
+              type="button"
+              class="fg-chip topic-chip review-trigger"
+              :disabled="reviewBusy"
+              @click="runWeeklyReview"
+            >
+              <Sparkles :size="14" class="fg-icon" />
+              {{ reviewBusy ? '复盘进行中…' : '本周照护复盘' }}
+            </button>
             <button
               v-for="q in composerSuggests"
               :key="q"
@@ -510,15 +746,21 @@ import {
   ArrowLeft,
   ArrowUp,
   BookOpen,
+  CalendarPlus,
   ChevronRight,
   Download,
   Ellipsis,
   History,
+  Info,
   MessagesSquare,
   Search,
   ShieldAlert,
+  Sparkles,
   SquarePen,
+  ThumbsDown,
+  ThumbsUp,
   TriangleAlert,
+  X,
 } from 'lucide-vue-next'
 import { aiApi } from '@/api/ai'
 import { chatApi } from '@/api/knowledge'
@@ -531,7 +773,16 @@ import PageHeader from '@/components/PageHeader.vue'
 import SeverityDot from '@/components/SeverityDot.vue'
 import SourceChip from '@/components/SourceChip.vue'
 import { dateText } from '@/utils/format'
-import type { ChatMessage, ChatSession, ChatSource, KnowledgeDoc } from '@/types'
+import type {
+  AiPendingAction,
+  AiToolCall,
+  ChatMessage,
+  ChatSession,
+  ChatSource,
+  FeedbackStats,
+  KnowledgeDoc,
+  WeeklyReviewResp,
+} from '@/types'
 
 const petStore = usePetStore()
 const route = useRoute()
@@ -567,6 +818,22 @@ const messagesCursor = ref<string | null>(null)
 const messagesMore = ref(false)
 const loadingMessages = ref(false)
 const loadingMore = ref(false)
+
+/** 工具轨迹只保留最近一条回答；服务端不存轨迹，回读消息后用最新 ai 消息 id 挂载 */
+const lastTrace = ref<AiToolCall[]>([])
+const lastTraceId = ref<number | null>(null)
+/** 本次查询失败的工具展示名，和轨迹一起挂在最新回答下 */
+const lastFailed = ref<string[]>([])
+
+/** 当前用户的回答反馈读数；侧栏只展示已有评价的情况 */
+const stats = ref<FeedbackStats | null>(null)
+
+/** Agent 的写操作只出计划，用户确认后才真正落库 */
+const pendingAction = ref<AiPendingAction | null>(null)
+const pendingForId = ref<number | null>(null)
+const pendingBusy = ref(false)
+const pendingCreated = ref(false)
+const feedbackBusy = ref<number | null>(null)
 
 const draft = ref('')
 const asking = ref(false)
@@ -630,6 +897,14 @@ function segments(content: string, count: number): Seg[] {
   }
   if (last < content.length) out.push({ text: content.slice(last) })
   return out.length ? out : [{ text: content }]
+}
+
+/** 模型偶尔会输出 Markdown 加粗；先转义再只放开 **...**，其余标签一律当文本 */
+function inlineBold(text: string): string {
+  const escaped = text.replace(/[&<>"']/g, (ch) =>
+    ch === '&' ? '&amp;' : ch === '<' ? '&lt;' : ch === '>' ? '&gt;' : ch === '"' ? '&quot;' : '&#39;',
+  )
+  return escaped.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>')
 }
 
 const threadRows = computed<Row[]>(() => {
@@ -761,6 +1036,12 @@ async function openChat(id: number) {
   activeId.value = id
   askError.value = null
   persistError.value = false
+  lastTrace.value = []
+  lastTraceId.value = null
+  lastFailed.value = []
+  pendingAction.value = null
+  pendingForId.value = null
+  pendingCreated.value = false
   localStorage.setItem(LAST_CHAT_KEY, String(id))
   await fetchMessages(id)
   await nextTick()
@@ -776,6 +1057,12 @@ function newChat() {
   messagesMore.value = false
   askError.value = null
   persistError.value = false
+  lastTrace.value = []
+  lastTraceId.value = null
+  lastFailed.value = []
+  pendingAction.value = null
+  pendingForId.value = null
+  pendingCreated.value = false
   draft.value = ''
   localStorage.removeItem(LAST_CHAT_KEY)
 }
@@ -788,15 +1075,21 @@ function askFrom(q: string) {
 async function submit(rawQuestion: string) {
   const q = rawQuestion.trim()
   if (!q || asking.value) return
+  // 计划还没确认时把 token 带上，服务端才能把「改成八点」识别为修改而不是新提醒
+  const priorPending = pendingAction.value && !pendingCreated.value ? pendingAction.value : null
   asking.value = true
   askingQuestion.value = q
   askError.value = null
   persistError.value = false
+  lastFailed.value = []
   draft.value = ''
   scrollThreadToBottomSoon()
 
   let answer: string
   let sources: ChatSource[] = []
+  let trace: AiToolCall[] = []
+  let failed: string[] = []
+  let pending: AiPendingAction | null = null
   let fallback = false
   let redline = false
   try {
@@ -805,10 +1098,18 @@ async function submit(rawQuestion: string) {
     if (redline) {
       answer = REDLINE_TEXT
     } else {
-      const resp = await aiApi.query({ query: q, petId: petStore.currentPet?.id })
+      const resp = await aiApi.query({
+        query: q,
+        petId: petStore.currentPet?.id,
+        sessionId: activeId.value ?? undefined,
+        pendingToken: priorPending?.token,
+      })
       answer = resp.content
       fallback = resp.isFallback
       sources = resp.sources
+      trace = resp.toolCalls ?? []
+      failed = resp.failedTools ?? []
+      pending = resp.pendingAction ?? null
     }
   } catch (e) {
     // 没答上来的问题不写进历史，只留一条错误条 + 重试；保留问题文本供重试
@@ -846,6 +1147,20 @@ async function submit(rawQuestion: string) {
     }
     // 回读同一页：来源卡片要用服务端补全的 sourceType/severity，消息也要换成真实 id
     await fetchMessages(id, true)
+    const lastAi = [...messages.value].reverse().find((m) => m.role === 'ai')
+    lastTrace.value = trace
+    lastTraceId.value = lastAi?.id ?? null
+    lastFailed.value = failed
+    if (pending) {
+      pendingAction.value = pending
+      pendingForId.value = lastAi?.id ?? null
+      pendingCreated.value = false
+    } else if (!priorPending) {
+      // 没有可延续的旧计划才清空；追问补充字段时旧卡片要留着，用户才能继续确认
+      pendingAction.value = null
+      pendingForId.value = null
+      pendingCreated.value = false
+    }
     await refreshSessions()
   } finally {
     asking.value = false
@@ -870,6 +1185,116 @@ function localMessage(
     isFallback: fallback,
     createdAt: dayjs().format('YYYY-MM-DDTHH:mm:ss'),
   }
+}
+
+/** 反馈按消息 id 落在服务端，刷新后仍保留；失败回滚本地状态 */
+async function rate(msg: ChatMessage, useful: boolean) {
+  if (msg.id < 0 || feedbackBusy.value === msg.id) return
+  const prev = msg.feedback ?? null
+  feedbackBusy.value = msg.id
+  msg.feedback = useful ? 1 : 0
+  try {
+    await chatApi.rateMessage(msg.id, useful)
+    void loadStats()
+  } catch {
+    msg.feedback = prev
+  } finally {
+    feedbackBusy.value = null
+  }
+}
+
+async function loadStats() {
+  try {
+    stats.value = await chatApi.feedbackStats()
+  } catch {
+    /* 读数是附带信息，拉不到不影响问答 */
+  }
+}
+
+/** Agent 只出计划；确认时只回传 token，落库字段以服务端保存的那份为准 */
+async function confirmPending() {
+  const action = pendingAction.value
+  if (!action || pendingBusy.value || pendingCreated.value) return
+  pendingBusy.value = true
+  try {
+    const created = await aiApi.confirmAction(action.token)
+    pendingCreated.value = true
+    ElMessage.success(created.repeated ? '这条提醒之前已经创建过了' : '提醒已创建')
+  } catch {
+    /* 错误提示由 request 拦截器统一处理 */
+  } finally {
+    pendingBusy.value = false
+  }
+}
+
+function dismissPending() {
+  pendingAction.value = null
+  pendingForId.value = null
+}
+
+/* ===== 本周照护复盘：照护分析 Agent → 行动计划 Agent ===== */
+const reviewBusy = ref(false)
+const review = ref<WeeklyReviewResp | null>(null)
+const reviewError = ref<string | null>(null)
+const reviewPending = ref<AiPendingAction | null>(null)
+const reviewPendingBusy = ref(false)
+const reviewPendingCreated = ref(false)
+
+async function runWeeklyReview() {
+  if (reviewBusy.value) return
+  const pet = petStore.currentPet
+  if (!pet) {
+    reviewError.value = '请先在宠物档案里选择一只宠物'
+    review.value = null
+    return
+  }
+  reviewBusy.value = true
+  reviewError.value = null
+  review.value = null
+  reviewPending.value = null
+  reviewPendingCreated.value = false
+  try {
+    const resp = await aiApi.weeklyReview({ petId: pet.id })
+    review.value = resp
+    reviewPending.value = resp.pendingAction ?? null
+  } catch (e) {
+    reviewError.value = e instanceof Error && e.message ? e.message : '复盘失败，请稍后重试'
+  } finally {
+    reviewBusy.value = false
+  }
+}
+
+function closeReview() {
+  review.value = null
+  reviewError.value = null
+  reviewPending.value = null
+  reviewPendingCreated.value = false
+}
+
+/** 复盘里的提醒同样只回传服务端 token，规则和普通问答一致 */
+async function confirmReviewPending() {
+  const action = reviewPending.value
+  if (!action || reviewPendingBusy.value || reviewPendingCreated.value) return
+  reviewPendingBusy.value = true
+  try {
+    const created = await aiApi.confirmAction(action.token)
+    reviewPendingCreated.value = true
+    ElMessage.success(created.repeated ? '这条提醒之前已经创建过了' : '提醒已创建')
+  } catch {
+    /* 错误提示由 request 拦截器统一处理 */
+  } finally {
+    reviewPendingBusy.value = false
+  }
+}
+
+function stepStatusText(status: string) {
+  if (status === 'PARTIAL') return '部分数据缺失'
+  if (status === 'FAILED') return '未完成'
+  return '已完成'
+}
+
+function openReviewSource(src: { docId: number; title: string; sourceName: string }) {
+  void openSource({ ...src })
 }
 
 /** 服务端会刷新 updated_at 和两个计数，重新拉一次比本地猜准 */
@@ -1097,6 +1522,7 @@ const relatedDocs = computed(() => {
 
 onMounted(async () => {
   await loadSessions()
+  void loadStats()
   const last = Number(localStorage.getItem(LAST_CHAT_KEY))
   const restore = sessions.value.find((s) => s.id === last) ?? sessions.value[0]
   if (restore) await openChat(restore.id)
@@ -1289,6 +1715,78 @@ onMounted(async () => {
   margin: var(--fg-s3) auto 0;
 }
 
+/* 回答反馈读数：只在有评价后出现，悬浮看最近差评 */
+.feedback-stat {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: calc(100% - 2 * var(--fg-s3));
+  margin: 0 var(--fg-s3) var(--fg-s2);
+  padding: var(--fg-s3);
+  border: var(--fg-line-w) solid var(--fg-line);
+  border-radius: var(--fg-radius);
+  background: var(--fg-paper);
+  font-family: inherit;
+  text-align: left;
+  cursor: default;
+}
+
+.fs-head {
+  display: flex;
+  align-items: center;
+  gap: var(--fg-s2);
+  color: var(--fg-ink-muted);
+}
+
+.fs-body {
+  display: flex;
+  align-items: baseline;
+  gap: var(--fg-s2);
+}
+
+.fs-rate {
+  font-size: var(--fg-text-h3);
+  font-weight: 600;
+  color: var(--fg-ink);
+}
+
+.fs-note {
+  font-size: var(--fg-text-label);
+}
+
+.fs-empty {
+  font-size: var(--fg-text-label);
+}
+
+.fs-pop-head {
+  margin: 0 0 var(--fg-s3);
+  font-size: var(--fg-text-label);
+  font-weight: 600;
+  color: var(--fg-ink);
+}
+
+.fs-pop-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fg-s3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fs-pop-text {
+  margin: 0 0 2px;
+  font-size: var(--fg-text-label);
+  line-height: 1.5;
+  color: var(--fg-ink);
+}
+
+.fs-pop-empty {
+  margin: 0;
+  font-size: var(--fg-text-label);
+}
+
 .pane-foot {
   flex: none;
   display: flex;
@@ -1459,6 +1957,10 @@ onMounted(async () => {
   word-break: break-word;
 }
 
+.ai-body :deep(strong) {
+  font-weight: 600;
+}
+
 .cite {
   display: inline-flex;
   align-items: center;
@@ -1496,6 +1998,29 @@ onMounted(async () => {
 .fallback-tag {
   height: 20px;
   font-size: var(--fg-text-label);
+}
+
+.tool-trace {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--fg-s2);
+  margin-top: var(--fg-s3);
+}
+
+.trace-title {
+  font-size: var(--fg-text-label);
+}
+
+.trace-chip {
+  font-size: var(--fg-text-label);
+}
+
+.trace-chip.is-warn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--fg-danger);
 }
 
 .sources {
@@ -1556,6 +2081,92 @@ onMounted(async () => {
 .ai-disclaimer {
   margin: var(--fg-s4) 0 0;
   font-size: var(--fg-text-label);
+}
+
+.answer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--fg-s2);
+  margin-top: var(--fg-s3);
+}
+
+.vote-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px var(--fg-s2);
+  border: var(--fg-line-w) solid var(--fg-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--fg-ink-muted);
+  font-family: inherit;
+  font-size: var(--fg-text-label);
+  cursor: pointer;
+  transition: color var(--fg-motion), border-color var(--fg-motion), background-color var(--fg-motion);
+}
+
+.vote-btn:hover {
+  border-color: var(--fg-accent);
+  color: var(--fg-accent);
+}
+
+.vote-btn.on {
+  border-color: var(--fg-accent);
+  background: var(--fg-accent-soft);
+  color: var(--fg-accent);
+}
+
+.vote-btn:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.vote-thanks {
+  font-size: var(--fg-text-label);
+}
+
+.pending-card {
+  max-width: 560px;
+  margin-top: var(--fg-s4);
+  padding: var(--fg-s4);
+  border: var(--fg-line-w) solid var(--fg-accent);
+  border-radius: var(--fg-radius);
+  background: var(--fg-accent-soft);
+}
+
+.pending-head {
+  display: flex;
+  align-items: center;
+  gap: var(--fg-s2);
+  margin: 0 0 var(--fg-s2);
+  font-size: var(--fg-text-body);
+  font-weight: 600;
+  color: var(--fg-accent);
+}
+
+.pending-summary {
+  margin: 0;
+  font-size: var(--fg-text-lead);
+  line-height: 1.6;
+}
+
+.pending-tip {
+  margin: var(--fg-s2) 0 var(--fg-s3);
+  font-size: var(--fg-text-label);
+}
+
+.pending-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--fg-s3);
+}
+
+.pending-link {
+  font-size: var(--fg-text-label);
+  color: var(--fg-accent);
+  text-decoration: underline;
 }
 
 .ask-error {
@@ -1705,6 +2316,196 @@ onMounted(async () => {
   max-width: 760px;
   margin: var(--fg-s2) auto 0;
   font-size: var(--fg-text-label);
+}
+
+/* ---------- 本周照护复盘（双 Agent） ---------- */
+.review-trigger {
+  border-color: var(--fg-accent);
+  color: var(--fg-accent);
+}
+
+.review-trigger:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.review-panel {
+  flex: none;
+  max-height: 56vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  padding: var(--fg-s4) var(--fg-s5);
+  border-bottom: var(--fg-line-w) solid var(--fg-line);
+  background: var(--fg-paper);
+  scrollbar-width: thin;
+  scrollbar-color: var(--fg-line) transparent;
+}
+
+.review-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--fg-s3);
+  min-width: 0;
+  max-width: 1000px;
+  margin: 0 auto var(--fg-s3);
+}
+
+.review-heading {
+  min-width: 0;
+}
+
+.review-title {
+  margin: 0;
+  font-size: var(--fg-text-body);
+  font-weight: 600;
+  color: var(--fg-ink);
+}
+
+.review-sub {
+  margin: 2px 0 0;
+  font-size: var(--fg-text-label);
+  overflow-wrap: anywhere;
+}
+
+.review-loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fg-s2);
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.review-loading p {
+  margin: var(--fg-s2) 0 0;
+  font-size: var(--fg-text-label);
+}
+
+.review-error {
+  max-width: 1000px;
+  margin: 0 auto;
+  font-size: var(--fg-text-label);
+  color: var(--fg-danger);
+}
+
+.review-steps {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--fg-s3);
+  align-items: start;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.review-card {
+  min-width: 0;
+  padding: var(--fg-s4);
+  border: var(--fg-line-w) solid var(--fg-line);
+  border-radius: var(--fg-radius);
+  background: var(--fg-surface);
+  overflow-wrap: anywhere;
+}
+
+.review-card.is-partial {
+  border-color: var(--fg-warning);
+  background: var(--fg-warning-soft);
+}
+
+.review-card.is-failed {
+  border-style: dashed;
+  color: var(--fg-ink-muted);
+}
+
+.card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--fg-s2);
+  row-gap: var(--fg-s1);
+  margin-bottom: var(--fg-s2);
+}
+
+.card-index {
+  font-size: var(--fg-text-label);
+  color: var(--fg-accent);
+}
+
+.card-kicker {
+  margin: 0;
+  font-size: var(--fg-text-label);
+  font-weight: 600;
+  color: var(--fg-ink);
+}
+
+.card-status {
+  margin-left: auto;
+}
+
+.card-ms {
+  font-size: var(--fg-text-label);
+}
+
+.card-text {
+  margin: 0 0 var(--fg-s3);
+  font-size: var(--fg-text-body);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.card-block {
+  margin-bottom: var(--fg-s3);
+}
+
+.fact-list {
+  margin: var(--fg-s1) 0 0;
+  padding-left: 1.1em;
+  font-size: var(--fg-text-label);
+  line-height: 1.7;
+}
+
+.fact-list li {
+  margin-bottom: 2px;
+}
+
+.card-missing {
+  margin: 0 0 var(--fg-s2);
+  font-size: var(--fg-text-label);
+  color: var(--fg-warning);
+}
+
+.review-card .tool-trace {
+  margin-top: var(--fg-s2);
+}
+
+.review-card .source-grid {
+  margin-top: var(--fg-s1);
+}
+
+.review-card .pending-card {
+  position: sticky;
+  bottom: calc(var(--fg-s2) * -1);
+  z-index: 2;
+  margin-top: var(--fg-s3);
+  background: var(--fg-surface);
+  box-shadow: 0 -8px 16px rgba(0, 0, 0, 0.08);
+}
+
+@media (max-width: 767.98px) {
+  .review-panel {
+    max-height: 50vh;
+    max-height: 50dvh;
+    padding: var(--fg-s3);
+  }
+
+  .review-steps {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--fg-s2);
+  }
+
+  .review-card {
+    padding: var(--fg-s3);
+  }
 }
 
 /* ---------- 骨架 ---------- */

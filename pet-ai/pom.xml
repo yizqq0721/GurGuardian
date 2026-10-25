@@ -37,6 +37,11 @@
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j</artifactId>
         </dependency>
+        <!-- Agent 走 DashScope 的 OpenAI 兼容端点：原生 DashScope 适配层会丢弃一轮里的多个工具结果 -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-open-ai</artifactId>
+        </dependency>
         <!-- Redis for tip caching -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

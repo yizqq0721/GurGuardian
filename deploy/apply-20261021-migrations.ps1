@@ -10,7 +10,7 @@ $ErrorActionPreference = 'Stop'
 $mysqlBin = 'C:\Program Files\MySQL\MySQL Server 9.7\bin'
 $mysql = Join-Path $mysqlBin 'mysql.exe'
 $dump = Join-Path $mysqlBin 'mysqldump.exe'
-$repo = $PSScriptRoot
+$repo = Split-Path $PSScriptRoot -Parent
 $backupDir = Join-Path (Split-Path $repo -Parent) 'backups'
 $backup = Join-Path $backupDir ('users-reminders-{0}.sql' -f (Get-Date -Format 'yyyyMMdd-HHmmss'))
 
@@ -25,8 +25,24 @@ $plain = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
 
 $env:MYSQL_PWD = $plain
 try {
+    Write-Host "==> Checking connection to $DbHost`:$DbPort"
+    & $mysql --default-character-set=utf8mb4 -h $DbHost -P $DbPort -u $DbUser $DbName -N -e "SELECT 1;" | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "login failed for '$DbUser'@$DbHost`:$DbPort (check the password and -DbUser; root may only be allowed inside the MySQL container)" }
+
     Write-Host "==> Backing up users + reminders"
-    cmd /c "`"$dump`" --default-character-set=utf8mb4 --single-transaction --no-tablespaces -h $DbHost -P $DbPort -u $DbUser $DbName users reminders > `"$backup`""
+    $dumpArgs = @(
+        '--default-character-set=utf8mb4',
+        '--single-transaction',
+        '--no-tablespaces',
+        "--result-file=$backup",
+        '-h', $DbHost,
+        '-P', "$DbPort",
+        '-u', $DbUser,
+        $DbName,
+        'users',
+        'reminders'
+    )
+    & $dump @dumpArgs
     if ($LASTEXITCODE -ne 0) { throw "mysqldump failed with exit code $LASTEXITCODE" }
     $backupItem = Get-Item -LiteralPath $backup -ErrorAction Stop
     if ($backupItem.Length -eq 0) { throw 'backup file is empty' }
@@ -36,8 +52,14 @@ try {
         $file = Join-Path (Join-Path $repo 'deploy') $name
         if (-not (Test-Path -LiteralPath $file)) { throw "missing migration: $file" }
         Write-Host "==> Applying $name"
-        cmd /c "`"$mysql`" --default-character-set=utf8mb4 -h $DbHost -P $DbPort -u $DbUser $DbName < `"$file`""
-        if ($LASTEXITCODE -ne 0) { throw "migration failed: $name (exit $LASTEXITCODE)" }
+        $proc = Start-Process -FilePath $mysql -ArgumentList @(
+            '--default-character-set=utf8mb4',
+            '-h', $DbHost,
+            '-P', "$DbPort",
+            '-u', $DbUser,
+            $DbName
+        ) -RedirectStandardInput $file -NoNewWindow -Wait -PassThru
+        if ($proc.ExitCode -ne 0) { throw "migration failed: $name (exit $($proc.ExitCode))" }
     }
 
     $check = & $mysql --default-character-set=utf8mb4 -h $DbHost -P $DbPort -u $DbUser $DbName -N -e "SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='$DbName' AND ((TABLE_NAME='reminders' AND COLUMN_NAME='remind_date') OR (TABLE_NAME='users' AND COLUMN_NAME='location'));"

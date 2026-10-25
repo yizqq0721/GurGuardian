@@ -2,6 +2,7 @@ package com.purr.furguardian.biz.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.purr.furguardian.biz.entity.pet.PetDO;
 import com.purr.furguardian.biz.entity.reminder.ReminderDO;
 import com.purr.furguardian.biz.entity.reminder.ReminderLogDO;
 import com.purr.furguardian.biz.mapper.reminder.ReminderLogMapper;
@@ -38,6 +39,7 @@ public class ReminderServiceImpl implements ReminderService {
 
     @Override
     public Long createReminder(Long userId, ReminderDO reminder) {
+        requireOwnedPet(userId, reminder.getPetId());
         applyDateRule(reminder);
         requirePetOwnership(userId, reminder.getPetId());
         reminder.setId(null);
@@ -50,6 +52,7 @@ public class ReminderServiceImpl implements ReminderService {
 
     @Override
     public void updateReminder(Long userId, Long reminderId, ReminderDO reminder) {
+        requireOwnedPet(userId, reminder.getPetId());
         applyDateRule(reminder);
         getReminder(userId, reminderId);
         requirePetOwnership(userId, reminder.getPetId());
@@ -141,6 +144,17 @@ public class ReminderServiceImpl implements ReminderService {
                 .le(endDate != null, ReminderLogDO::getDoneDate, endDate)
                 .orderByDesc(ReminderLogDO::getDoneDate);
         return logMapper.selectList(wrapper);
+    }
+
+    /** 提醒挂在宠物上，写之前必须确认这只宠物属于当前用户，避免往别人的宠物下塞数据。 */
+    private void requireOwnedPet(Long userId, Long petId) {
+        if (petId == null) {
+            throw new BizException(ErrorCode.BAD_REQUEST, "请选择宠物");
+        }
+        PetDO pet = petMapper.selectById(petId);
+        if (pet == null || !userId.equals(pet.getUserId())) {
+            throw new BizException(ErrorCode.DATA_NOT_FOUND, "宠物不存在");
+        }
     }
 
     private ReminderDO getReminder(Long userId, Long reminderId) {

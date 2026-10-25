@@ -9,6 +9,7 @@ import com.purr.furguardian.common.result.CursorPage;
 import com.purr.furguardian.common.result.Result;
 import com.purr.furguardian.web.dto.knowledge.ChatCreateDTO;
 import com.purr.furguardian.web.dto.knowledge.ChatExchangeDTO;
+import com.purr.furguardian.web.dto.knowledge.ChatFeedbackDTO;
 import com.purr.furguardian.web.dto.knowledge.ChatRenameDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -70,6 +71,20 @@ public class KnowledgeChatController {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime cursor,
             @RequestParam(defaultValue = "10") int limit) {
         return Result.ok(chatService.listMessages(UserContext.getUserId(), id, cursor, limit));
+    }
+
+    @PostMapping("/messages/{messageId}/feedback")
+    @Operation(summary = "AI 回答反馈", description = "对一条 AI 回答标记有用或没用，重复提交可改判")
+    public Result<Void> feedback(@PathVariable Long messageId,
+                                 @RequestBody @Valid ChatFeedbackDTO dto) {
+        chatService.rateMessage(UserContext.getUserId(), messageId, dto.getUseful());
+        return Result.ok();
+    }
+
+    @GetMapping("/feedback-stats")
+    @Operation(summary = "回答反馈读数", description = "当前用户的有用率、评价总数和最近被标为没用的回答")
+    public Result<KnowledgeChatService.FeedbackStats> feedbackStats() {
+        return Result.ok(chatService.feedbackStats(UserContext.getUserId()));
     }
 
     @PostMapping("/chats/{id}/messages")

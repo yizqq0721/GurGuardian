@@ -1,0 +1,19 @@
+{
+  "name": "fur-guardian-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FurGuardian Android shell (Capacitor, remote-loading)",
+  "type": "module",
+  "scripts": {
+    "sync": "cap sync android",
+    "apk": "cap sync android && cd android && gradlew.bat assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.6.9",
+    "@capacitor/core": "^7.6.9"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.6.9",
+    "typescript": "~5.7.3"
+  }
+}

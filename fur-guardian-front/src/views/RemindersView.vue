@@ -151,7 +151,7 @@
                           class="tl-link"
                           to="/profile"
                         >
-                          <MapPin :size="14" class="fg-icon" />获取当前位置
+                          <MapPin :size="14" class="fg-icon" />设置常用城市
                         </router-link>
                       </template>
                       <button
@@ -363,13 +363,13 @@
                   <span class="wx-advice">{{ weather.advice }}</span>
                 </p>
                 <p v-if="weather" class="wx-source">
-                  按当前位置「{{ userStore.location }}」查询 · <router-link to="/profile">重新定位</router-link>
+                  按常用城市「{{ userStore.location }}」查询 · <router-link to="/profile">修改常用城市</router-link>
                 </p>
                 <p v-else-if="weatherState === 'loading'" class="wx-text">正在获取今日天气…</p>
                 <p v-else class="wx-text">
                   {{ weatherEmptyText }}
                   <button v-if="userStore.location" type="button" class="wx-link" @click="maybeLoadWeather(true)">重新获取天气</button>
-                  <router-link v-else class="wx-link" to="/profile">去获取位置</router-link>
+                  <router-link v-else class="wx-link" to="/profile">去设置常用城市</router-link>
                 </p>
               </div>
             </div>
@@ -470,7 +470,6 @@ import StatTile from '@/components/StatTile.vue'
 import { usePetStore } from '@/stores/pet'
 import { useUserStore } from '@/stores/user'
 import { dateText } from '@/utils/format'
-import { readSavedGeo } from '@/utils/geo'
 import { isDatedReminder, isDatedType, isReminderDueOn } from '@/utils/reminder'
 import {
   REMINDER_TYPE_LABEL,
@@ -498,7 +497,7 @@ const filterPetId = ref<number | undefined>(
 )
 const onlyToday = ref(false)
 
-/** 遛弯天气只对今天有意义；有关联定位坐标时按坐标查询，否则按已保存的位置查询 */
+/** 遛弯天气只对今天有意义，按用户资料里的常用城市查询 */
 const weather = ref<WeatherToday | null>(null)
 const weatherState = ref<'idle' | 'loading' | 'ready' | 'unavailable'>('idle')
 
@@ -790,13 +789,13 @@ const weatherActionText = computed(() =>
 )
 
 const weatherEmptyText = computed(() => {
-  if (!userStore.location) return '还没获取当前位置，获取后就能查看当日遛弯天气。'
-  if (weatherState.value === 'unavailable') return '按当前位置暂时取不到天气，请稍后重试或重新定位。'
+  if (!userStore.location) return '还没设置常用城市，设置后就能查看当日遛弯天气。'
+  if (weatherState.value === 'unavailable') return '按常用城市暂时取不到天气，请检查城市名或稍后再试。'
   return '正在等待今日天气。'
 })
 
 /**
- * 未获取位置时不请求天气、也不主动申请定位，界面直接引导去用户信息获取；
+ * 没有常用城市时不请求天气、也不申请浏览器定位，界面直接引导去用户信息填写；
  * interactive=true 允许用户在已有位置时手动重试。
  */
 async function maybeLoadWeather(interactive = false) {
@@ -812,8 +811,7 @@ async function maybeLoadWeather(interactive = false) {
 
   weatherState.value = 'loading'
   try {
-    const point = readSavedGeo(24 * 60 * 60 * 1000)
-    const data = await weatherApi.today(point ? { lat: point.lat, lng: point.lng } : undefined)
+    const data = await weatherApi.today()
     weather.value = data
     weatherState.value = data ? 'ready' : 'unavailable'
   } catch {
@@ -1244,6 +1242,7 @@ async function remove(row: Reminder) {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
+  white-space: nowrap;
 }
 
 .time-alt {
@@ -1320,7 +1319,6 @@ async function remove(row: Reminder) {
 }
 
 .is-done .tl-name {
-  text-decoration: line-through;
   color: var(--fg-ink-muted);
   font-weight: 500;
 }
@@ -1759,7 +1757,7 @@ async function remove(row: Reminder) {
   }
 
   .tl-row {
-    grid-template-columns: 48px 44px minmax(0, 1fr) 44px;
+    grid-template-columns: 56px 44px minmax(0, 1fr) 44px;
     gap: var(--fg-s2);
     padding: var(--fg-s3) 0;
   }

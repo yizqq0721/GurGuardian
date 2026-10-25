@@ -343,7 +343,7 @@ async function loadPlaces() {
     placesStatus.value = 'ok'
     activeId.value = ''
     listExpanded.value = false
-    renderMarkers()
+    renderMarkers(true)
   } catch (e) {
     placesStatus.value = 'error'
     placesError.value = (e as Error).message || '周边查询失败，请稍后重试'
@@ -386,7 +386,7 @@ async function initMap() {
       renderUserMarker()
     }
     if (places.value.length) {
-      renderMarkers()
+      renderMarkers(true)
     }
   } catch (e) {
     mapError.value = (e as Error).message
@@ -407,7 +407,7 @@ function renderUserMarker() {
   userMarker.setMap(map)
 }
 
-function renderMarkers() {
+function renderMarkers(fitView = false) {
   markerList.forEach((m) => m.setMap(null))
   markerList = []
   if (!map || !AMapRef) return
@@ -423,13 +423,19 @@ function renderMarkers() {
     marker.setMap(map)
     markerList.push(marker)
   }
+  // 手机地图卡片只有 300px 高，按定位点 zoom 15 铺开时周边标记几乎全在视口外
+  if (fitView && markerList.length) {
+    const overlays = userMarker ? [...markerList, userMarker] : markerList
+    map.setFitView(overlays, false, [40, 40, 40, 40], 15)
+  }
 }
 
 function pinHtml(active: boolean) {
   const isMedical = category.value === 'medical'
+  // 十字在手机小图上仍容易被当成普通医疗机构，改用爪印+红底明确「宠物医院」
   const glyph = isMedical
-    ? '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>'
-    : '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l5 7h-3l4 6H6l4-6H7l5-7Z"/><path d="M12 16v5"/></svg>'
+    ? '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="20" cy="16" r="2"/><path d="M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.045Q6.52 17.48 4.46 16.84A3.5 3.5 0 0 1 5.5 10Z"/></svg>'
+    : '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m17 14 3 3.3a1 1 0 0 1-.7 1.7H4.7a1 1 0 0 1-.7-1.7L7 14h-.3a1 1 0 0 1-.7-1.7L9 9h-.2A1 1 0 0 1 8 7.3L12 3l4 4.3a1 1 0 0 1-.8 1.7H15l3 3.3a1 1 0 0 1-.7 1.7H17Z"/><path d="M12 22v-3"/></svg>'
   const kind = isMedical ? ' nby-pin--medical' : ' nby-pin--park'
   return `<div class="nby-pin${kind}${active ? ' is-active' : ''}">${glyph}</div>`
 }

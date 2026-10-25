@@ -39,7 +39,7 @@
               @keyup.enter="handleLogin"
             />
           </el-form-item>
-          <p class="demo-hint fg-mono">演示账号 demo · 密码 demo123</p>
+          <p class="demo-hint fg-mono">演示账号 demo · 密码 123456</p>
           <el-button type="primary" size="large" class="full-btn" :loading="loading" @click="handleLogin">
             登录
           </el-button>

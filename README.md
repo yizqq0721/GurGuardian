@@ -2,7 +2,7 @@
 
 把「经验喂养」变成「数据喂养」。
 
-FurGuardian 面向犬猫主人，用确定性的营养算法回答「每天到底喂多少」，用国标逐项判定主粮营养是否达标，再结合已审核知识库与大模型生成每日 Tip、每日食谱、知识问答和周报。
+FurGuardian 面向犬猫主人，用确定性的营养算法回答「每天到底喂多少」，用国标逐项判定主粮营养是否达标，再结合经来源标注与入库筛选的知识库与大模型生成每日 Tip、每日食谱、知识问答和周报。
 
 > 本项目是日常营养管理与健康趋势追踪工具，不是兽医诊疗系统。AI 生成内容仅供参考，不构成医疗建议。
 
@@ -35,7 +35,7 @@ FurGuardian 面向犬猫主人，用确定性的营养算法回答「每天到�
 | 营养达标判定 | 干物质基准换算，对照 GB/T 31216-2014（犬粮）和 GB/T 31217-2014（猫粮）校验蛋白质、脂肪、钙、磷、牛磺酸（猫）、赖氨酸（犬） |
 | 食品库 | 食品增删改查、保证值录入、猫犬适用性校验、零食与主粮区分、代谢能标注或公式估算 |
 | 每日 Tip | SSE 流式生成、知识库 RAG、Redis 缓存、换一条、点赞 / 点踩、紧急症状红线拦截 |
-| 知识问答 | 已审核语料检索、向量检索 + SQL 降级、逐条引用来源、会话历史 / 重命名 / 删除 / 导出 Markdown |
+| 知识问答 | `review_status=approved` 语料检索、向量检索 + SQL 降级、逐条引用来源、会话历史 / 重命名 / 删除 / 导出 Markdown |
 | 每日食谱建议 | 在确定性营养结果之上，结合零食库与知识库由 LLM 生成可执行食谱；AI 不可用时返回确定性兜底建议 |
 | 提醒管理 | 每天 / 每周 / 每月 / 每年 / 单次提醒、打卡、近 7 天时间轴、连续打卡与完成率统计 |
 | 周度报告 | 规则引擎生成结构化结论，AI 仅负责润色措辞；体重趋势与 BCS 变化联动 |
@@ -109,7 +109,7 @@ flowchart TB
 | `pet-common` | 统一响应体、错误码、业务异常、用户上下文、登录拦截器、CORS、Redis 配置 |
 | `pet-nutrition-core` | RER / MER、干物质换算、国标标准、能量估算、危险食材规则；**不依赖 Spring / MyBatis / LangChain4j**，可独立测试 |
 | `pet-biz` | 领域实体、Mapper、账号 / 宠物 / 食品 / 营养 / 提醒 / 周报 / Tip / 会话等业务服务 |
-| `pet-knowledge` | Redis 8 向量检索、Embedding 入库、已审核过滤、SQL 关键词降级 |
+| `pet-knowledge` | Redis 8 向量检索、Embedding 入库、`approved` 状态过滤、SQL 关键词降级 |
 | `pet-ai` | LLM 调用封装、Prompt 模板、Tip 生成、每日食谱、周报润色、红线匹配 |
 | `pet-job` | 每日 Tip 推送、周报生成、知识向量入库 |
 | `pet-web` | Spring Boot 启动类、REST Controller、DTO、运行配置 |
@@ -121,7 +121,7 @@ flowchart TB
 
 1. 前端把问题提交到 `POST /api/ai/query`。
 2. 先做红线关键词检测；命中则直接返回「尽快就医」提示。
-3. 根据宠物物种和生命阶段，从 `knowledge_docs` 中取出已审核、非急诊的候选集合。
+3. 根据宠物物种和生命阶段，从 `knowledge_docs` 中取出 `review_status=approved` 且非急诊的候选集合。
 4. 优先用 Redis 向量检索召回；异常或无命中时降级为 SQL 关键词检索（中文按双字滑窗切分）。
 5. 把命中的知识条目作为唯一参考资料拼进 Prompt，调用 `qwen-plus`。
 6. 返回回答和来源列表；前端展示可点击的引用，并把这一轮问答落库到会话。
@@ -152,7 +152,7 @@ docker compose up -d
 docker compose ps
 ```
 
-首次启动时，MySQL 会按固定顺序执行 `schema.sql` → `seed.sql` → `knowledge_seed.sql` → `knowledge_seed_wsava.sql`（容器内映射为 `01/02/03/04`），创建 15 张表，并写入演示账号、2 只宠物、7 条提醒、3 款食品和 845 条知识语料。
+首次启动时，MySQL 会按固定顺序执行 `schema.sql` → `seed.sql` → `knowledge_seed.sql` → `knowledge_seed_wsava.sql` → `knowledge_seed_msd.sql`（容器内映射为 `01/02/03/04/05`），创建 15 张表，并写入演示账号、2 只宠物、7 条提醒、3 款食品和 1340 条知识语料。
 
 > 初始化 SQL 只在数据卷为空时执行一次。修改 `sql/*.sql` 后要重新初始化，必须 `docker compose down -v`（会删除数据）。
 
@@ -163,6 +163,7 @@ mysql --default-character-set=utf8mb4 -uroot -p < sql/schema.sql
 mysql --default-character-set=utf8mb4 -uroot -p fur_guardian < sql/seed.sql
 mysql --default-character-set=utf8mb4 -uroot -p fur_guardian < sql/knowledge_seed.sql
 mysql --default-character-set=utf8mb4 -uroot -p fur_guardian < sql/knowledge_seed_wsava.sql
+mysql --default-character-set=utf8mb4 -uroot -p fur_guardian < sql/knowledge_seed_msd.sql
 ```
 
 确认 Redis 具备向量能力：
@@ -220,7 +221,7 @@ npm run build
 
 | 账号 | 密码 |
 | --- | --- |
-| `demo` | `demo123` |
+| `demo` | `123456` |
 
 种子数据包含一只玩具贵宾「豆豆」和一只英短「咪咪」，以及 8 周体重记录；也可以直接注册新账号从 4 步引导开始建档。
 
@@ -291,9 +292,11 @@ BCS ≤ 3：按当前体重计算，MER 额外上调 15%
 | --- | --- |
 | `sql/knowledge_seed.sql` | 80 条基础养宠知识 |
 | `sql/knowledge_seed_wsava.sql` | 由 WSAVA 全球营养指南中文摘要切分的 765 条语料，单条不超过 1200 字 |
+| `sql/knowledge_seed_msd.sql` | 由 MSD 兽医手册中文摘要切分的 495 条语料，单条不超过 1200 字 |
 | `sql/build-wsava-seed.mjs` | 生成 WSAVA 种子 SQL 的脚本 |
+| `sql/build-msd-seed.mjs` | 生成 MSD 种子 SQL 的脚本 |
 
-合计 **845 条**。每条语料包含标题、正文、物种、生命阶段、主题、严重等级、来源名称 / 类型 / URL、审核状态等字段。
+合计 **1340 条**，均已入库并完成向量化；其中 60 条严重等级为 `emergency` 的条目被检索规则排除，实际参与问答检索的为 **1280 条**。每条语料包含标题、正文、物种、生命阶段、主题、严重等级、来源名称 / 类型 / URL、审核状态等字段。
 
 ### 检索策略
 
@@ -364,6 +367,7 @@ BCS ≤ 3：按当前体重计算，MER 额外上调 15%
 │   ├── seed.sql                 # 演示账号、宠物、体重、食品、提醒
 │   ├── knowledge_seed.sql       # 80 条基础知识
 │   ├── knowledge_seed_wsava.sql # 765 条 WSAVA 语料
+│   ├── knowledge_seed_msd.sql   # 495 条 MSD 兽医手册语料
 │   └── knowledge_vector_index.sql
 ├── deploy/                      # 云服务器部署说明与修复脚本
 ├── docs/                        # 食材营养数据来源等补充文档
@@ -429,7 +433,7 @@ npm run build
 安全边界：
 
 - 密码使用 BCrypt 存储；登录令牌存放在 Redis，7 天过期。
-- 知识问答只使用已审核、非急诊语料，并附来源。
+- 知识问答只使用 `review_status=approved` 且非急诊的语料，并附来源。
 - AI Prompt 禁止使用「诊断」「处方」「治疗」「确诊」等医疗术语，输出需附免责声明。
 - 命中紧急症状红线时直接提示就医，不依赖模型判断。
 - 危险食材规则在营养引擎层拦截并告警。
@@ -465,7 +469,7 @@ npm run build
 - **WSAVA Global Nutrition Guidelines / GNC Toolkit**：营养评估（第五生命体征）、BCS / MCS、RER / DER、住院喂养、选粮、零食 10% 原则、生肉基饮食、互联网营养信息评估。见 [营养指南](https://wsava.org/global-guidelines/global-nutrition-guidelines/) 与 [营养工具包](https://wsava.org/nutrition-toolkit)。
 - **WSAVA 全球指南 11 个板块**：动物福利、牙科、胃肠、遗传病、肝病、微芯片、疼痛、职业健康、肾病、生殖控制、疫苗接种。见 [WSAVA Global Guidelines](https://wsava.org/global-guidelines/)。
 - **《推进小动物营养六大关键原则》**：营养文化、团队角色、风险评估、快速干预与监测、营养沟通、出院教育。
-- 知识库共收录 845 条语料，其中 765 条由 WSAVA 营养指南与工具包整理而来；每条附来源名称与链接。
+- 知识库共收录 1340 条语料：765 条由 WSAVA 营养指南与工具包整理，495 条由 MSD 兽医手册中文摘要整理；每条附来源名称与链接。
 
 > WSAVA 内容的翻译与对外引用受 GNC SOP v4 约束：需先申请、整份翻译、保留 GNC Logo、附指定英文署名声明；BCS / MCS 图表另需版权人单独授权。
 
@@ -492,7 +496,7 @@ npm run build
 
 ### 临床与安全参考
 
-- Merck Veterinary Manual
+- Merck Veterinary Manual（MSD 兽医手册中文摘要，495 条已入库；仅作内部研发与检索验证，不对外分发）
 - AAHA / AAFP / ISFM / CAPC / ESCCAP 指南
 - 《宠物饲料卫生规定》
 

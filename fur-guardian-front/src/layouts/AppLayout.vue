@@ -1,5 +1,37 @@
 <template>
-  <div class="app-layout">
+  <!-- App 壳：APK / HAP 带 ?app=1 进入，桌面与手机浏览器始终走下面的网页布局 -->
+  <div v-if="isAppShell" class="app-shell-root">
+    <header class="appbar">
+      <div class="appbar-side">
+        <button v-if="canGoBack" type="button" class="appbar-btn" aria-label="返回" @click="goBack">
+          <ChevronLeft :size="24" class="fg-icon" />
+        </button>
+      </div>
+      <h1 class="appbar-title">{{ appTitle }}</h1>
+      <div class="appbar-side appbar-side--right">
+        <PetSwitcher v-if="showPetSwitcher" />
+      </div>
+    </header>
+
+    <main class="app-body">
+      <router-view />
+    </main>
+
+    <nav class="tabbar" aria-label="主导航">
+      <router-link
+        v-for="tab in tabs"
+        :key="tab.path"
+        :to="tab.path"
+        class="tabbar-item"
+        :class="{ 'is-active': isTabActive(tab.path) }"
+      >
+        <component :is="tab.icon" :size="23" class="tabbar-icon" />
+        <span class="tabbar-label">{{ tab.label }}</span>
+      </router-link>
+    </nav>
+  </div>
+
+  <div v-else class="app-layout">
     <header class="topbar">
       <div class="topbar-inner">
         <router-link to="/pets" class="wordmark">
@@ -93,13 +125,24 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { PawPrint, ChevronDown, Menu, X } from 'lucide-vue-next'
+import {
+  PawPrint,
+  ChevronDown,
+  ChevronLeft,
+  Menu,
+  X,
+  Bell,
+  BookOpen,
+  MapPin,
+  UserRound,
+} from 'lucide-vue-next'
 import { ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { usePetStore } from '@/stores/pet'
 import PetSwitcher from '@/components/PetSwitcher.vue'
 import WeatherWidget from '@/components/WeatherWidget.vue'
 import { useReminderNotify } from '@/composables/useReminderNotify'
+import { isAppShell } from '@/utils/appMode'
 
 const route = useRoute()
 const router = useRouter()
@@ -127,6 +170,60 @@ function isActive(path: string) {
   return route.path === path || route.path.startsWith(`${path}/`)
 }
 
+/* ---------- App 壳：底部任务栏 ---------- */
+const tabs = [
+  { path: '/pets', label: '宠物', title: '我的宠物', icon: PawPrint },
+  { path: '/reminders', label: '提醒', title: '提醒', icon: Bell },
+  { path: '/knowledge', label: '知识', title: '知识问答', icon: BookOpen },
+  { path: '/nearby', label: '周边', title: '周边资源', icon: MapPin },
+  { path: '/settings', label: '我的', title: '我的', icon: UserRound },
+]
+
+const tabPath = computed(() => tabs.find((t) => route.path === t.path)?.path ?? '')
+
+const appTitle = computed(() => {
+  const tab = tabs.find((t) => t.path === route.path)
+  if (tab) return tab.title
+  return (route.meta.title as string) || 'FurGuardian'
+})
+
+const canGoBack = computed(() => !tabPath.value)
+
+function isTabActive(path: string) {
+  if (path === '/settings') return route.path === '/settings' || route.path === '/profile'
+  return route.path === path || route.path.startsWith(`${path}/`)
+}
+
+function goBack() {
+  if (window.history.state?.back) {
+    router.back()
+    return
+  }
+  // 直接打开深层页面（没有历史）时，回到它所属的一级入口
+  if (/^\/pets\/\d+\/(profile|nutrition)$/.test(route.path)) {
+    router.push(route.path.replace(/\/(profile|nutrition)$/, ''))
+  } else if (/^\/pets\/\d+/.test(route.path)) {
+    router.push('/pets')
+  } else if (route.path.startsWith('/reminders/')) {
+    router.push('/reminders')
+  } else if (route.path.startsWith('/reports/')) {
+    router.push('/reports')
+  } else if (route.path.startsWith('/foods/')) {
+    router.push('/foods')
+  } else if (route.path === '/profile') {
+    router.push('/settings')
+  } else {
+    router.push('/pets')
+  }
+}
+
+const petContextRoutes = ['/reminders', '/knowledge', '/nearby', '/reports', '/foods']
+const showPetSwitcher = computed(
+  () =>
+    petContextRoutes.some((p) => route.path === p || route.path.startsWith(`${p}/`)) ||
+    /^\/pets\/\d+/.test(route.path),
+)
+
 /* ---------- 响应式新增：移动端汉堡菜单状态 ---------- */
 const mobileNavOpen = ref(false)
 let desktopMq: MediaQueryList | null = null
@@ -150,6 +247,14 @@ watch(mobileNavOpen, (open) => {
 
 // 路由变化后自动收起
 watch(() => route.path, closeMobileNav)
+
+// App 壳切换一级页面时回到顶部
+watch(
+  () => route.fullPath,
+  () => {
+    if (isAppShell) window.scrollTo({ top: 0, left: 0 })
+  },
+)
 
 onMounted(() => {
   petStore.fetchPets()
@@ -464,5 +569,151 @@ async function handleCommand(cmd: string) {
   .wordmark span {
     display: none;
   }
+}
+
+/* ============================================================
+   App 壳：固定顶栏 + QQ 式底部任务栏
+   ============================================================ */
+.app-shell-root {
+  min-height: 100vh;
+}
+
+.appbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  height: calc(var(--fg-appbar-h) + env(safe-area-inset-top));
+  padding: env(safe-area-inset-top) 6px 0;
+  background: rgba(253, 251, 246, 0.94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: var(--fg-line-w) solid var(--fg-line);
+}
+
+.appbar-side {
+  flex: none;
+  display: flex;
+  align-items: center;
+  width: 88px;
+  min-width: 0;
+}
+
+.appbar-side--right {
+  justify-content: flex-end;
+  padding-right: 4px;
+}
+
+.appbar-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  text-align: center;
+  font-family: var(--fg-font-serif);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--fg-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.appbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--fg-ink);
+  cursor: pointer;
+}
+
+.appbar-btn:active {
+  background: var(--fg-paper);
+}
+
+.appbar-side--right :deep(.pet-switcher) {
+  width: 84px;
+}
+
+.appbar-side--right :deep(.pet-switcher .el-select__wrapper) {
+  min-height: 32px;
+  padding: 0 2px 0 8px;
+  background: var(--fg-paper);
+  box-shadow: none;
+  font-size: 13px;
+}
+
+.appbar-side--right :deep(.pet-current) {
+  gap: 4px;
+  font-size: 13px;
+  color: var(--fg-ink-muted);
+  max-width: 84px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 120;
+  display: flex;
+  align-items: stretch;
+  height: calc(var(--fg-tabbar-h) + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top: var(--fg-line-w) solid var(--fg-line);
+}
+
+.tabbar-item {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--fg-ink-muted);
+  text-decoration: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.tabbar-item.is-active {
+  color: var(--fg-accent);
+}
+
+.tabbar-icon {
+  transition: transform var(--fg-motion);
+}
+
+.tabbar-item.is-active .tabbar-icon {
+  transform: translateY(-1px);
+}
+
+.tabbar-item:active .tabbar-icon {
+  transform: scale(0.92);
+}
+
+.tabbar-label {
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.tabbar-item.is-active .tabbar-label {
+  font-weight: 600;
 }
 </style>
