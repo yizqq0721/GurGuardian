@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
+import { isAppShell } from '@/utils/appMode'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -52,6 +53,10 @@ const router = createRouter({
 router.beforeEach((to) => {
   document.title = to.meta.title ? `${to.meta.title} · FurGuardian` : 'FurGuardian · 养宠智能助手'
   const userStore = useUserStore()
+  // App 壳里不展示营销落地页：已登录直接进宠物页，未登录直接进登录页
+  if (isAppShell && to.name === 'landing') {
+    return userStore.isLoggedIn ? { name: 'pets' } : { name: 'auth' }
+  }
   if (!to.meta.public && !userStore.isLoggedIn) {
     ElMessage({ message: '请先登录', type: 'warning', grouping: true })
     return { name: 'auth', query: { redirect: to.fullPath } }

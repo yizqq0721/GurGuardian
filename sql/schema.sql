@@ -315,6 +315,7 @@ CREATE TABLE knowledge_chat_messages (
     sources_json  JSON        DEFAULT NULL COMMENT '引用来源快照 [{docId,title,sourceName}]',
     is_red_line   TINYINT(1)  NOT NULL DEFAULT 0 COMMENT '是否红线症状回答',
     is_fallback   TINYINT(1)  NOT NULL DEFAULT 0 COMMENT '是否LLM降级回答',
+    feedback      TINYINT     DEFAULT NULL COMMENT '用户反馈 1=有用 0=没用 NULL=未评价',
     created_at    DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     PRIMARY KEY (id),
     KEY idx_session_created (session_id, created_at),

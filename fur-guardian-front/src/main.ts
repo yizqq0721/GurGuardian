@@ -22,11 +22,18 @@ import '@/styles/tokens.css'
 import '@/styles/index.css'
 // 响应式新增：移动端全局适配（仅 <768px 生效）
 import '@/styles/responsive.css'
+// App 壳：仅 APK/HAP 带 ?app=1 进入，手机浏览器不受影响
+import '@/styles/app-shell.css'
 import App from './App.vue'
 import router from './router'
+import { isAppShell, stripAppFlag } from '@/utils/appMode'
+
+document.documentElement.classList.toggle('app-shell', isAppShell)
 
 const app = createApp(App)
 app.use(createPinia())
 app.use(router)
 app.use(ElementPlus, { locale: zhCn })
 app.mount('#app')
+
+router.isReady().then(stripAppFlag)

@@ -326,10 +326,69 @@ export interface AiSource {
   sourceName: string
 }
 
+export interface AiToolCall {
+  name: string
+  label: string
+  summary: string
+}
+
+/** Agent 生成的待确认计划，尚未落库，必须由用户点击确认 */
+export interface AiPendingAction {
+  /** 确认用的服务端计划令牌，原样回传 */
+  token: string
+  type: string
+  petId: number
+  title: string
+  reminderType: ReminderType
+  remindDate?: string | null
+  remindTime?: string | null
+  repeatRule?: RepeatRule | null
+  repeatDays?: string | null
+  summary: string
+}
+
+/** 确认 Agent 计划的结果：repeated=true 表示之前已经创建过，本次没有新建 */
+export interface ConfirmedAction {
+  reminderId: number
+  summary: string
+  repeated: boolean
+}
+
 export interface AiQueryResp {
   content: string
   sources: AiSource[]
   isFallback: boolean
+  toolCalls?: AiToolCall[]
+  pendingAction?: AiPendingAction | null
+  /** 查询失败的工具展示名，非空表示有维度缺数据 */
+  failedTools?: string[]
+}
+
+/** 双 Agent 复盘中单个角色的执行结果 */
+export interface AiAgentStep {
+  role: string
+  label: string
+  /** OK / PARTIAL（有维度缺数据）/ FAILED */
+  status: string
+  content: string
+  /** 来自工具的真实事实摘要 */
+  facts: string[]
+  /** 没有取到的数据维度 */
+  missing: string[]
+  toolCalls: AiToolCall[]
+  failedTools: string[]
+  ms: number
+}
+
+/** 本周照护复盘：照护分析 → 行动计划 */
+export interface WeeklyReviewResp {
+  analysis: AiAgentStep
+  plan: AiAgentStep | null
+  sources: AiSource[]
+  pendingAction?: AiPendingAction | null
+  /** 分析阶段就失败、本次没有可用结论 */
+  degraded: boolean
+  ms: number
 }
 
 export interface KnowledgeDoc {
@@ -368,6 +427,8 @@ export interface ChatMessage {
   sources: ChatSource[]
   isRedLine: boolean
   isFallback: boolean
+  /** 1 有用 / 0 没用 / null 未评价 */
+  feedback?: number | null
   createdAt: string
 }
 
@@ -379,6 +440,16 @@ export interface ChatSession {
   sourceCount: number
   createdAt: string
   updatedAt: string
+}
+
+/** 回答反馈读数：total 只算可评价的 AI 回答，红线回答不计入 */
+export interface FeedbackStats {
+  total: number
+  useful: number
+  useless: number
+  unrated: number
+  usefulRate: number
+  recentUseless: { messageId: number; sessionId: number; snippet: string; createdAt: string }[]
 }
 
 /** 周边资源分类：medical=宠物医疗（宠物诊所/兽医站），park=公园 */

@@ -1,16 +1,13 @@
 <template>
-  <button
+  <router-link
     v-if="!userStore.location"
-    type="button"
+    to="/profile"
     class="weather-chip is-idle"
-    :disabled="locating"
-    :aria-label="locating ? '正在获取位置' : '获取当前位置'"
-    @click="handleLocate"
+    aria-label="设置常用城市"
   >
-    <Loader2 v-if="locating" :size="16" class="fg-icon spin" />
-    <LocateFixed v-else :size="16" class="fg-icon" />
-    <span class="chip-text">{{ locating ? '定位中' : '定位' }}</span>
-  </button>
+    <MapPin :size="16" class="fg-icon" />
+    <span class="chip-text">设置城市</span>
+  </router-link>
 
   <el-popover
     v-else
@@ -34,11 +31,7 @@
           <MapPin :size="14" class="fg-icon" />
           <span>{{ userStore.location }}</span>
         </span>
-        <button type="button" class="wx-locate" :disabled="locating" @click="handleLocate">
-          <Loader2 v-if="locating" :size="13" class="fg-icon spin" />
-          <LocateFixed v-else :size="13" class="fg-icon" />
-          {{ locating ? '定位中' : '重新定位' }}
-        </button>
+        <router-link class="wx-locate" to="/profile">修改城市</router-link>
       </div>
 
       <template v-if="weather">
@@ -83,7 +76,6 @@ import {
   CloudLightning,
   CloudRain,
   CloudSun,
-  LocateFixed,
   Loader2,
   MapPin,
   Snowflake,
@@ -92,14 +84,9 @@ import {
 } from 'lucide-vue-next'
 import { weatherApi } from '@/api/weather'
 import { useUserStore } from '@/stores/user'
-import { readSavedGeo } from '@/utils/geo'
-import { useGeoLocation } from '@/composables/useGeoLocation'
 import type { WeatherToday } from '@/types'
 
-const WEATHER_GEO_MAX_AGE = 24 * 60 * 60 * 1000
-
 const userStore = useUserStore()
-const { locating, locateAndSave } = useGeoLocation()
 
 const weather = ref<WeatherToday | null>(null)
 const state = ref<'idle' | 'loading' | 'ready' | 'unavailable'>('idle')
@@ -132,10 +119,6 @@ const chipLabel = computed(() => {
   return `今日${weather.value.text}，${weather.value.high}度，${walkLabel.value}`
 })
 
-function freshGeo() {
-  return readSavedGeo(WEATHER_GEO_MAX_AGE)
-}
-
 async function loadWeather() {
   if (!userStore.location) {
     weather.value = null
@@ -145,17 +128,11 @@ async function loadWeather() {
   if (state.value === 'loading') return
   state.value = 'loading'
   try {
-    const point = freshGeo()
-    weather.value = await weatherApi.today(point ? { lat: point.lat, lng: point.lng } : undefined)
+    weather.value = await weatherApi.today()
     state.value = weather.value ? 'ready' : 'unavailable'
   } catch {
     state.value = 'unavailable'
   }
-}
-
-async function handleLocate() {
-  const result = await locateAndSave()
-  if (result) await loadWeather()
 }
 
 let refreshTimer: number | undefined

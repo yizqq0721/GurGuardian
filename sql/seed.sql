@@ -1,6 +1,6 @@
 -- ============================================================
 -- FurGuardian 演示种子数据
--- 账号: demo / demo123
+-- 账号: demo / 123456
 -- 宠物: 一犬(贵宾犬) + 一猫(英短) + 各8周体重记录
 -- ============================================================
 
@@ -9,7 +9,7 @@ SET NAMES utf8mb4;
 
 USE fur_guardian;
 
--- 演示用户 (BCrypt encoded "demo123")
+-- 演示用户 (BCrypt encoded "123456")
 INSERT INTO users (username, password, nickname, status) VALUES
 ('demo', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '演示用户', 1);
 

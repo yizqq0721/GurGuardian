@@ -1,5 +1,5 @@
 import request from './request'
-import type { ChatMessage, ChatSession, CursorPage } from '@/types'
+import type { ChatMessage, ChatSession, CursorPage, FeedbackStats } from '@/types'
 
 export interface ExchangePayload {
   question: string
@@ -30,5 +30,11 @@ export const chatApi = {
   },
   append(id: number, data: ExchangePayload) {
     return request.post<void>(`/api/knowledge/chats/${id}/messages`, data)
+  },
+  rateMessage(messageId: number, useful: boolean) {
+    return request.post<void>(`/api/knowledge/messages/${messageId}/feedback`, { useful })
+  },
+  feedbackStats() {
+    return request.get<FeedbackStats>('/api/knowledge/feedback-stats')
   },
 }

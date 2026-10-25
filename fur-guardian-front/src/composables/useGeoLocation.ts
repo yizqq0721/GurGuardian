@@ -1,17 +1,14 @@
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { placesApi } from '@/api/places'
-import { userApi } from '@/api/user'
 import { requestGeo, type GeoPoint } from '@/utils/geo'
-import { useUserStore } from '@/stores/user'
 import type { GeoAddress } from '@/types'
 
-/** 获取浏览器定位，反查区/县并保存到当前用户资料。 */
+/** 获取浏览器定位并反查区/县；只在用户点击时调用，不会自动申请定位。 */
 export function useGeoLocation() {
   const locating = ref(false)
-  const userStore = useUserStore()
 
-  async function locateAndSave(): Promise<{ point: GeoPoint; address: GeoAddress } | null> {
+  async function locate(): Promise<{ point: GeoPoint; address: GeoAddress } | null> {
     if (locating.value) return null
     if (!window.isSecureContext) {
       ElMessage.warning('浏览器只允许在 HTTPS 或 localhost 下定位')
@@ -22,9 +19,6 @@ export function useGeoLocation() {
     try {
       const point = await requestGeo()
       const address = await placesApi.regeo(point)
-      const profile = await userApi.update({ location: address.label })
-      userStore.applyProfile(profile)
-      ElMessage.success(`当前位置：${address.label}`)
       return { point, address }
     } catch (e) {
       const reason = e instanceof Error ? e.message : ''
@@ -42,5 +36,5 @@ export function useGeoLocation() {
     }
   }
 
-  return { locating, locateAndSave }
+  return { locating, locate }
 }

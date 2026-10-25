@@ -20,12 +20,12 @@
         </div>
         <div class="fg-kv">
           <span class="row-text">
-            <span class="row-label">当前位置</span>
-            <span class="row-desc">顶部天气与遛弯建议按该位置查询</span>
+            <span class="row-label">常用城市</span>
+            <span class="row-desc">顶部天气与遛弯建议按该城市查询</span>
           </span>
           <span class="row-control">
-            <span class="row-value">{{ userStore.location || '未定位' }}</span>
-            <el-button size="small" @click="router.push('/profile')">定位</el-button>
+            <span class="row-value">{{ userStore.location || '未设置' }}</span>
+            <el-button size="small" @click="router.push('/profile')">修改</el-button>
           </span>
         </div>
         <div class="fg-kv">
@@ -39,6 +39,43 @@
             <span class="fg-unit">只</span>
           </span>
         </div>
+      </section>
+
+      <!-- App 壳：底部只有 5 个一级入口，其余功能从这里进 -->
+      <section v-if="isAppShell" class="set-section">
+        <h2 class="fg-section-title">
+          <LayoutGrid :size="20" class="fg-icon" />
+          常用功能
+        </h2>
+
+        <button type="button" class="app-entry" @click="router.push('/foods')">
+          <span class="app-entry-text">
+            <span class="row-label">食品库</span>
+            <span class="row-desc">录入主粮、核对营养标注</span>
+          </span>
+          <ChevronRight :size="18" class="fg-icon app-entry-arrow" />
+        </button>
+        <button type="button" class="app-entry" @click="router.push('/reports')">
+          <span class="app-entry-text">
+            <span class="row-label">周报</span>
+            <span class="row-desc">每周体重与喂食趋势</span>
+          </span>
+          <ChevronRight :size="18" class="fg-icon app-entry-arrow" />
+        </button>
+        <button type="button" class="app-entry" @click="router.push('/reminders/calendar')">
+          <span class="app-entry-text">
+            <span class="row-label">待办日历</span>
+            <span class="row-desc">按月查看提醒与打卡</span>
+          </span>
+          <ChevronRight :size="18" class="fg-icon app-entry-arrow" />
+        </button>
+        <button v-if="userStore.isAdmin" type="button" class="app-entry" @click="router.push('/admin/users')">
+          <span class="app-entry-text">
+            <span class="row-label">用户管理</span>
+            <span class="row-desc">管理员入口</span>
+          </span>
+          <ChevronRight :size="18" class="fg-icon app-entry-arrow" />
+        </button>
       </section>
 
       <!-- 通知 -->
@@ -160,7 +197,7 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Bell, Info as InfoIcon, LogOut, User as UserIcon } from 'lucide-vue-next'
+import { Bell, ChevronRight, Info as InfoIcon, LayoutGrid, LogOut, User as UserIcon } from 'lucide-vue-next'
 import { useUserStore } from '@/stores/user'
 import { usePetStore } from '@/stores/pet'
 import { userApi } from '@/api/user'
@@ -171,6 +208,7 @@ import {
   sendTestNotification,
   setInAppNotifyEnabled,
 } from '@/composables/useReminderNotify'
+import { isAppShell } from '@/utils/appMode'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -354,6 +392,43 @@ async function logout() {
   font-size: var(--fg-text-body);
   line-height: 1.8;
   color: var(--el-text-color-regular);
+}
+
+.app-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fg-s3);
+  width: 100%;
+  min-height: 56px;
+  padding: var(--fg-s3) 0;
+  border: 0;
+  border-bottom: var(--fg-line-w) solid var(--fg-line);
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+
+.app-entry:last-child {
+  border-bottom: 0;
+}
+
+.app-entry:active {
+  background: var(--fg-paper);
+}
+
+.app-entry-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fg-s1);
+  min-width: 0;
+}
+
+.app-entry-arrow {
+  flex: none;
+  color: var(--fg-ink-muted);
 }
 
 @media (max-width: 640px) {

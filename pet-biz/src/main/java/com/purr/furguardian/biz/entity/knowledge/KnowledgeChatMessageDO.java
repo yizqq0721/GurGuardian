@@ -18,6 +18,7 @@ public class KnowledgeChatMessageDO {
     private String sourcesJson;
     private Integer isRedLine;
     private Integer isFallback;
+    private Integer feedback;
     private LocalDateTime createdAt;
 
     public Long getId() { return id; }
@@ -36,6 +37,8 @@ public class KnowledgeChatMessageDO {
     public void setIsRedLine(Integer isRedLine) { this.isRedLine = isRedLine; }
     public Integer getIsFallback() { return isFallback; }
     public void setIsFallback(Integer isFallback) { this.isFallback = isFallback; }
+    public Integer getFeedback() { return feedback; }
+    public void setFeedback(Integer feedback) { this.feedback = feedback; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

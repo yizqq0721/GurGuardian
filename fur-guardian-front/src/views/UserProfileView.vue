@@ -2,7 +2,7 @@
   <div class="fg-page">
     <PageHeader
       title="用户信息"
-      description="昵称与当前位置；定位结果用于顶部天气和遛弯建议。"
+      description="昵称与常用城市；顶部天气和遛弯建议会按这里查询。"
       breadcrumb="账号 / 用户信息"
     />
 
@@ -32,19 +32,22 @@
               placeholder="例如：豆豆爸"
             />
           </el-form-item>
-          <el-form-item label="当前位置">
+          <el-form-item label="常用城市">
             <div class="location-row">
-              <span class="location-value">
-                <MapPin :size="15" class="fg-icon" />
-                {{ form.location || '尚未获取位置' }}
-              </span>
-              <el-button class="locate-btn" :loading="locating" @click="locate">
+              <el-input
+                v-model="form.location"
+                maxlength="64"
+                show-word-limit
+                clearable
+                placeholder="例如：杭州市西湖区"
+              />
+              <el-button class="locate-btn" :loading="locating" @click="handleLocate">
                 <LocateFixed v-if="!locating" :size="14" class="fg-icon" />
-                <span>{{ form.location ? '重新定位' : '获取当前位置' }}</span>
+                <span>定位</span>
               </el-button>
             </div>
             <p class="field-hint">
-              用于顶部天气与遛弯提醒，只保存到区/县，不记录详细地址。
+              填城市名，或点「定位」自动填入所在区/县；顶部天气与遛弯提醒会按这里查询，留空则不显示当日天气。
             </p>
           </el-form-item>
         </section>
@@ -61,7 +64,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { LocateFixed, MapPin } from 'lucide-vue-next'
+import { LocateFixed } from 'lucide-vue-next'
 import PageHeader from '@/components/PageHeader.vue'
 import { userApi } from '@/api/user'
 import { useUserStore } from '@/stores/user'
@@ -69,7 +72,7 @@ import { useGeoLocation } from '@/composables/useGeoLocation'
 import type { UserProfile } from '@/types'
 
 const userStore = useUserStore()
-const { locating, locateAndSave } = useGeoLocation()
+const { locating, locate } = useGeoLocation()
 
 const loading = ref(true)
 const saving = ref(false)
@@ -97,8 +100,8 @@ function fill(profile: UserProfile) {
   form.location = profile.location || ''
 }
 
-async function locate() {
-  const result = await locateAndSave()
+async function handleLocate() {
+  const result = await locate()
   if (result) form.location = result.address.label
 }
 
@@ -178,30 +181,19 @@ async function save() {
 .location-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--fg-s3);
   width: 100%;
-  padding: var(--fg-s2) var(--fg-s3);
-  border: var(--fg-line-w) solid var(--fg-line);
-  border-radius: var(--fg-radius);
-  background: var(--fg-paper);
 }
 
-.location-value {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--fg-s2);
+.location-row :deep(.el-input) {
+  flex: 1;
   min-width: 0;
-  color: var(--fg-ink);
-  font-size: var(--fg-text-body);
-  overflow-wrap: anywhere;
 }
 
 .locate-btn {
   flex: none;
 }
 
-.locate-btn :deep(.el-button__text),
 .locate-btn :deep(span) {
   display: inline-flex;
   align-items: center;

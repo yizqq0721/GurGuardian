@@ -135,6 +135,64 @@ public class KnowledgeChatServiceImpl implements KnowledgeChatService {
         sessionMapper.updateById(session);
     }
 
+    @Override
+    public void rateMessage(Long userId, Long messageId, boolean useful) {
+        LambdaQueryWrapper<KnowledgeChatMessageDO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(KnowledgeChatMessageDO::getId, messageId)
+               .eq(KnowledgeChatMessageDO::getUserId, userId)
+               .eq(KnowledgeChatMessageDO::getRole, "ai");
+        KnowledgeChatMessageDO message = messageMapper.selectOne(wrapper);
+        if (message == null) {
+            throw new BizException(ErrorCode.DATA_NOT_FOUND);
+        }
+        KnowledgeChatMessageDO patch = new KnowledgeChatMessageDO();
+        patch.setId(messageId);
+        patch.setFeedback(useful ? 1 : 0);
+        messageMapper.updateById(patch);
+    }
+
+    @Override
+    public FeedbackStats feedbackStats(Long userId) {
+        long total = countAiMessages(userId, null);
+        long useful = countAiMessages(userId, 1);
+        long useless = countAiMessages(userId, 0);
+        long rated = useful + useless;
+        int usefulRate = rated == 0 ? 0 : (int) Math.round(useful * 100.0 / rated);
+
+        LambdaQueryWrapper<KnowledgeChatMessageDO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.select(KnowledgeChatMessageDO::getId, KnowledgeChatMessageDO::getSessionId,
+                       KnowledgeChatMessageDO::getContent, KnowledgeChatMessageDO::getCreatedAt)
+               .eq(KnowledgeChatMessageDO::getUserId, userId)
+               .eq(KnowledgeChatMessageDO::getRole, "ai")
+               .eq(KnowledgeChatMessageDO::getFeedback, 0)
+               .orderByDesc(KnowledgeChatMessageDO::getCreatedAt)
+               .last("LIMIT 5");
+        List<FeedbackSample> recentUseless = messageMapper.selectList(wrapper).stream()
+                .map(row -> new FeedbackSample(row.getId(), row.getSessionId(),
+                        snippet(row.getContent()), row.getCreatedAt()))
+                .toList();
+
+        return new FeedbackStats(total, useful, useless, total - rated, usefulRate, recentUseless);
+    }
+
+    /** 红线回答没有评分入口，不计入分母；feedback 传 null 表示全部。 */
+    private long countAiMessages(Long userId, Integer feedback) {
+        LambdaQueryWrapper<KnowledgeChatMessageDO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(KnowledgeChatMessageDO::getUserId, userId)
+               .eq(KnowledgeChatMessageDO::getRole, "ai")
+               .eq(KnowledgeChatMessageDO::getIsRedLine, 0);
+        if (feedback != null) {
+            wrapper.eq(KnowledgeChatMessageDO::getFeedback, feedback);
+        }
+        Long count = messageMapper.selectCount(wrapper);
+        return count == null ? 0 : count;
+    }
+
+    private String snippet(String content) {
+        String text = content == null ? "" : content.replaceAll("\\s+", " ").trim();
+        return text.length() <= 80 ? text : text.substring(0, 80) + "…";
+    }
+
     private KnowledgeChatSessionDO requireOwned(Long userId, Long sessionId) {
         LambdaQueryWrapper<KnowledgeChatSessionDO> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(KnowledgeChatSessionDO::getId, sessionId)
@@ -201,6 +259,7 @@ public class KnowledgeChatServiceImpl implements KnowledgeChatService {
         return new ChatMessage(row.getId(), row.getRole(), row.getContent(), readSources(row.getSourcesJson()),
                 row.getIsRedLine() != null && row.getIsRedLine() == 1,
                 row.getIsFallback() != null && row.getIsFallback() == 1,
+                row.getFeedback(),
                 row.getCreatedAt());
     }
 
