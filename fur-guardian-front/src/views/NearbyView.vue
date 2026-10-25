@@ -412,11 +412,10 @@ function renderMarkers(fitView = false) {
   markerList = []
   if (!map || !AMapRef) return
   for (const p of places.value) {
-    const isMedical = category.value === 'medical'
     const marker = new AMapRef.Marker({
       position: [p.lng, p.lat],
       content: pinHtml(p.id === activeId.value),
-      offset: new AMapRef.Pixel(isMedical ? -19 : -16, isMedical ? -19 : -16),
+      offset: new AMapRef.Pixel(-15, -15),
       zIndex: p.id === activeId.value ? 120 : 100,
     })
     marker.on('click', () => selectMarker(p))
@@ -431,13 +430,11 @@ function renderMarkers(fitView = false) {
 }
 
 function pinHtml(active: boolean) {
-  const isMedical = category.value === 'medical'
-  // 十字在手机小图上仍容易被当成普通医疗机构，改用爪印+红底明确「宠物医院」
-  const glyph = isMedical
-    ? '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="20" cy="16" r="2"/><path d="M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.045Q6.52 17.48 4.46 16.84A3.5 3.5 0 0 1 5.5 10Z"/></svg>'
+  /* 十字在手机小图上仍像普通医疗点，医院改用爪印；公园用松树，两者一眼可分 */
+  const glyph = category.value === 'medical'
+    ? '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="20" cy="16" r="2"/><path d="M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.045Q6.52 17.48 4.46 16.84A3.5 3.5 0 0 1 5.5 10Z"/></svg>'
     : '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m17 14 3 3.3a1 1 0 0 1-.7 1.7H4.7a1 1 0 0 1-.7-1.7L7 14h-.3a1 1 0 0 1-.7-1.7L9 9h-.2A1 1 0 0 1 8 7.3L12 3l4 4.3a1 1 0 0 1-.8 1.7H15l3 3.3a1 1 0 0 1-.7 1.7H17Z"/><path d="M12 22v-3"/></svg>'
-  const kind = isMedical ? ' nby-pin--medical' : ' nby-pin--park'
-  return `<div class="nby-pin${kind}${active ? ' is-active' : ''}">${glyph}</div>`
+  return `<div class="nby-pin${active ? ' is-active' : ''}">${glyph}</div>`
 }
 
 function selectPlace(p: NearbyPlace) {
@@ -675,62 +672,22 @@ onBeforeUnmount(() => {
 
 /* 地图标记注入的是原生 DOM，样式必须穿过 scoped 作用域 */
 .map :deep(.nby-pin) {
+  width: 30px;
+  height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
+  background: var(--fg-surface);
+  border: 2px solid var(--fg-accent);
+  color: var(--fg-accent);
   cursor: pointer;
-  transition: transform var(--fg-motion), background var(--fg-motion), color var(--fg-motion);
+  transition: background var(--fg-motion), color var(--fg-motion);
 }
 
-/* 医院：红底白十字 + 白色描边与光晕，远看也能一眼认出 */
-.map :deep(.nby-pin--medical) {
-  width: 38px;
-  height: 38px;
-  color: #fff;
-  background: #d93a3a;
-  border: 3px solid #fff;
-  box-shadow:
-    0 2px 10px rgba(0, 0, 0, 0.35),
-    0 0 0 5px rgba(217, 58, 58, 0.22);
-  animation: nby-pulse 2.4s ease-in-out infinite;
-}
-
-.map :deep(.nby-pin--medical.is-active) {
-  background: #b42318;
-  transform: scale(1.12);
-  box-shadow:
-    0 3px 14px rgba(0, 0, 0, 0.4),
-    0 0 0 7px rgba(217, 58, 58, 0.3);
-}
-
-/* 公园：绿底白标，与医院明显区分 */
-.map :deep(.nby-pin--park) {
-  width: 32px;
-  height: 32px;
-  color: #fff;
-  background: #1f7a4d;
-  border: 2px solid var(--fg-surface);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
-}
-
-.map :deep(.nby-pin--park.is-active) {
-  background: #145c39;
-  transform: scale(1.12);
-}
-
-@keyframes nby-pulse {
-  0%,
-  100% {
-    box-shadow:
-      0 2px 10px rgba(0, 0, 0, 0.35),
-      0 0 0 5px rgba(217, 58, 58, 0.22);
-  }
-  50% {
-    box-shadow:
-      0 2px 10px rgba(0, 0, 0, 0.35),
-      0 0 0 9px rgba(217, 58, 58, 0.08);
-  }
+.map :deep(.nby-pin.is-active) {
+  background: var(--fg-accent);
+  color: var(--fg-surface);
 }
 
 .map :deep(.nby-me) {
